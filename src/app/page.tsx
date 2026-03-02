@@ -3,7 +3,7 @@ import { buildLambda, gameThirteenProbability, getConditionalProbability } from 
 import GameCard from '@/components/GameCard'
 import LiveWatchCard from '@/components/LiveWatchCard'
 import ScorigramiGrid from '@/components/ScorigramiGrid'
-import type { MLBLiveGame } from '@/lib/mlb'
+import type { MLBGame, MLBLiveGame } from '@/lib/mlb'
 import type { LiveGameState } from '@/lib/probability'
 
 export const revalidate = 60
@@ -15,6 +15,90 @@ interface PageProps {
   searchParams: Promise<{ window?: string }>
 }
 
+async function enrichGame(
+  game: MLBGame,
+  season: number,
+  rollingWindow: number
+) {
+  try {
+    const [awayStats, homeStats] = await Promise.all([
+      fetchTeamSeasonStats(game.teams.away.team.id, season, rollingWindow || undefined).catch(
+        () => ({ teamId: game.teams.away.team.id, gamesPlayed: 0, runsPerGame: 4.5, totalRuns: 0 })
+      ),
+      fetchTeamSeasonStats(game.teams.home.team.id, season, rollingWindow || undefined).catch(
+        () => ({ teamId: game.teams.home.team.id, gamesPlayed: 0, runsPerGame: 4.5, totalRuns: 0 })
+      ),
+    ])
+
+    const [awayLastSeason, homeLastSeason] = await Promise.all([
+      awayStats.gamesPlayed < 10
+        ? fetchLastSeasonRunsPerGame(game.teams.away.team.id, season).catch(() => null)
+        : Promise.resolve(null),
+      homeStats.gamesPlayed < 10
+        ? fetchLastSeasonRunsPerGame(game.teams.home.team.id, season).catch(() => null)
+        : Promise.resolve(null),
+    ])
+
+    const awayPitcherId = game.probablePitchers?.away?.id
+    const homePitcherId = game.probablePitchers?.home?.id
+
+    const [awayPitcherEra, homePitcherEra] = await Promise.all([
+      awayPitcherId ? fetchPitcherEra(awayPitcherId, season).catch(() => null) : Promise.resolve(null),
+      homePitcherId ? fetchPitcherEra(homePitcherId, season).catch(() => null) : Promise.resolve(null),
+    ])
+
+    const venueId = String(game.venue.id)
+
+    const awayLambda = buildLambda({
+      baseRunsPerGame: awayStats.runsPerGame,
+      gamesPlayed: awayStats.gamesPlayed,
+      lastSeasonRunsPerGame: awayLastSeason ?? undefined,
+      venueId,
+      starterEra: homePitcherEra ?? undefined,
+    })
+
+    const homeLambda = buildLambda({
+      baseRunsPerGame: homeStats.runsPerGame,
+      gamesPlayed: homeStats.gamesPlayed,
+      lastSeasonRunsPerGame: homeLastSeason ?? undefined,
+      venueId,
+      starterEra: awayPitcherEra ?? undefined,
+    })
+
+    const combinedProb = gameThirteenProbability(
+      homeLambda.pitcherAdjusted,
+      awayLambda.pitcherAdjusted
+    )
+
+    return {
+      game,
+      awayLambda,
+      homeLambda,
+      combinedProb,
+      isBlended: awayLambda.isBlended || homeLambda.isBlended,
+      awayPitcherName: game.probablePitchers?.away?.fullName,
+      homePitcherName: game.probablePitchers?.home?.fullName,
+    }
+  } catch {
+    // Fall back to pure Poisson with defaults if any fetch fails
+    const venueId = String(game.venue.id)
+    const defaultLambda = buildLambda({ baseRunsPerGame: 4.5, gamesPlayed: 0, venueId })
+    const combinedProb = gameThirteenProbability(
+      defaultLambda.pitcherAdjusted,
+      defaultLambda.pitcherAdjusted
+    )
+    return {
+      game,
+      awayLambda: defaultLambda,
+      homeLambda: defaultLambda,
+      combinedProb,
+      isBlended: false,
+      awayPitcherName: undefined,
+      homePitcherName: undefined,
+    }
+  }
+}
+
 export default async function HomePage({ searchParams }: PageProps) {
   const { window: windowParam } = await searchParams
   const rollingWindow = (() => {
@@ -23,80 +107,26 @@ export default async function HomePage({ searchParams }: PageProps) {
   })()
   const season = currentSeason()
 
-  const games = await fetchTodaySchedule()
+  // Fetch schedule — gracefully handle API failures
+  let games: MLBGame[] = []
+  let fetchError: string | null = null
+  try {
+    games = await fetchTodaySchedule()
+  } catch (err) {
+    fetchError = err instanceof Error ? err.message : 'MLB API unavailable'
+  }
 
-  // Build enriched game data with probabilities
   const enrichedGames = await Promise.all(
-    games.map(async (game) => {
-      const [awayStats, homeStats] = await Promise.all([
-        fetchTeamSeasonStats(game.teams.away.team.id, season, rollingWindow || undefined),
-        fetchTeamSeasonStats(game.teams.home.team.id, season, rollingWindow || undefined),
-      ])
-
-      const [awayLastSeason, homeLastSeason] = await Promise.all([
-        awayStats.gamesPlayed < 10
-          ? fetchLastSeasonRunsPerGame(game.teams.away.team.id, season)
-          : Promise.resolve(null),
-        homeStats.gamesPlayed < 10
-          ? fetchLastSeasonRunsPerGame(game.teams.home.team.id, season)
-          : Promise.resolve(null),
-      ])
-
-      // Pitcher ERA: away pitcher affects home team's expected runs (and vice versa)
-      const awayPitcherId = game.probablePitchers?.away?.id
-      const homePitcherId = game.probablePitchers?.home?.id
-
-      const [awayPitcherEra, homePitcherEra] = await Promise.all([
-        awayPitcherId ? fetchPitcherEra(awayPitcherId, season) : Promise.resolve(null),
-        homePitcherId ? fetchPitcherEra(homePitcherId, season) : Promise.resolve(null),
-      ])
-
-      const venueId = String(game.venue.id)
-
-      const awayLambda = buildLambda({
-        baseRunsPerGame: awayStats.runsPerGame,
-        gamesPlayed: awayStats.gamesPlayed,
-        lastSeasonRunsPerGame: awayLastSeason ?? undefined,
-        venueId,
-        starterEra: homePitcherEra ?? undefined,
-      })
-
-      const homeLambda = buildLambda({
-        baseRunsPerGame: homeStats.runsPerGame,
-        gamesPlayed: homeStats.gamesPlayed,
-        lastSeasonRunsPerGame: homeLastSeason ?? undefined,
-        venueId,
-        starterEra: awayPitcherEra ?? undefined,
-      })
-
-      const combinedProb = gameThirteenProbability(
-        homeLambda.pitcherAdjusted,
-        awayLambda.pitcherAdjusted
-      )
-
-      return {
-        game,
-        awayLambda,
-        homeLambda,
-        combinedProb,
-        isBlended: awayLambda.isBlended || homeLambda.isBlended,
-        awayPitcherName: game.probablePitchers?.away?.fullName,
-        homePitcherName: game.probablePitchers?.home?.fullName,
-      }
-    })
+    games.map((game) => enrichGame(game, season, rollingWindow))
   )
-
   enrichedGames.sort((a, b) => b.combinedProb - a.combinedProb)
 
   // Live games
   const liveGames = games.filter((g) => g.status.abstractGameState === 'Live')
-
   const liveFeeds = await Promise.all(
     liveGames.map((g) => fetchLiveFeed(g.gamePk).catch(() => null))
   )
-
   const activeLiveFeeds = liveFeeds.filter(Boolean) as MLBLiveGame[]
-
   const watchGames = activeLiveFeeds.filter((feed) => {
     const { away, home } = feed.liveData.linescore.teams
     return away.runs >= 9 || home.runs >= 9
@@ -109,12 +139,16 @@ export default async function HomePage({ searchParams }: PageProps) {
 
   const scorigramiData = await Promise.all(
     topTeamIds.map(async (team) => {
-      const log = await fetchTeamGameLog(team.id, season)
-      const counts: Record<number, number> = {}
-      for (const entry of log) {
-        counts[entry.runsScored] = (counts[entry.runsScored] ?? 0) + 1
+      try {
+        const log = await fetchTeamGameLog(team.id, season)
+        const counts: Record<number, number> = {}
+        for (const entry of log) {
+          counts[entry.runsScored] = (counts[entry.runsScored] ?? 0) + 1
+        }
+        return { abbr: team.abbreviation, counts }
+      } catch {
+        return { abbr: team.abbreviation, counts: {} }
       }
-      return { abbr: team.abbreviation, counts }
     })
   )
 
@@ -157,6 +191,13 @@ export default async function HomePage({ searchParams }: PageProps) {
           </div>
         </header>
 
+        {/* API error banner */}
+        {fetchError && (
+          <div className="rounded border border-amber-900 bg-amber-950/30 px-4 py-3 text-amber-400 text-sm">
+            ⚠ MLB Stats API unavailable: {fetchError}. Showing fallback Poisson estimates.
+          </div>
+        )}
+
         {/* Live 13-Watch */}
         {watchGames.length > 0 && (
           <section>
@@ -189,9 +230,7 @@ export default async function HomePage({ searchParams }: PageProps) {
                   isBottom: !isTop,
                 }
 
-                const enriched = enrichedGames.find(
-                  (e) => e.game.gamePk === feed.gamePk
-                )
+                const enriched = enrichedGames.find((e) => e.game.gamePk === feed.gamePk)
                 const awayLambdaVal = enriched?.awayLambda.pitcherAdjusted ?? 4.5
                 const homeLambdaVal = enriched?.homeLambda.pitcherAdjusted ?? 4.5
 
@@ -233,8 +272,14 @@ export default async function HomePage({ searchParams }: PageProps) {
             Today&apos;s Games — Probability Heatmap
           </h2>
           {enrichedGames.length === 0 ? (
-            <div className="text-gray-600 text-center py-16 font-mono">
-              No games scheduled today.
+            <div className="rounded border border-gray-800 bg-[#111] px-6 py-16 text-center space-y-2">
+              <div className="text-gray-500 font-mono text-lg">No games scheduled today</div>
+              <div className="text-gray-700 text-sm">
+                Check back during the MLB season (March–October)
+              </div>
+              <div className="text-gray-700 text-xs mt-4">
+                <a href="/history" className="underline hover:text-gray-500">View historical 13-run games →</a>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -260,18 +305,20 @@ export default async function HomePage({ searchParams }: PageProps) {
           )}
         </section>
 
-        {/* Scorigami Squares */}
-        <section>
-          <h2 className="text-lg font-bold text-white mb-1">Scorigami Squares</h2>
-          <p className="text-gray-600 text-xs mb-4">
-            Run-scoring distribution for today&apos;s highest-probability teams (cell brightness = frequency)
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {scorigramiData.map(({ abbr, counts }) => (
-              <ScorigramiGrid key={abbr} teamAbbr={abbr} runCounts={counts} />
-            ))}
-          </div>
-        </section>
+        {/* Scorigami Squares — only show if we have game data */}
+        {scorigramiData.some((d) => Object.keys(d.counts).length > 0) && (
+          <section>
+            <h2 className="text-lg font-bold text-white mb-1">Scorigami Squares</h2>
+            <p className="text-gray-600 text-xs mb-4">
+              Run-scoring distribution for today&apos;s highest-probability teams (cell brightness = frequency)
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {scorigramiData.map(({ abbr, counts }) => (
+                <ScorigramiGrid key={abbr} teamAbbr={abbr} runCounts={counts} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Footer */}
         <footer className="border-t border-gray-900 pt-6 text-gray-600 text-xs space-y-2">
