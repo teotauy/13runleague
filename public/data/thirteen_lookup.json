@@ -1,0 +1,2748 @@
+{
+  "_meta": {
+    "description": "13-Run conditional probability lookup table",
+    "source": "Retrosheet play-by-play data",
+    "attribution": "The information used here was obtained free of charge from and is copyrighted by Retrosheet. Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.",
+    "total_games": 203258,
+    "thirteen_games_vis": 1368,
+    "thirteen_games_home": 1433,
+    "thirteen_games_either": 2785,
+    "base_probability_vis": 0.00673,
+    "base_probability_home": 0.00705,
+    "key_format": "vis_or_home|inning_completed|runs_at_that_point",
+    "min_sample_size": 25,
+    "generated": "2026-03-02T15:22:22.914828"
+  },
+  "lookup": {
+    "vis|1|0": {
+      "total": 145821,
+      "ended_at_13": 602,
+      "probability": 0.004128,
+      "probability_pct": "0.41%"
+    },
+    "home|1|0": {
+      "total": 138383,
+      "ended_at_13": 549,
+      "probability": 0.003967,
+      "probability_pct": "0.40%"
+    },
+    "vis|2|0": {
+      "total": 109797,
+      "ended_at_13": 296,
+      "probability": 0.002696,
+      "probability_pct": "0.27%"
+    },
+    "home|2|0": {
+      "total": 101825,
+      "ended_at_13": 212,
+      "probability": 0.002082,
+      "probability_pct": "0.21%"
+    },
+    "vis|3|0": {
+      "total": 84461,
+      "ended_at_13": 144,
+      "probability": 0.001705,
+      "probability_pct": "0.17%"
+    },
+    "home|3|0": {
+      "total": 76622,
+      "ended_at_13": 88,
+      "probability": 0.001148,
+      "probability_pct": "0.11%"
+    },
+    "vis|4|0": {
+      "total": 60901,
+      "ended_at_13": 34,
+      "probability": 0.000558,
+      "probability_pct": "0.06%"
+    },
+    "home|4|0": {
+      "total": 54120,
+      "ended_at_13": 22,
+      "probability": 0.000407,
+      "probability_pct": "0.04%"
+    },
+    "vis|5|0": {
+      "total": 46891,
+      "ended_at_13": 15,
+      "probability": 0.00032,
+      "probability_pct": "0.03%"
+    },
+    "home|5|0": {
+      "total": 40896,
+      "ended_at_13": 7,
+      "probability": 0.000171,
+      "probability_pct": "0.02%"
+    },
+    "vis|6|0": {
+      "total": 34536,
+      "ended_at_13": 7,
+      "probability": 0.000203,
+      "probability_pct": "0.02%"
+    },
+    "home|6|0": {
+      "total": 29426,
+      "ended_at_13": 2,
+      "probability": 6.8e-05,
+      "probability_pct": "0.01%"
+    },
+    "vis|7|1": {
+      "total": 33522,
+      "ended_at_13": 4,
+      "probability": 0.000119,
+      "probability_pct": "0.01%"
+    },
+    "home|7|0": {
+      "total": 21647,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|8|2": {
+      "total": 30791,
+      "ended_at_13": 3,
+      "probability": 9.7e-05,
+      "probability_pct": "0.01%"
+    },
+    "home|8|0": {
+      "total": 16275,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|9|2": {
+      "total": 28453,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|9|2": {
+      "total": 20376,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|10|2": {
+      "total": 2873,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|10|2": {
+      "total": 2558,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|11|2": {
+      "total": 1542,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|5|1": {
+      "total": 40281,
+      "ended_at_13": 16,
+      "probability": 0.000397,
+      "probability_pct": "0.04%"
+    },
+    "home|6|2": {
+      "total": 33841,
+      "ended_at_13": 9,
+      "probability": 0.000266,
+      "probability_pct": "0.03%"
+    },
+    "vis|7|0": {
+      "total": 25724,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|7|2": {
+      "total": 31781,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|8|0": {
+      "total": 19531,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|8|3": {
+      "total": 28205,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|9|0": {
+      "total": 14736,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|9|0": {
+      "total": 11969,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|10|0": {
+      "total": 723,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|1|2": {
+      "total": 17093,
+      "ended_at_13": 221,
+      "probability": 0.012929,
+      "probability_pct": "1.29%"
+    },
+    "home|2|2": {
+      "total": 26132,
+      "ended_at_13": 225,
+      "probability": 0.00861,
+      "probability_pct": "0.86%"
+    },
+    "home|3|3": {
+      "total": 20309,
+      "ended_at_13": 146,
+      "probability": 0.007189,
+      "probability_pct": "0.72%"
+    },
+    "home|4|4": {
+      "total": 16848,
+      "ended_at_13": 142,
+      "probability": 0.008428,
+      "probability_pct": "0.84%"
+    },
+    "vis|5|2": {
+      "total": 35129,
+      "ended_at_13": 54,
+      "probability": 0.001537,
+      "probability_pct": "0.15%"
+    },
+    "home|5|4": {
+      "total": 20124,
+      "ended_at_13": 72,
+      "probability": 0.003578,
+      "probability_pct": "0.36%"
+    },
+    "vis|6|4": {
+      "total": 21992,
+      "ended_at_13": 53,
+      "probability": 0.00241,
+      "probability_pct": "0.24%"
+    },
+    "home|6|4": {
+      "total": 23480,
+      "ended_at_13": 38,
+      "probability": 0.001618,
+      "probability_pct": "0.16%"
+    },
+    "vis|7|5": {
+      "total": 17930,
+      "ended_at_13": 35,
+      "probability": 0.001952,
+      "probability_pct": "0.20%"
+    },
+    "home|7|4": {
+      "total": 24157,
+      "ended_at_13": 7,
+      "probability": 0.00029,
+      "probability_pct": "0.03%"
+    },
+    "vis|8|5": {
+      "total": 20176,
+      "ended_at_13": 9,
+      "probability": 0.000446,
+      "probability_pct": "0.04%"
+    },
+    "home|8|4": {
+      "total": 25262,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|9|5": {
+      "total": 21048,
+      "ended_at_13": 1,
+      "probability": 4.8e-05,
+      "probability_pct": "0.00%"
+    },
+    "home|9|5": {
+      "total": 8675,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|10|9": {
+      "total": 445,
+      "ended_at_13": 2,
+      "probability": 0.004494,
+      "probability_pct": "0.45%"
+    },
+    "home|10|7": {
+      "total": 677,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|1|1": {
+      "total": 30682,
+      "ended_at_13": 242,
+      "probability": 0.007887,
+      "probability_pct": "0.79%"
+    },
+    "vis|2|1": {
+      "total": 45355,
+      "ended_at_13": 236,
+      "probability": 0.005203,
+      "probability_pct": "0.52%"
+    },
+    "vis|3|3": {
+      "total": 18296,
+      "ended_at_13": 160,
+      "probability": 0.008745,
+      "probability_pct": "0.87%"
+    },
+    "home|3|1": {
+      "total": 45670,
+      "ended_at_13": 104,
+      "probability": 0.002277,
+      "probability_pct": "0.23%"
+    },
+    "vis|4|3": {
+      "total": 23726,
+      "ended_at_13": 136,
+      "probability": 0.005732,
+      "probability_pct": "0.57%"
+    },
+    "home|4|1": {
+      "total": 44520,
+      "ended_at_13": 49,
+      "probability": 0.001101,
+      "probability_pct": "0.11%"
+    },
+    "vis|5|4": {
+      "total": 18392,
+      "ended_at_13": 108,
+      "probability": 0.005872,
+      "probability_pct": "0.59%"
+    },
+    "vis|7|4": {
+      "total": 23467,
+      "ended_at_13": 20,
+      "probability": 0.000852,
+      "probability_pct": "0.09%"
+    },
+    "vis|8|4": {
+      "total": 25016,
+      "ended_at_13": 6,
+      "probability": 0.00024,
+      "probability_pct": "0.02%"
+    },
+    "vis|9|4": {
+      "total": 25411,
+      "ended_at_13": 1,
+      "probability": 3.9e-05,
+      "probability_pct": "0.00%"
+    },
+    "home|9|4": {
+      "total": 13035,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|10|4": {
+      "total": 2981,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|10|4": {
+      "total": 2319,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|11|4": {
+      "total": 1642,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|11|4": {
+      "total": 1235,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|12|4": {
+      "total": 873,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|12|4": {
+      "total": 656,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|13|4": {
+      "total": 489,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|13|4": {
+      "total": 355,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|14|4": {
+      "total": 239,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|14|4": {
+      "total": 194,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|3|1": {
+      "total": 46665,
+      "ended_at_13": 148,
+      "probability": 0.003172,
+      "probability_pct": "0.32%"
+    },
+    "vis|4|1": {
+      "total": 47104,
+      "ended_at_13": 72,
+      "probability": 0.001529,
+      "probability_pct": "0.15%"
+    },
+    "vis|5|1": {
+      "total": 43712,
+      "ended_at_13": 35,
+      "probability": 0.000801,
+      "probability_pct": "0.08%"
+    },
+    "vis|6|1": {
+      "total": 38161,
+      "ended_at_13": 11,
+      "probability": 0.000288,
+      "probability_pct": "0.03%"
+    },
+    "vis|8|1": {
+      "total": 28153,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|3|2": {
+      "total": 29542,
+      "ended_at_13": 155,
+      "probability": 0.005247,
+      "probability_pct": "0.52%"
+    },
+    "vis|4|4": {
+      "total": 14870,
+      "ended_at_13": 149,
+      "probability": 0.01002,
+      "probability_pct": "1.00%"
+    },
+    "home|6|1": {
+      "total": 34279,
+      "ended_at_13": 4,
+      "probability": 0.000117,
+      "probability_pct": "0.01%"
+    },
+    "home|7|1": {
+      "total": 29551,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|8|1": {
+      "total": 24315,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|9|1": {
+      "total": 18718,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|1|1": {
+      "total": 33075,
+      "ended_at_13": 234,
+      "probability": 0.007075,
+      "probability_pct": "0.71%"
+    },
+    "home|2|1": {
+      "total": 46454,
+      "ended_at_13": 236,
+      "probability": 0.00508,
+      "probability_pct": "0.51%"
+    },
+    "home|5|3": {
+      "total": 27099,
+      "ended_at_13": 54,
+      "probability": 0.001993,
+      "probability_pct": "0.20%"
+    },
+    "home|6|3": {
+      "total": 29349,
+      "ended_at_13": 19,
+      "probability": 0.000647,
+      "probability_pct": "0.06%"
+    },
+    "home|7|3": {
+      "total": 28949,
+      "ended_at_13": 4,
+      "probability": 0.000138,
+      "probability_pct": "0.01%"
+    },
+    "vis|4|2": {
+      "total": 35160,
+      "ended_at_13": 127,
+      "probability": 0.003612,
+      "probability_pct": "0.36%"
+    },
+    "home|8|5": {
+      "total": 21284,
+      "ended_at_13": 2,
+      "probability": 9.4e-05,
+      "probability_pct": "0.01%"
+    },
+    "home|1|3": {
+      "total": 8322,
+      "ended_at_13": 160,
+      "probability": 0.019226,
+      "probability_pct": "1.92%"
+    },
+    "home|2|3": {
+      "total": 13889,
+      "ended_at_13": 189,
+      "probability": 0.013608,
+      "probability_pct": "1.36%"
+    },
+    "vis|5|3": {
+      "total": 25957,
+      "ended_at_13": 92,
+      "probability": 0.003544,
+      "probability_pct": "0.35%"
+    },
+    "home|4|3": {
+      "total": 25514,
+      "ended_at_13": 127,
+      "probability": 0.004978,
+      "probability_pct": "0.50%"
+    },
+    "vis|6|3": {
+      "total": 28893,
+      "ended_at_13": 39,
+      "probability": 0.00135,
+      "probability_pct": "0.13%"
+    },
+    "vis|7|3": {
+      "total": 29371,
+      "ended_at_13": 12,
+      "probability": 0.000409,
+      "probability_pct": "0.04%"
+    },
+    "home|7|5": {
+      "total": 19328,
+      "ended_at_13": 16,
+      "probability": 0.000828,
+      "probability_pct": "0.08%"
+    },
+    "vis|8|3": {
+      "total": 29226,
+      "ended_at_13": 4,
+      "probability": 0.000137,
+      "probability_pct": "0.01%"
+    },
+    "vis|9|3": {
+      "total": 28626,
+      "ended_at_13": 1,
+      "probability": 3.5e-05,
+      "probability_pct": "0.00%"
+    },
+    "vis|7|2": {
+      "total": 33603,
+      "ended_at_13": 6,
+      "probability": 0.000179,
+      "probability_pct": "0.02%"
+    },
+    "vis|10|6": {
+      "total": 1638,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|1|2": {
+      "total": 14856,
+      "ended_at_13": 179,
+      "probability": 0.012049,
+      "probability_pct": "1.20%"
+    },
+    "vis|2|2": {
+      "total": 24096,
+      "ended_at_13": 201,
+      "probability": 0.008342,
+      "probability_pct": "0.83%"
+    },
+    "home|5|2": {
+      "total": 34811,
+      "ended_at_13": 28,
+      "probability": 0.000804,
+      "probability_pct": "0.08%"
+    },
+    "home|8|2": {
+      "total": 28378,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|2|4": {
+      "total": 7155,
+      "ended_at_13": 166,
+      "probability": 0.023201,
+      "probability_pct": "2.32%"
+    },
+    "home|3|4": {
+      "total": 12972,
+      "ended_at_13": 186,
+      "probability": 0.014339,
+      "probability_pct": "1.43%"
+    },
+    "home|4|6": {
+      "total": 6316,
+      "ended_at_13": 151,
+      "probability": 0.023908,
+      "probability_pct": "2.39%"
+    },
+    "home|5|6": {
+      "total": 9760,
+      "ended_at_13": 125,
+      "probability": 0.012807,
+      "probability_pct": "1.28%"
+    },
+    "home|6|6": {
+      "total": 12014,
+      "ended_at_13": 69,
+      "probability": 0.005743,
+      "probability_pct": "0.57%"
+    },
+    "home|7|6": {
+      "total": 14465,
+      "ended_at_13": 21,
+      "probability": 0.001452,
+      "probability_pct": "0.15%"
+    },
+    "home|8|7": {
+      "total": 12544,
+      "ended_at_13": 1,
+      "probability": 8e-05,
+      "probability_pct": "0.01%"
+    },
+    "home|8|6": {
+      "total": 16584,
+      "ended_at_13": 1,
+      "probability": 6e-05,
+      "probability_pct": "0.01%"
+    },
+    "vis|2|3": {
+      "total": 12160,
+      "ended_at_13": 186,
+      "probability": 0.015296,
+      "probability_pct": "1.53%"
+    },
+    "vis|6|7": {
+      "total": 6860,
+      "ended_at_13": 139,
+      "probability": 0.020262,
+      "probability_pct": "2.03%"
+    },
+    "vis|7|7": {
+      "total": 9065,
+      "ended_at_13": 80,
+      "probability": 0.008825,
+      "probability_pct": "0.88%"
+    },
+    "vis|8|7": {
+      "total": 10905,
+      "ended_at_13": 30,
+      "probability": 0.002751,
+      "probability_pct": "0.28%"
+    },
+    "vis|9|8": {
+      "total": 9303,
+      "ended_at_13": 6,
+      "probability": 0.000645,
+      "probability_pct": "0.06%"
+    },
+    "vis|5|6": {
+      "total": 8307,
+      "ended_at_13": 138,
+      "probability": 0.016612,
+      "probability_pct": "1.66%"
+    },
+    "vis|6|6": {
+      "total": 10597,
+      "ended_at_13": 110,
+      "probability": 0.01038,
+      "probability_pct": "1.04%"
+    },
+    "vis|7|6": {
+      "total": 13069,
+      "ended_at_13": 67,
+      "probability": 0.005127,
+      "probability_pct": "0.51%"
+    },
+    "vis|9|10": {
+      "total": 4707,
+      "ended_at_13": 14,
+      "probability": 0.002974,
+      "probability_pct": "0.30%"
+    },
+    "home|3|2": {
+      "total": 30970,
+      "ended_at_13": 148,
+      "probability": 0.004779,
+      "probability_pct": "0.48%"
+    },
+    "home|4|2": {
+      "total": 35984,
+      "ended_at_13": 90,
+      "probability": 0.002501,
+      "probability_pct": "0.25%"
+    },
+    "home|6|5": {
+      "total": 17175,
+      "ended_at_13": 57,
+      "probability": 0.003319,
+      "probability_pct": "0.33%"
+    },
+    "vis|9|1": {
+      "total": 23891,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|6|2": {
+      "total": 34822,
+      "ended_at_13": 20,
+      "probability": 0.000574,
+      "probability_pct": "0.06%"
+    },
+    "vis|8|6": {
+      "total": 15206,
+      "ended_at_13": 14,
+      "probability": 0.000921,
+      "probability_pct": "0.09%"
+    },
+    "vis|9|9": {
+      "total": 6653,
+      "ended_at_13": 5,
+      "probability": 0.000752,
+      "probability_pct": "0.08%"
+    },
+    "home|10|0": {
+      "total": 695,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|11|1": {
+      "total": 1096,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|11|1": {
+      "total": 1040,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|12|2": {
+      "total": 838,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|12|1": {
+      "total": 575,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|3|4": {
+      "total": 11046,
+      "ended_at_13": 173,
+      "probability": 0.015662,
+      "probability_pct": "1.57%"
+    },
+    "vis|5|7": {
+      "total": 5179,
+      "ended_at_13": 155,
+      "probability": 0.029929,
+      "probability_pct": "2.99%"
+    },
+    "vis|6|12": {
+      "total": 612,
+      "ended_at_13": 133,
+      "probability": 0.21732,
+      "probability_pct": "21.73%"
+    },
+    "vis|7|12": {
+      "total": 948,
+      "ended_at_13": 201,
+      "probability": 0.212025,
+      "probability_pct": "21.20%"
+    },
+    "vis|8|12": {
+      "total": 1494,
+      "ended_at_13": 236,
+      "probability": 0.157965,
+      "probability_pct": "15.80%"
+    },
+    "vis|9|12": {
+      "total": 2047,
+      "ended_at_13": 11,
+      "probability": 0.005374,
+      "probability_pct": "0.54%"
+    },
+    "vis|9|6": {
+      "total": 16590,
+      "ended_at_13": 1,
+      "probability": 6e-05,
+      "probability_pct": "0.01%"
+    },
+    "home|2|7": {
+      "total": 1070,
+      "ended_at_13": 82,
+      "probability": 0.076636,
+      "probability_pct": "7.66%"
+    },
+    "home|3|7": {
+      "total": 2373,
+      "ended_at_13": 142,
+      "probability": 0.05984,
+      "probability_pct": "5.98%"
+    },
+    "home|4|7": {
+      "total": 3981,
+      "ended_at_13": 164,
+      "probability": 0.041196,
+      "probability_pct": "4.12%"
+    },
+    "home|5|8": {
+      "total": 3928,
+      "ended_at_13": 166,
+      "probability": 0.042261,
+      "probability_pct": "4.23%"
+    },
+    "home|6|8": {
+      "total": 5494,
+      "ended_at_13": 124,
+      "probability": 0.02257,
+      "probability_pct": "2.26%"
+    },
+    "home|7|8": {
+      "total": 7461,
+      "ended_at_13": 58,
+      "probability": 0.007774,
+      "probability_pct": "0.78%"
+    },
+    "home|8|10": {
+      "total": 4425,
+      "ended_at_13": 5,
+      "probability": 0.00113,
+      "probability_pct": "0.11%"
+    },
+    "home|7|9": {
+      "total": 5040,
+      "ended_at_13": 101,
+      "probability": 0.02004,
+      "probability_pct": "2.00%"
+    },
+    "home|8|9": {
+      "total": 6293,
+      "ended_at_13": 2,
+      "probability": 0.000318,
+      "probability_pct": "0.03%"
+    },
+    "home|9|3": {
+      "total": 17909,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|10|3": {
+      "total": 3387,
+      "ended_at_13": 1,
+      "probability": 0.000295,
+      "probability_pct": "0.03%"
+    },
+    "home|10|3": {
+      "total": 2700,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|11|5": {
+      "total": 1294,
+      "ended_at_13": 1,
+      "probability": 0.000773,
+      "probability_pct": "0.08%"
+    },
+    "home|11|3": {
+      "total": 1478,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|1|4": {
+      "total": 3058,
+      "ended_at_13": 100,
+      "probability": 0.032701,
+      "probability_pct": "3.27%"
+    },
+    "vis|2|4": {
+      "total": 5903,
+      "ended_at_13": 129,
+      "probability": 0.021853,
+      "probability_pct": "2.19%"
+    },
+    "home|2|5": {
+      "total": 3756,
+      "ended_at_13": 117,
+      "probability": 0.03115,
+      "probability_pct": "3.12%"
+    },
+    "home|3|5": {
+      "total": 7703,
+      "ended_at_13": 173,
+      "probability": 0.022459,
+      "probability_pct": "2.25%"
+    },
+    "home|4|5": {
+      "total": 10406,
+      "ended_at_13": 140,
+      "probability": 0.013454,
+      "probability_pct": "1.35%"
+    },
+    "home|6|9": {
+      "total": 3529,
+      "ended_at_13": 160,
+      "probability": 0.045339,
+      "probability_pct": "4.53%"
+    },
+    "vis|3|6": {
+      "total": 3432,
+      "ended_at_13": 128,
+      "probability": 0.037296,
+      "probability_pct": "3.73%"
+    },
+    "vis|4|6": {
+      "total": 5273,
+      "ended_at_13": 156,
+      "probability": 0.029585,
+      "probability_pct": "2.96%"
+    },
+    "vis|7|8": {
+      "total": 6112,
+      "ended_at_13": 114,
+      "probability": 0.018652,
+      "probability_pct": "1.87%"
+    },
+    "vis|8|8": {
+      "total": 7648,
+      "ended_at_13": 45,
+      "probability": 0.005884,
+      "probability_pct": "0.59%"
+    },
+    "vis|10|5": {
+      "total": 2376,
+      "ended_at_13": 1,
+      "probability": 0.000421,
+      "probability_pct": "0.04%"
+    },
+    "home|10|5": {
+      "total": 1635,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|11|5": {
+      "total": 877,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|12|5": {
+      "total": 665,
+      "ended_at_13": 1,
+      "probability": 0.001504,
+      "probability_pct": "0.15%"
+    },
+    "vis|3|5": {
+      "total": 6311,
+      "ended_at_13": 142,
+      "probability": 0.0225,
+      "probability_pct": "2.25%"
+    },
+    "vis|4|5": {
+      "total": 9116,
+      "ended_at_13": 153,
+      "probability": 0.016784,
+      "probability_pct": "1.68%"
+    },
+    "vis|5|5": {
+      "total": 12621,
+      "ended_at_13": 131,
+      "probability": 0.01038,
+      "probability_pct": "1.04%"
+    },
+    "vis|6|5": {
+      "total": 15757,
+      "ended_at_13": 88,
+      "probability": 0.005585,
+      "probability_pct": "0.56%"
+    },
+    "vis|2|5": {
+      "total": 2906,
+      "ended_at_13": 91,
+      "probability": 0.031315,
+      "probability_pct": "3.13%"
+    },
+    "home|5|7": {
+      "total": 6324,
+      "ended_at_13": 176,
+      "probability": 0.02783,
+      "probability_pct": "2.78%"
+    },
+    "home|6|7": {
+      "total": 8144,
+      "ended_at_13": 93,
+      "probability": 0.011419,
+      "probability_pct": "1.14%"
+    },
+    "home|7|7": {
+      "total": 10612,
+      "ended_at_13": 44,
+      "probability": 0.004146,
+      "probability_pct": "0.41%"
+    },
+    "home|8|8": {
+      "total": 8948,
+      "ended_at_13": 3,
+      "probability": 0.000335,
+      "probability_pct": "0.03%"
+    },
+    "vis|1|3": {
+      "total": 7048,
+      "ended_at_13": 137,
+      "probability": 0.019438,
+      "probability_pct": "1.94%"
+    },
+    "home|4|9": {
+      "total": 1394,
+      "ended_at_13": 128,
+      "probability": 0.091822,
+      "probability_pct": "9.18%"
+    },
+    "home|5|9": {
+      "total": 2324,
+      "ended_at_13": 165,
+      "probability": 0.070998,
+      "probability_pct": "7.10%"
+    },
+    "vis|9|7": {
+      "total": 12714,
+      "ended_at_13": 2,
+      "probability": 0.000157,
+      "probability_pct": "0.02%"
+    },
+    "home|5|5": {
+      "total": 14308,
+      "ended_at_13": 114,
+      "probability": 0.007968,
+      "probability_pct": "0.80%"
+    },
+    "vis|8|10": {
+      "total": 3524,
+      "ended_at_13": 123,
+      "probability": 0.034904,
+      "probability_pct": "3.49%"
+    },
+    "vis|9|11": {
+      "total": 3178,
+      "ended_at_13": 15,
+      "probability": 0.00472,
+      "probability_pct": "0.47%"
+    },
+    "home|11|2": {
+      "total": 1324,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|12|2": {
+      "total": 728,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|13|5": {
+      "total": 355,
+      "ended_at_13": 1,
+      "probability": 0.002817,
+      "probability_pct": "0.28%"
+    },
+    "home|13|2": {
+      "total": 416,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|10|1": {
+      "total": 2027,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|10|1": {
+      "total": 1851,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|12|1": {
+      "total": 610,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|3|8": {
+      "total": 817,
+      "ended_at_13": 86,
+      "probability": 0.105263,
+      "probability_pct": "10.53%"
+    },
+    "vis|4|8": {
+      "total": 1808,
+      "ended_at_13": 129,
+      "probability": 0.07135,
+      "probability_pct": "7.13%"
+    },
+    "vis|5|8": {
+      "total": 3032,
+      "ended_at_13": 162,
+      "probability": 0.05343,
+      "probability_pct": "5.34%"
+    },
+    "vis|6|8": {
+      "total": 4296,
+      "ended_at_13": 137,
+      "probability": 0.03189,
+      "probability_pct": "3.19%"
+    },
+    "vis|7|9": {
+      "total": 4032,
+      "ended_at_13": 158,
+      "probability": 0.039187,
+      "probability_pct": "3.92%"
+    },
+    "vis|8|9": {
+      "total": 5153,
+      "ended_at_13": 89,
+      "probability": 0.017271,
+      "probability_pct": "1.73%"
+    },
+    "vis|6|9": {
+      "total": 2739,
+      "ended_at_13": 165,
+      "probability": 0.060241,
+      "probability_pct": "6.02%"
+    },
+    "vis|11|3": {
+      "total": 1784,
+      "ended_at_13": 1,
+      "probability": 0.000561,
+      "probability_pct": "0.06%"
+    },
+    "vis|12|3": {
+      "total": 970,
+      "ended_at_13": 1,
+      "probability": 0.001031,
+      "probability_pct": "0.10%"
+    },
+    "home|12|3": {
+      "total": 808,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|13|3": {
+      "total": 554,
+      "ended_at_13": 1,
+      "probability": 0.001805,
+      "probability_pct": "0.18%"
+    },
+    "home|13|3": {
+      "total": 449,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|14|3": {
+      "total": 306,
+      "ended_at_13": 1,
+      "probability": 0.003268,
+      "probability_pct": "0.33%"
+    },
+    "home|14|3": {
+      "total": 245,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|15|3": {
+      "total": 153,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|3|8": {
+      "total": 1185,
+      "ended_at_13": 103,
+      "probability": 0.08692,
+      "probability_pct": "8.69%"
+    },
+    "vis|4|7": {
+      "total": 3125,
+      "ended_at_13": 137,
+      "probability": 0.04384,
+      "probability_pct": "4.38%"
+    },
+    "home|4|8": {
+      "total": 2402,
+      "ended_at_13": 154,
+      "probability": 0.064113,
+      "probability_pct": "6.41%"
+    },
+    "vis|5|9": {
+      "total": 1793,
+      "ended_at_13": 141,
+      "probability": 0.078639,
+      "probability_pct": "7.86%"
+    },
+    "home|9|8": {
+      "total": 1649,
+      "ended_at_13": 1,
+      "probability": 0.000606,
+      "probability_pct": "0.06%"
+    },
+    "home|1|5": {
+      "total": 1537,
+      "ended_at_13": 60,
+      "probability": 0.039037,
+      "probability_pct": "3.90%"
+    },
+    "vis|1|5": {
+      "total": 1148,
+      "ended_at_13": 46,
+      "probability": 0.04007,
+      "probability_pct": "4.01%"
+    },
+    "vis|2|6": {
+      "total": 1589,
+      "ended_at_13": 82,
+      "probability": 0.051605,
+      "probability_pct": "5.16%"
+    },
+    "home|3|12": {
+      "total": 104,
+      "ended_at_13": 14,
+      "probability": 0.134615,
+      "probability_pct": "13.46%"
+    },
+    "home|4|12": {
+      "total": 227,
+      "ended_at_13": 40,
+      "probability": 0.176211,
+      "probability_pct": "17.62%"
+    },
+    "home|5|12": {
+      "total": 492,
+      "ended_at_13": 116,
+      "probability": 0.235772,
+      "probability_pct": "23.58%"
+    },
+    "home|6|12": {
+      "total": 905,
+      "ended_at_13": 216,
+      "probability": 0.238674,
+      "probability_pct": "23.87%"
+    },
+    "home|7|12": {
+      "total": 1349,
+      "ended_at_13": 212,
+      "probability": 0.157153,
+      "probability_pct": "15.72%"
+    },
+    "home|8|12": {
+      "total": 2089,
+      "ended_at_13": 21,
+      "probability": 0.010053,
+      "probability_pct": "1.01%"
+    },
+    "home|7|10": {
+      "total": 3308,
+      "ended_at_13": 161,
+      "probability": 0.04867,
+      "probability_pct": "4.87%"
+    },
+    "home|5|10": {
+      "total": 1392,
+      "ended_at_13": 165,
+      "probability": 0.118534,
+      "probability_pct": "11.85%"
+    },
+    "home|6|10": {
+      "total": 2322,
+      "ended_at_13": 184,
+      "probability": 0.079242,
+      "probability_pct": "7.92%"
+    },
+    "home|3|6": {
+      "total": 4176,
+      "ended_at_13": 149,
+      "probability": 0.03568,
+      "probability_pct": "3.57%"
+    },
+    "home|9|7": {
+      "total": 3022,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|10|7": {
+      "total": 1113,
+      "ended_at_13": 2,
+      "probability": 0.001797,
+      "probability_pct": "0.18%"
+    },
+    "vis|11|8": {
+      "total": 369,
+      "ended_at_13": 1,
+      "probability": 0.00271,
+      "probability_pct": "0.27%"
+    },
+    "home|11|8": {
+      "total": 243,
+      "ended_at_13": 1,
+      "probability": 0.004115,
+      "probability_pct": "0.41%"
+    },
+    "vis|12|11": {
+      "total": 29,
+      "ended_at_13": 3,
+      "probability": 0.103448,
+      "probability_pct": "10.34%"
+    },
+    "home|12|9": {
+      "total": 66,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|2|8": {
+      "total": 513,
+      "ended_at_13": 55,
+      "probability": 0.107212,
+      "probability_pct": "10.72%"
+    },
+    "home|8|13": {
+      "total": 1393,
+      "ended_at_13": 1375,
+      "probability": 0.987078,
+      "probability_pct": "98.71%"
+    },
+    "home|8|14": {
+      "total": 850,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|1|4": {
+      "total": 3893,
+      "ended_at_13": 127,
+      "probability": 0.032623,
+      "probability_pct": "3.26%"
+    },
+    "home|5|11": {
+      "total": 804,
+      "ended_at_13": 142,
+      "probability": 0.176617,
+      "probability_pct": "17.66%"
+    },
+    "home|6|11": {
+      "total": 1499,
+      "ended_at_13": 204,
+      "probability": 0.136091,
+      "probability_pct": "13.61%"
+    },
+    "home|7|11": {
+      "total": 2167,
+      "ended_at_13": 184,
+      "probability": 0.08491,
+      "probability_pct": "8.49%"
+    },
+    "home|8|11": {
+      "total": 3176,
+      "ended_at_13": 11,
+      "probability": 0.003463,
+      "probability_pct": "0.35%"
+    },
+    "vis|11|7": {
+      "total": 594,
+      "ended_at_13": 2,
+      "probability": 0.003367,
+      "probability_pct": "0.34%"
+    },
+    "home|9|6": {
+      "total": 5303,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|2|6": {
+      "total": 1977,
+      "ended_at_13": 86,
+      "probability": 0.0435,
+      "probability_pct": "4.35%"
+    },
+    "vis|4|9": {
+      "total": 1033,
+      "ended_at_13": 98,
+      "probability": 0.094869,
+      "probability_pct": "9.49%"
+    },
+    "vis|5|10": {
+      "total": 978,
+      "ended_at_13": 124,
+      "probability": 0.126789,
+      "probability_pct": "12.68%"
+    },
+    "vis|7|13": {
+      "total": 581,
+      "ended_at_13": 272,
+      "probability": 0.468158,
+      "probability_pct": "46.82%"
+    },
+    "vis|8|13": {
+      "total": 916,
+      "ended_at_13": 601,
+      "probability": 0.656114,
+      "probability_pct": "65.61%"
+    },
+    "vis|9|14": {
+      "total": 893,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|12|8": {
+      "total": 208,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|12|5": {
+      "total": 476,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|15|4": {
+      "total": 146,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|15|3": {
+      "total": 142,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|2|7": {
+      "total": 771,
+      "ended_at_13": 64,
+      "probability": 0.083009,
+      "probability_pct": "8.30%"
+    },
+    "vis|9|13": {
+      "total": 1307,
+      "ended_at_13": 1297,
+      "probability": 0.992349,
+      "probability_pct": "99.23%"
+    },
+    "home|6|13": {
+      "total": 533,
+      "ended_at_13": 254,
+      "probability": 0.476548,
+      "probability_pct": "47.65%"
+    },
+    "home|7|13": {
+      "total": 857,
+      "ended_at_13": 619,
+      "probability": 0.722287,
+      "probability_pct": "72.23%"
+    },
+    "vis|16|4": {
+      "total": 74,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|16|3": {
+      "total": 72,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|9|9": {
+      "total": 874,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|10|9": {
+      "total": 196,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|11|10": {
+      "total": 135,
+      "ended_at_13": 2,
+      "probability": 0.014815,
+      "probability_pct": "1.48%"
+    },
+    "home|11|9": {
+      "total": 111,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|11|0": {
+      "total": 423,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|11|0": {
+      "total": 413,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|12|0": {
+      "total": 263,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|10|6": {
+      "total": 1088,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|11|6": {
+      "total": 914,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|11|6": {
+      "total": 605,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|12|6": {
+      "total": 510,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|12|6": {
+      "total": 329,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|13|7": {
+      "total": 175,
+      "ended_at_13": 1,
+      "probability": 0.005714,
+      "probability_pct": "0.57%"
+    },
+    "home|13|6": {
+      "total": 175,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|7|11": {
+      "total": 1566,
+      "ended_at_13": 228,
+      "probability": 0.145594,
+      "probability_pct": "14.56%"
+    },
+    "vis|8|11": {
+      "total": 2328,
+      "ended_at_13": 200,
+      "probability": 0.085911,
+      "probability_pct": "8.59%"
+    },
+    "vis|13|1": {
+      "total": 335,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|13|6": {
+      "total": 263,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|14|6": {
+      "total": 162,
+      "ended_at_13": 1,
+      "probability": 0.006173,
+      "probability_pct": "0.62%"
+    },
+    "home|14|6": {
+      "total": 96,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|13|2": {
+      "total": 473,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|14|2": {
+      "total": 268,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|16|3": {
+      "total": 99,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|12|0": {
+      "total": 248,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|13|0": {
+      "total": 142,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|7|10": {
+      "total": 2581,
+      "ended_at_13": 171,
+      "probability": 0.066253,
+      "probability_pct": "6.63%"
+    },
+    "vis|15|6": {
+      "total": 70,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|15|4": {
+      "total": 101,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|1|8": {
+      "total": 79,
+      "ended_at_13": 4,
+      "probability": 0.050633,
+      "probability_pct": "5.06%"
+    },
+    "home|2|9": {
+      "total": 261,
+      "ended_at_13": 28,
+      "probability": 0.10728,
+      "probability_pct": "10.73%"
+    },
+    "home|3|10": {
+      "total": 317,
+      "ended_at_13": 63,
+      "probability": 0.198738,
+      "probability_pct": "19.87%"
+    },
+    "home|4|11": {
+      "total": 443,
+      "ended_at_13": 84,
+      "probability": 0.189616,
+      "probability_pct": "18.96%"
+    },
+    "home|14|2": {
+      "total": 202,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|14|8": {
+      "total": 69,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|6|10": {
+      "total": 1751,
+      "ended_at_13": 175,
+      "probability": 0.099943,
+      "probability_pct": "9.99%"
+    },
+    "home|1|6": {
+      "total": 570,
+      "ended_at_13": 40,
+      "probability": 0.070175,
+      "probability_pct": "7.02%"
+    },
+    "vis|9|18": {
+      "total": 132,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|4|10": {
+      "total": 825,
+      "ended_at_13": 114,
+      "probability": 0.138182,
+      "probability_pct": "13.82%"
+    },
+    "home|5|14": {
+      "total": 153,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|6|14": {
+      "total": 322,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|7|16": {
+      "total": 210,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|8|17": {
+      "total": 215,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|13|0": {
+      "total": 157,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|13|5": {
+      "total": 268,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|14|7": {
+      "total": 102,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|14|5": {
+      "total": 150,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|13|1": {
+      "total": 316,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|14|1": {
+      "total": 182,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|3|7": {
+      "total": 1810,
+      "ended_at_13": 110,
+      "probability": 0.060773,
+      "probability_pct": "6.08%"
+    },
+    "home|3|11": {
+      "total": 191,
+      "ended_at_13": 36,
+      "probability": 0.188482,
+      "probability_pct": "18.85%"
+    },
+    "home|5|15": {
+      "total": 93,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|6|15": {
+      "total": 192,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|7|18": {
+      "total": 70,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|8|19": {
+      "total": 68,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|7|14": {
+      "total": 555,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|14|1": {
+      "total": 165,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|15|1": {
+      "total": 87,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|15|1": {
+      "total": 91,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|14|0": {
+      "total": 84,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|14|0": {
+      "total": 85,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|15|0": {
+      "total": 54,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|15|0": {
+      "total": 51,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|16|0": {
+      "total": 33,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|16|0": {
+      "total": 30,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|6|13": {
+      "total": 365,
+      "ended_at_13": 117,
+      "probability": 0.320548,
+      "probability_pct": "32.05%"
+    },
+    "vis|2|9": {
+      "total": 184,
+      "ended_at_13": 24,
+      "probability": 0.130435,
+      "probability_pct": "13.04%"
+    },
+    "vis|3|9": {
+      "total": 450,
+      "ended_at_13": 47,
+      "probability": 0.104444,
+      "probability_pct": "10.44%"
+    },
+    "vis|11|9": {
+      "total": 235,
+      "ended_at_13": 1,
+      "probability": 0.004255,
+      "probability_pct": "0.43%"
+    },
+    "vis|6|11": {
+      "total": 1046,
+      "ended_at_13": 174,
+      "probability": 0.166348,
+      "probability_pct": "16.63%"
+    },
+    "vis|7|14": {
+      "total": 379,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|8|14": {
+      "total": 599,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|4|11": {
+      "total": 304,
+      "ended_at_13": 59,
+      "probability": 0.194079,
+      "probability_pct": "19.41%"
+    },
+    "vis|5|11": {
+      "total": 525,
+      "ended_at_13": 105,
+      "probability": 0.2,
+      "probability_pct": "20.00%"
+    },
+    "vis|9|15": {
+      "total": 596,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|7|15": {
+      "total": 339,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|8|15": {
+      "total": 519,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|1|6": {
+      "total": 408,
+      "ended_at_13": 37,
+      "probability": 0.090686,
+      "probability_pct": "9.07%"
+    },
+    "home|8|16": {
+      "total": 331,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|9|17": {
+      "total": 200,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|1|7": {
+      "total": 130,
+      "ended_at_13": 8,
+      "probability": 0.061538,
+      "probability_pct": "6.15%"
+    },
+    "vis|4|10": {
+      "total": 543,
+      "ended_at_13": 76,
+      "probability": 0.139963,
+      "probability_pct": "14.00%"
+    },
+    "vis|10|8": {
+      "total": 725,
+      "ended_at_13": 3,
+      "probability": 0.004138,
+      "probability_pct": "0.41%"
+    },
+    "home|7|17": {
+      "total": 138,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|8|20": {
+      "total": 65,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|5|12": {
+      "total": 321,
+      "ended_at_13": 61,
+      "probability": 0.190031,
+      "probability_pct": "19.00%"
+    },
+    "vis|8|15": {
+      "total": 391,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|11|7": {
+      "total": 367,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|12|7": {
+      "total": 333,
+      "ended_at_13": 2,
+      "probability": 0.006006,
+      "probability_pct": "0.60%"
+    },
+    "home|12|7": {
+      "total": 202,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|13|7": {
+      "total": 108,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|14|7": {
+      "total": 63,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|15|7": {
+      "total": 51,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|15|7": {
+      "total": 32,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|9|10": {
+      "total": 400,
+      "ended_at_13": 2,
+      "probability": 0.005,
+      "probability_pct": "0.50%"
+    },
+    "vis|8|17": {
+      "total": 109,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|3|11": {
+      "total": 117,
+      "ended_at_13": 27,
+      "probability": 0.230769,
+      "probability_pct": "23.08%"
+    },
+    "vis|4|12": {
+      "total": 145,
+      "ended_at_13": 32,
+      "probability": 0.22069,
+      "probability_pct": "22.07%"
+    },
+    "vis|5|14": {
+      "total": 111,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|6|15": {
+      "total": 97,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|7|16": {
+      "total": 136,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|8|16": {
+      "total": 209,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|9|13": {
+      "total": 40,
+      "ended_at_13": 38,
+      "probability": 0.95,
+      "probability_pct": "95.00%"
+    },
+    "home|9|11": {
+      "total": 201,
+      "ended_at_13": 2,
+      "probability": 0.00995,
+      "probability_pct": "1.00%"
+    },
+    "vis|10|13": {
+      "total": 33,
+      "ended_at_13": 30,
+      "probability": 0.909091,
+      "probability_pct": "90.91%"
+    },
+    "home|10|11": {
+      "total": 52,
+      "ended_at_13": 1,
+      "probability": 0.019231,
+      "probability_pct": "1.92%"
+    },
+    "home|4|16": {
+      "total": 27,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|6|18": {
+      "total": 42,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|7|19": {
+      "total": 52,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|6|17": {
+      "total": 61,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|8|21": {
+      "total": 30,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|2|8": {
+      "total": 353,
+      "ended_at_13": 32,
+      "probability": 0.090652,
+      "probability_pct": "9.07%"
+    },
+    "home|9|12": {
+      "total": 90,
+      "ended_at_13": 4,
+      "probability": 0.044444,
+      "probability_pct": "4.44%"
+    },
+    "home|3|9": {
+      "total": 575,
+      "ended_at_13": 72,
+      "probability": 0.125217,
+      "probability_pct": "12.52%"
+    },
+    "home|1|7": {
+      "total": 217,
+      "ended_at_13": 21,
+      "probability": 0.096774,
+      "probability_pct": "9.68%"
+    },
+    "home|4|15": {
+      "total": 33,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|6|16": {
+      "total": 99,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|8|18": {
+      "total": 86,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|5|13": {
+      "total": 198,
+      "ended_at_13": 47,
+      "probability": 0.237374,
+      "probability_pct": "23.74%"
+    },
+    "vis|7|15": {
+      "total": 218,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|15|2": {
+      "total": 139,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|9|16": {
+      "total": 360,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|10|10": {
+      "total": 202,
+      "ended_at_13": 5,
+      "probability": 0.024752,
+      "probability_pct": "2.48%"
+    },
+    "home|10|10": {
+      "total": 113,
+      "ended_at_13": 1,
+      "probability": 0.00885,
+      "probability_pct": "0.88%"
+    },
+    "home|10|8": {
+      "total": 404,
+      "ended_at_13": 1,
+      "probability": 0.002475,
+      "probability_pct": "0.25%"
+    },
+    "vis|11|11": {
+      "total": 78,
+      "ended_at_13": 5,
+      "probability": 0.064103,
+      "probability_pct": "6.41%"
+    },
+    "home|11|10": {
+      "total": 58,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|12|10": {
+      "total": 86,
+      "ended_at_13": 1,
+      "probability": 0.011628,
+      "probability_pct": "1.16%"
+    },
+    "vis|1|8": {
+      "total": 51,
+      "ended_at_13": 5,
+      "probability": 0.098039,
+      "probability_pct": "9.80%"
+    },
+    "vis|3|10": {
+      "total": 201,
+      "ended_at_13": 31,
+      "probability": 0.154229,
+      "probability_pct": "15.42%"
+    },
+    "vis|12|9": {
+      "total": 126,
+      "ended_at_13": 1,
+      "probability": 0.007937,
+      "probability_pct": "0.79%"
+    },
+    "vis|13|8": {
+      "total": 129,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|5|13": {
+      "total": 267,
+      "ended_at_13": 87,
+      "probability": 0.325843,
+      "probability_pct": "32.58%"
+    },
+    "home|8|18": {
+      "total": 123,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|4|13": {
+      "total": 129,
+      "ended_at_13": 28,
+      "probability": 0.217054,
+      "probability_pct": "21.71%"
+    },
+    "home|2|10": {
+      "total": 125,
+      "ended_at_13": 26,
+      "probability": 0.208,
+      "probability_pct": "20.80%"
+    },
+    "home|16|4": {
+      "total": 43,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|17|4": {
+      "total": 33,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|3|13": {
+      "total": 41,
+      "ended_at_13": 9,
+      "probability": 0.219512,
+      "probability_pct": "21.95%"
+    },
+    "vis|9|21": {
+      "total": 29,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|7|19": {
+      "total": 28,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|8|19": {
+      "total": 50,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|9|19": {
+      "total": 111,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|14|5": {
+      "total": 200,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|15|5": {
+      "total": 114,
+      "ended_at_13": 1,
+      "probability": 0.008772,
+      "probability_pct": "0.88%"
+    },
+    "home|15|5": {
+      "total": 76,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|16|5": {
+      "total": 59,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|10|11": {
+      "total": 138,
+      "ended_at_13": 4,
+      "probability": 0.028986,
+      "probability_pct": "2.90%"
+    },
+    "home|11|11": {
+      "total": 27,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|15|2": {
+      "total": 111,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|16|2": {
+      "total": 70,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|16|2": {
+      "total": 68,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|17|2": {
+      "total": 37,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|17|2": {
+      "total": 33,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|2|11": {
+      "total": 57,
+      "ended_at_13": 8,
+      "probability": 0.140351,
+      "probability_pct": "14.04%"
+    },
+    "home|12|8": {
+      "total": 136,
+      "ended_at_13": 1,
+      "probability": 0.007353,
+      "probability_pct": "0.74%"
+    },
+    "vis|6|17": {
+      "total": 41,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|7|18": {
+      "total": 49,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|2|10": {
+      "total": 88,
+      "ended_at_13": 20,
+      "probability": 0.227273,
+      "probability_pct": "22.73%"
+    },
+    "vis|13|10": {
+      "total": 37,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|13|8": {
+      "total": 78,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|16|7": {
+      "total": 27,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|14|8": {
+      "total": 49,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|15|8": {
+      "total": 49,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|15|8": {
+      "total": 29,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|1|9": {
+      "total": 33,
+      "ended_at_13": 7,
+      "probability": 0.212121,
+      "probability_pct": "21.21%"
+    },
+    "vis|6|14": {
+      "total": 219,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|16|8": {
+      "total": 28,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|12|12": {
+      "total": 32,
+      "ended_at_13": 2,
+      "probability": 0.0625,
+      "probability_pct": "6.25%"
+    },
+    "vis|16|1": {
+      "total": 54,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|16|1": {
+      "total": 49,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|17|1": {
+      "total": 32,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|17|1": {
+      "total": 26,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|17|3": {
+      "total": 48,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|17|3": {
+      "total": 42,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|18|3": {
+      "total": 32,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|16|5": {
+      "total": 46,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|13|9": {
+      "total": 63,
+      "ended_at_13": 1,
+      "probability": 0.015873,
+      "probability_pct": "1.59%"
+    },
+    "vis|3|12": {
+      "total": 54,
+      "ended_at_13": 14,
+      "probability": 0.259259,
+      "probability_pct": "25.93%"
+    },
+    "vis|7|17": {
+      "total": 68,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|13|9": {
+      "total": 33,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|14|9": {
+      "total": 39,
+      "ended_at_13": 1,
+      "probability": 0.025641,
+      "probability_pct": "2.56%"
+    },
+    "vis|2|11": {
+      "total": 33,
+      "ended_at_13": 3,
+      "probability": 0.090909,
+      "probability_pct": "9.09%"
+    },
+    "vis|8|20": {
+      "total": 27,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|9|20": {
+      "total": 40,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|5|15": {
+      "total": 54,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|6|16": {
+      "total": 58,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|1|9": {
+      "total": 45,
+      "ended_at_13": 12,
+      "probability": 0.266667,
+      "probability_pct": "26.67%"
+    },
+    "vis|4|13": {
+      "total": 82,
+      "ended_at_13": 10,
+      "probability": 0.121951,
+      "probability_pct": "12.20%"
+    },
+    "vis|10|12": {
+      "total": 75,
+      "ended_at_13": 5,
+      "probability": 0.066667,
+      "probability_pct": "6.67%"
+    },
+    "vis|17|5": {
+      "total": 28,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|15|6": {
+      "total": 55,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|16|6": {
+      "total": 40,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|16|6": {
+      "total": 33,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|3|14": {
+      "total": 29,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|10|14": {
+      "total": 28,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|5|16": {
+      "total": 25,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|11|12": {
+      "total": 42,
+      "ended_at_13": 2,
+      "probability": 0.047619,
+      "probability_pct": "4.76%"
+    },
+    "home|4|14": {
+      "total": 65,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|5|16": {
+      "total": 53,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "home|12|10": {
+      "total": 28,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|3|13": {
+      "total": 30,
+      "ended_at_13": 3,
+      "probability": 0.1,
+      "probability_pct": "10.00%"
+    },
+    "home|5|17": {
+      "total": 26,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    },
+    "vis|4|14": {
+      "total": 30,
+      "ended_at_13": 0,
+      "probability": 0.0,
+      "probability_pct": "0.00%"
+    }
+  }
+}
