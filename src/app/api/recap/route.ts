@@ -3,7 +3,9 @@ import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 import WeeklyRecap from '../../../../emails/WeeklyRecap'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY)
+}
 
 // Supabase admin client for server-side access
 function adminClient() {
@@ -82,7 +84,7 @@ export async function POST(request: Request) {
 
       if (emails.length === 0) return { league: league.name, sent: 0 }
 
-      await resend.emails.send({
+      await getResend().emails.send({
         from: '13 Run League <recap@13runleague.com>',
         to: emails,
         subject: `13 Run League — Week ${weekNumber} Recap`,
