@@ -145,6 +145,11 @@ export default function WeeklyRecap({
             <Text style={{ color: '#374151', fontSize: '11px' }}>
               13runleague.com · You&apos;re receiving this because you&apos;re in a 13 Run League.
             </Text>
+            <Text style={{ fontSize: '12px', marginTop: '8px' }}>
+              <Link href="https://buymeacoffee.com/colbyblack" style={{ color: '#eab308' }}>
+                ☕ Buy me a coffee
+              </Link>
+            </Text>
           </Section>
 
         </Container>

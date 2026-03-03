@@ -378,6 +378,16 @@ export default async function HomePage({ searchParams }: PageProps) {
           <p className="text-gray-700">
             Live data via MLB Stats API · Probabilities are estimates, not gambling advice.
           </p>
+          <p>
+            <a
+              href="https://buymeacoffee.com/colbyblack"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-yellow-500 hover:text-yellow-400 transition-colors"
+            >
+              ☕ Buy me a coffee
+            </a>
+          </p>
         </footer>
       </div>
     </main>

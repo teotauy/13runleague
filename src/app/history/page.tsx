@@ -85,10 +85,20 @@ export default async function HistoryPage() {
           </div>
         </section>
 
-        <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs">
+        <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs space-y-2">
           <p>
             The information used here was obtained free of charge from and is copyrighted by Retrosheet.
             Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
+          </p>
+          <p>
+            <a
+              href="https://buymeacoffee.com/colbyblack"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-yellow-500 hover:text-yellow-400 transition-colors"
+            >
+              ☕ Buy me a coffee
+            </a>
           </p>
         </footer>
       </div>
