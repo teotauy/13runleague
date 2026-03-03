@@ -16,7 +16,7 @@ import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
 import * as path from 'path'
 
-// Normalize historical spelling variants → canonical team name
+// Normalize historical spelling/name variants → canonical form
 // Applied before inserting into historical_results and looking up abbreviations
 const CANONICAL_TEAM: Record<string, string> = {
   // Diamondbacks variants
@@ -29,6 +29,11 @@ const CANONICAL_TEAM: Record<string, string> = {
   'Indians': 'Guardians',
   // Cardinals variant
   'Cards': 'Cardinals',
+}
+
+// Normalize player name variants → canonical name
+const CANONICAL_MEMBER: Record<string, string> = {
+  'Robyn': 'Robyn Walters',
 }
 
 // Canonical team name → MLB abbreviation (for the members table)
@@ -140,10 +145,11 @@ async function main() {
   for (const yearData of historyData.data) {
     const rows = yearData.members.map((m) => {
       const canonicalTeam = CANONICAL_TEAM[m.team] ?? m.team
+      const canonicalName = CANONICAL_MEMBER[m.name] ?? m.name
       return {
         league_id: league.id,
         year: m.year,
-        member_name: m.name,
+        member_name: canonicalName,
         team: canonicalTeam,
         paid_in: m.paid_in ?? 0,
         total_won: m.total_won ?? 0,
@@ -180,7 +186,8 @@ async function main() {
   let skipped = 0
 
   for (const m of year2025.members) {
-    if (existingNames.has(m.name)) {
+    const canonicalName = CANONICAL_MEMBER[m.name] ?? m.name
+    if (existingNames.has(canonicalName)) {
       skipped++
       continue
     }
@@ -188,13 +195,13 @@ async function main() {
     const canonicalTeam = CANONICAL_TEAM[m.team] ?? m.team
     const abbr = TEAM_ABBR[canonicalTeam]
     if (!abbr) {
-      console.warn(`  ⚠ No abbreviation for team "${m.team}" (${m.name}) — skipping member row`)
+      console.warn(`  ⚠ No abbreviation for team "${m.team}" (${canonicalName}) — skipping member row`)
       continue
     }
 
     const { error } = await supabase.from('members').insert({
       league_id: league.id,
-      name: m.name,
+      name: canonicalName,
       assigned_team: abbr,
     })
 

@@ -100,18 +100,18 @@ function AllTimeTable({ data }: { data: AllTimeEntry[] }) {
             return (
               <tr key={entry.name} className="border-b border-gray-900 hover:bg-[#111]">
                 <td className="py-2 pr-4 text-gray-600">{i + 1}</td>
-                <td className="py-2 pr-4 text-white font-semibold">{entry.name}</td>
+                <td className="py-2 pr-4 text-white font-semibold">
+                  {entry.isActive && <span className="mr-1">⭐</span>}
+                  {entry.name}
+                </td>
                 <td className="py-2 pr-4 text-gray-400">
                   {yearRange(entry.yearsPlayed)}
                 </td>
                 <td className="py-2 pr-4 text-gray-300">{entry.totalShares}</td>
                 <td className="py-2 pr-4 font-bold text-[#39ff14]">${entry.totalWon.toLocaleString()}</td>
-                <td className="py-2 space-x-1">
+                <td className="py-2">
                   {isIronman && (
                     <span title="Ironman — played all 8 years" className="text-base">🏆</span>
-                  )}
-                  {entry.isActive && (
-                    <span title="Active player (2025)" className="text-base">⭐</span>
                   )}
                 </td>
               </tr>
