@@ -17,16 +17,22 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 // Full team name → MLB abbreviation (for the members table)
+// Includes historical spelling variants found in history_import.json
 const TEAM_ABBR: Record<string, string> = {
   'Angels': 'LAA',
   'Astros': 'HOU',
   'Athletics': 'ATH',
+  "A's": 'ATH',
+  'Athetics': 'ATH', // typo in source data
   'Blue Jays': 'TOR',
   'Braves': 'ATL',
   'Brewers': 'MIL',
   'Cardinals': 'STL',
+  'Cards': 'STL',
   'Cubs': 'CHC',
   'Diamondbacks': 'ARI',
+  'DBacks': 'ARI',
+  'Dbacks': 'ARI',
   'Dodgers': 'LAD',
   'Giants': 'SF',
   'Guardians': 'CLE',
@@ -107,6 +113,20 @@ async function main() {
   }
 
   console.log(`Seeding into league: ${league.name} (${slug})\n`)
+
+  // --- Clear existing historical_results for this league (idempotent re-run) ---
+  const { error: deleteError, count } = await supabase
+    .from('historical_results')
+    .delete({ count: 'exact' })
+    .eq('league_id', league.id)
+
+  if (deleteError) {
+    console.error('Error clearing existing historical_results:', deleteError.message)
+    process.exit(1)
+  }
+  if ((count ?? 0) > 0) {
+    console.log(`  ↩ Cleared ${count} existing historical_results rows\n`)
+  }
 
   // --- Seed historical_results ---
   for (const yearData of historyData.data) {
