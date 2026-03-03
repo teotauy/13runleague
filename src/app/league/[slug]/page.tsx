@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/mlb'
@@ -14,6 +15,14 @@ interface Props {
 
 export default async function LeagueDashboard({ params }: Props) {
   const { slug } = await params
+
+  // Auth check - defense in depth (middleware will redirect, but check here too)
+  const cookieStore = await cookies()
+  const authCookie = cookieStore.get(`league_auth_${slug}`)
+  if (!authCookie) {
+    notFound()
+  }
+
   const supabase = createServiceClient()
   const season = currentSeason()
 

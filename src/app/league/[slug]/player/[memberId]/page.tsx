@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 
@@ -9,6 +10,14 @@ export const dynamic = 'force-dynamic'
 
 export default async function PlayerPage({ params }: Props) {
   const { slug, memberId } = await params
+
+  // Auth check - defense in depth (middleware will redirect, but check here too)
+  const cookieStore = await cookies()
+  const authCookie = cookieStore.get(`league_auth_${slug}`)
+  if (!authCookie) {
+    notFound()
+  }
+
   const supabase = createServiceClient()
 
   // Get league
