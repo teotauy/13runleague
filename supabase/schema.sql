@@ -24,6 +24,18 @@ create table members (
   created_at timestamptz default now()
 );
 
+-- Weekly Payments (payment status per member per week)
+create table weekly_payments (
+  id uuid primary key default gen_random_uuid(),
+  member_id uuid references members(id) on delete cascade,
+  week_number integer not null,          -- week 1-52
+  payment_status text default 'unpaid',  -- 'unpaid', '50%', 'paid'
+  override_note text,                    -- commissioner notes (e.g. "cash at bar")
+  updated_at timestamptz default now()
+);
+
+create index on weekly_payments (member_id, week_number);
+
 -- Game Results
 create table game_results (
   id uuid primary key default gen_random_uuid(),
@@ -62,6 +74,7 @@ alter table leagues enable row level security;
 alter table members enable row level security;
 alter table game_results enable row level security;
 alter table streaks enable row level security;
+alter table weekly_payments enable row level security;
 
 -- Public read for game_results (historical data is public)
 create policy "game_results_public_read"
