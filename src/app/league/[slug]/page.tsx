@@ -40,17 +40,21 @@ export default async function LeagueDashboard({ params }: Props) {
     .order('game_date', { ascending: false })
     .limit(50)
 
-  // Last 13-run game per team — used for drought tracker
-  const { data: lastThirteens } = await supabase
-    .from('game_results')
-    .select('winning_team, game_date')
-    .eq('was_thirteen', true)
-    .order('game_date', { ascending: false })
+  // Historical results — fetched early; used for drought calc AND rankings tabs
+  const { data: historicalRaw } = await supabase
+    .from('historical_results')
+    .select('member_name, team, year, total_won, shares, week_wins')
+    .eq('league_id', league.id)
 
-  const lastWinByTeam = new Map<string, string>()
-  for (const game of lastThirteens ?? []) {
-    if (!lastWinByTeam.has(game.winning_team)) {
-      lastWinByTeam.set(game.winning_team, game.game_date)
+  // Most recent 13-run week per team (drought tracker)
+  // week_wins is an array of league week numbers; season start ≈ April 1 each year
+  const teamLastWinMap = new Map<string, { year: number; week: number }>()
+  for (const row of historicalRaw ?? []) {
+    if (!row.week_wins?.length) continue
+    const maxWeek = Math.max(...row.week_wins)
+    const existing = teamLastWinMap.get(row.team)
+    if (!existing || row.year > existing.year || (row.year === existing.year && maxWeek > existing.week)) {
+      teamLastWinMap.set(row.team, { year: row.year, week: maxWeek })
     }
   }
 
@@ -69,10 +73,13 @@ export default async function LeagueDashboard({ params }: Props) {
 
       const streak = streaks?.find((s) => s.member_id === member.id)
 
-      // Weeks since this member's team last scored 13
-      const lastWinDate = lastWinByTeam.get(teamAbbr)
-      const weeksSinceWin = lastWinDate
-        ? Math.max(0, Math.floor((Date.now() - new Date(lastWinDate).getTime()) / (7 * 24 * 60 * 60 * 1000)))
+      // Weeks since this member's team last scored 13 (from historical week data)
+      const lastWin = teamLastWinMap.get(teamAbbr)
+      const weeksSinceWin = lastWin
+        ? Math.max(0, Math.floor(
+            (Date.now() - (new Date(lastWin.year, 3, 1).getTime() + (lastWin.week - 1) * 7 * 24 * 60 * 60 * 1000))
+            / (7 * 24 * 60 * 60 * 1000)
+          ))
         : null
 
       if (!todayGame) {
@@ -99,12 +106,6 @@ export default async function LeagueDashboard({ params }: Props) {
   const weeksPlayed = Math.ceil(
     (league.pot_total ?? 0) / ((members?.length ?? 1) * (league.weekly_buy_in ?? 10))
   )
-
-  // Historical results for rankings tabs
-  const { data: historicalRaw } = await supabase
-    .from('historical_results')
-    .select('member_name, team, year, total_won, shares')
-    .eq('league_id', league.id)
 
   // Aggregate all-time rankings by member
   const allTimeMap = new Map<string, AllTimeEntry>()
