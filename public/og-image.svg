@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <!-- Dark background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a0a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1a1a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Neon green accent line -->
+  <line x1="0" y1="80" x2="1200" y2="80" stroke="#39ff14" stroke-width="3"/>
+
+  <!-- Large "13" on the left -->
+  <text x="150" y="380" font-family="monospace" font-size="280" font-weight="bold" fill="#39ff14" text-anchor="middle" dominant-baseline="middle">
+    13
+  </text>
+
+  <!-- Main heading -->
+  <text x="700" y="150" font-family="monospace" font-size="72" font-weight="bold" fill="#39ff14" text-anchor="middle">
+    13 Run League
+  </text>
+
+  <!-- Tagline -->
+  <text x="700" y="280" font-family="monospace" font-size="40" fill="#ffffff" text-anchor="middle">
+    MLB Probability Dashboard
+  </text>
+
+  <!-- Description -->
+  <text x="700" y="360" font-family="monospace" font-size="28" fill="#999999" text-anchor="middle">
+    Track which teams score exactly 13 runs today
+  </text>
+
+  <!-- Baseball emoji indicator -->
+  <text x="700" y="470" font-family="monospace" font-size="48" text-anchor="middle">
+    ⚾ 🏟️ 🏆
+  </text>
+
+  <!-- Bottom tagline -->
+  <text x="700" y="570" font-family="monospace" font-size="20" fill="#666666" text-anchor="middle">
+    As always, no wagering, please · 13runleague.com
+  </text>
+</svg>
