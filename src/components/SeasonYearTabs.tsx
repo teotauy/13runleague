@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import RankingsTabs, { type AllTimeEntry, type TeamEntry } from './RankingsTabs'
 import Tooltip from './Tooltip'
 
@@ -36,6 +37,7 @@ interface SeasonYearTabsProps {
   potTotal: number
   weeksPlayed: number
   leagueName: string
+  slug: string
 }
 
 const YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018]
@@ -48,6 +50,7 @@ export default function SeasonYearTabs({
   potTotal,
   weeksPlayed,
   leagueName,
+  slug,
 }: SeasonYearTabsProps) {
   const [selectedYear, setSelectedYear] = useState(2026)
 
@@ -231,7 +234,14 @@ export default function SeasonYearTabs({
               <tbody>
                 {enrichedMembers.map(({ member, streak, todayGame, todayProb, weeksSinceWin }) => (
                   <tr key={member.id} className="border-b border-gray-900 hover:bg-[#111]">
-                    <td className="py-3 pr-4 text-white font-semibold">{member.name}</td>
+                    <td className="py-3 pr-4 text-white font-semibold">
+                      <Link
+                        href={`/league/${slug}/player/${member.id}`}
+                        className="hover:text-[#39ff14] transition-colors"
+                      >
+                        {member.name}
+                      </Link>
+                    </td>
                     <td className="py-3 pr-4">
                       <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-200">
                         {member.assigned_team}
@@ -273,8 +283,9 @@ export default function SeasonYearTabs({
 
       {/* Rankings tabs */}
       <RankingsTabs
-        allTimeData={Array.from(currentData.allTimeMap.values())}
-        teamsData={Array.from(currentData.teamsMap.values())}
+        allTime={Array.from(currentData.allTimeMap.values())}
+        teams={Array.from(currentData.teamsMap.values())}
+        slug={slug}
       />
     </div>
   )

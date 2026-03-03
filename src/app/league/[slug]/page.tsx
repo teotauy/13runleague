@@ -113,6 +113,7 @@ export default async function LeagueDashboard({ params }: Props) {
   const allTimeMap = new Map<string, AllTimeEntry>()
   for (const row of historicalRaw ?? []) {
     const existing = allTimeMap.get(row.member_name)
+    const member = (members ?? []).find((m) => m.name === row.member_name)
     if (existing) {
       existing.totalWon += row.total_won ?? 0
       existing.totalShares += row.shares ?? 0
@@ -126,7 +127,8 @@ export default async function LeagueDashboard({ params }: Props) {
         totalWon: row.total_won ?? 0,
         totalShares: row.shares ?? 0,
         yearsPlayed: [row.year],
-        isActive: !!(members ?? []).find((m) => m.name === row.member_name),
+        isActive: !!member,
+        id: member?.id,
       })
     }
   }
@@ -190,6 +192,7 @@ export default async function LeagueDashboard({ params }: Props) {
           potTotal={league.pot_total ?? 0}
           weeksPlayed={weeksPlayed}
           leagueName={league.name}
+          slug={slug}
         />
 
         {/* 13-Run History */}

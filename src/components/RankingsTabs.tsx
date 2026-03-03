@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 export interface AllTimeEntry {
   name: string
@@ -8,6 +9,7 @@ export interface AllTimeEntry {
   totalShares: number
   yearsPlayed: number[]
   isActive: boolean
+  id?: string
 }
 
 export interface TeamEntry {
@@ -102,7 +104,16 @@ function AllTimeTable({ data }: { data: AllTimeEntry[] }) {
                 <td className="py-2 pr-4 text-gray-600">{i + 1}</td>
                 <td className="py-2 pr-4 text-white font-semibold">
                   {entry.isActive && <span className="mr-1">⭐</span>}
-                  {entry.name}
+                  {entry.id && slug ? (
+                    <Link
+                      href={`/league/${slug}/player/${entry.id}`}
+                      className="hover:text-[#39ff14] transition-colors"
+                    >
+                      {entry.name}
+                    </Link>
+                  ) : (
+                    entry.name
+                  )}
                 </td>
                 <td className="py-2 pr-4 text-gray-400">
                   {yearRange(entry.yearsPlayed)}
@@ -178,9 +189,11 @@ function TeamTable({ data }: { data: TeamEntry[] }) {
 export default function RankingsTabs({
   allTime,
   teams,
+  slug,
 }: {
   allTime: AllTimeEntry[]
   teams: TeamEntry[]
+  slug?: string
 }) {
   const [tab, setTab] = useState<'alltime' | 'teams'>('alltime')
 
