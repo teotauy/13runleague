@@ -194,7 +194,7 @@ export default async function LeagueDashboard({ params }: Props) {
 
         {/* Season Year Tabs - combines Pot Tracker, Leaderboard, and Rankings */}
         <SeasonYearTabs
-          historicalRaw={historicalRaw}
+          historicalRaw={historicalRaw ?? []}
           enrichedMembers={enrichedMembers}
           allTimeMap={allTimeMap}
           teamsMap={teamMap}
