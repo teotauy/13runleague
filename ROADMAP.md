@@ -42,6 +42,7 @@ The minimum viable product for running a real league.
 - [ ] 2.8 League password auth - cookie-based, middleware enforces noindex on all /league/[slug] routes
 - [ ] 2.9 Draft board team rankings - sortable by Win Rate / Dollar Rate / WAR / Spring Training; filterable to available teams only; updates live as teams are picked
 - [ ] 2.10 Tooltips and stat explainers - hover tooltips for all stats, stats glossary page, explain WAR/Dollar Rate/Win Rate/Sweat Factor/Park Factors
+- [ ] 2.11 Season year tabs — sticky nav bar across the top of the league dashboard; Tab 1: current year (e.g. 2026, active season — leaderboard, drought, P(13), today's games); Tab 2: All Time (existing rankings tabs); subsequent tabs: past seasons in reverse order (2025, 2024, 2023...) each showing that year's member/team assignments, week-by-week winners, pot total, and 13-run games; active tab highlighted in neon green
 
 ---
 
