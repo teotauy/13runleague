@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import MemberRoster from '@/components/admin/MemberRoster'
 import PaymentBoard from '@/components/admin/PaymentBoard'
+import TeamAssignment from '@/components/admin/TeamAssignment'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,6 +59,15 @@ export default async function AdminDashboard({ params }: Props) {
             leagueId={league.id}
             leagueSlug={slug}
             members={members ?? []}
+          />
+        </section>
+
+        {/* Team Assignment */}
+        <section>
+          <h2 className="text-xl font-bold mb-4">Team Assignment</h2>
+          <TeamAssignment
+            members={members ?? []}
+            leagueSlug={slug}
           />
         </section>
 
