@@ -16,27 +16,35 @@ import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
 import * as path from 'path'
 
-// Full team name → MLB abbreviation (for the members table)
-// Includes historical spelling variants found in history_import.json
+// Normalize historical spelling variants → canonical team name
+// Applied before inserting into historical_results and looking up abbreviations
+const CANONICAL_TEAM: Record<string, string> = {
+  // Diamondbacks variants
+  'DBacks': 'Diamondbacks',
+  'Dbacks': 'Diamondbacks',
+  // Athletics variants → A's
+  'Athletics': "A's",
+  'Athetics': "A's", // typo in source data
+  // Indians → Guardians (renamed 2022)
+  'Indians': 'Guardians',
+  // Cardinals variant
+  'Cards': 'Cardinals',
+}
+
+// Canonical team name → MLB abbreviation (for the members table)
 const TEAM_ABBR: Record<string, string> = {
   'Angels': 'LAA',
   'Astros': 'HOU',
-  'Athletics': 'ATH',
   "A's": 'ATH',
-  'Athetics': 'ATH', // typo in source data
   'Blue Jays': 'TOR',
   'Braves': 'ATL',
   'Brewers': 'MIL',
   'Cardinals': 'STL',
-  'Cards': 'STL',
   'Cubs': 'CHC',
   'Diamondbacks': 'ARI',
-  'DBacks': 'ARI',
-  'Dbacks': 'ARI',
   'Dodgers': 'LAD',
   'Giants': 'SF',
   'Guardians': 'CLE',
-  'Indians': 'CLE',
   'Mariners': 'SEA',
   'Marlins': 'MIA',
   'Mets': 'NYM',
@@ -130,16 +138,19 @@ async function main() {
 
   // --- Seed historical_results ---
   for (const yearData of historyData.data) {
-    const rows = yearData.members.map((m) => ({
-      league_id: league.id,
-      year: m.year,
-      member_name: m.name,
-      team: m.team,
-      paid_in: m.paid_in ?? 0,
-      total_won: m.total_won ?? 0,
-      shares: m.week_wins?.length ?? 0,
-      week_wins: m.week_wins ?? [],
-    }))
+    const rows = yearData.members.map((m) => {
+      const canonicalTeam = CANONICAL_TEAM[m.team] ?? m.team
+      return {
+        league_id: league.id,
+        year: m.year,
+        member_name: m.name,
+        team: canonicalTeam,
+        paid_in: m.paid_in ?? 0,
+        total_won: m.total_won ?? 0,
+        shares: m.week_wins?.length ?? 0,
+        week_wins: m.week_wins ?? [],
+      }
+    })
 
     const { error } = await supabase.from('historical_results').insert(rows)
     if (error) {
@@ -174,7 +185,8 @@ async function main() {
       continue
     }
 
-    const abbr = TEAM_ABBR[m.team]
+    const canonicalTeam = CANONICAL_TEAM[m.team] ?? m.team
+    const abbr = TEAM_ABBR[canonicalTeam]
     if (!abbr) {
       console.warn(`  ⚠ No abbreviation for team "${m.team}" (${m.name}) — skipping member row`)
       continue
