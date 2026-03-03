@@ -191,6 +191,35 @@ export default async function HomePage({ searchParams }: PageProps) {
           </div>
         </header>
 
+        {/* Offseason countdown banner — shown Oct 5 through Mar 24 */}
+        {(() => {
+          const now = new Date()
+          const month = now.getMonth()
+          const day = now.getDate()
+          // Offseason: Oct 5 - Mar 24
+          const isOffseason = (month > 9) || (month === 9 && day >= 5) || (month < 2) || (month === 2 && day < 25)
+
+          if (!isOffseason) return null
+
+          // Calculate days to next Opening Day (Mar 25)
+          const nextYear = month < 2 ? now.getFullYear() : now.getFullYear() + 1
+          const openingDay = new Date(`${nextYear}-03-25T00:00:00-04:00`)
+          const msDiff = openingDay.getTime() - now.getTime()
+          const daysLeft = Math.ceil(msDiff / (1000 * 60 * 60 * 24))
+
+          return (
+            <div className="rounded border border-purple-900 bg-purple-950/30 px-4 py-3 text-purple-300 text-sm flex items-start gap-3">
+              <span className="text-lg leading-none mt-0.5">🏟️</span>
+              <div>
+                <span className="font-semibold text-purple-200">MLB Offseason.</span>
+                {' '}Next Opening Day is{' '}
+                <span className="text-purple-100 font-bold">March 25</span>
+                {' '}({daysLeft} {daysLeft === 1 ? 'day' : 'days'} away).
+              </div>
+            </div>
+          )
+        })()}
+
         {/* Spring Training banner — shown until Opening Day */}
         {new Date() < new Date('2026-03-25T00:00:00-04:00') && (
           <div className="rounded border border-blue-900 bg-blue-950/30 px-4 py-3 text-blue-300 text-sm flex items-start gap-3">
