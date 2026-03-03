@@ -191,6 +191,18 @@ export default async function HomePage({ searchParams }: PageProps) {
           </div>
         </header>
 
+        {/* Spring Training banner — shown until Opening Day */}
+        {new Date() < new Date('2026-03-25T00:00:00-04:00') && (
+          <div className="rounded border border-blue-900 bg-blue-950/30 px-4 py-3 text-blue-300 text-sm flex items-start gap-3">
+            <span className="text-lg leading-none mt-0.5">⚾</span>
+            <div>
+              <span className="font-semibold text-blue-200">Spring Training in progress.</span>
+              {' '}Probabilities are based on Spring Training stats, which may not reflect regular season performance.
+              {' '}<span className="text-blue-400">Opening Day is March 25.</span>
+            </div>
+          </div>
+        )}
+
         {/* API error banner */}
         {fetchError && (
           <div className="rounded border border-amber-900 bg-amber-950/30 px-4 py-3 text-amber-400 text-sm">
