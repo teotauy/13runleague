@@ -15,6 +15,9 @@ export function proxy(request: NextRequest) {
 
     if (!slug) return response
 
+    // Allow the login page through — otherwise the redirect loops forever
+    if (pathname === `/league/${slug}/login`) return response
+
     // Check auth cookie
     const cookieName = `league_auth_${slug}`
     const authCookie = request.cookies.get(cookieName)
