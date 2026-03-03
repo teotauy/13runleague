@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import DraftRoom from '@/components/draft/DraftRoom'
 
@@ -10,7 +10,7 @@ interface Props {
 
 export default async function DraftPage({ params }: Props) {
   const { slug } = await params
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   const { data: league, error } = await supabase
     .from('leagues')

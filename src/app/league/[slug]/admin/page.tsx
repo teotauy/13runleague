@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import MemberRoster from '@/components/admin/MemberRoster'
 import PaymentBoard from '@/components/admin/PaymentBoard'
@@ -12,7 +12,7 @@ interface Props {
 
 export default async function AdminDashboard({ params }: Props) {
   const { slug } = await params
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   const { data: league, error } = await supabase
     .from('leagues')

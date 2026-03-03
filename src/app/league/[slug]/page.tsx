@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/mlb'
 import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
@@ -12,7 +12,7 @@ interface Props {
 
 export default async function LeagueDashboard({ params }: Props) {
   const { slug } = await params
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   const season = currentSeason()
 
   const { data: league, error } = await supabase

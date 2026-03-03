@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import bcrypt from 'bcryptjs'
 
 interface Props {
@@ -15,7 +15,7 @@ export default async function LeagueLoginPage({ params, searchParams }: Props) {
   async function login(formData: FormData) {
     'use server'
     const password = formData.get('password') as string
-    const supabase = await createClient()
+    const supabase = createServiceClient()
 
     const { data: league, error: dbError } = await supabase
       .from('leagues')
