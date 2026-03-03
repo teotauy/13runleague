@@ -109,7 +109,7 @@ function todayDate(): string {
 
 export async function fetchTodaySchedule(): Promise<MLBGame[]> {
   const date = todayDate()
-  const url = `${MLB_API}/api/v1/schedule?sportId=1&date=${date}&gameType=R&hydrate=probablePitcher(note),linescore,team,venue`
+  const url = `${MLB_API}/api/v1/schedule?sportId=1&date=${date}&hydrate=probablePitcher(note),linescore,team,venue`
 
   const res = await fetch(url, { next: { revalidate: 60 } })
   if (!res.ok) throw new Error(`MLB schedule fetch failed: ${res.status}`)
@@ -127,7 +127,7 @@ export async function fetchTodaySchedule(): Promise<MLBGame[]> {
 }
 
 export async function fetchScheduleForDate(date: string): Promise<MLBGame[]> {
-  const url = `${MLB_API}/api/v1/schedule?sportId=1&date=${date}&gameType=R&hydrate=probablePitcher(note),linescore,team,venue`
+  const url = `${MLB_API}/api/v1/schedule?sportId=1&date=${date}&hydrate=probablePitcher(note),linescore,team,venue`
 
   const res = await fetch(url, { cache: 'force-cache' })
   if (!res.ok) throw new Error(`MLB schedule fetch failed: ${res.status}`)
