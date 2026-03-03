@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/mlb'
 import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
+import RankingsTabs, { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
 
 export const dynamic = 'force-dynamic'
 
@@ -78,6 +79,54 @@ export default async function LeagueDashboard({ params }: Props) {
   const weeksPlayed = Math.ceil(
     (league.pot_total ?? 0) / ((members?.length ?? 1) * (league.weekly_buy_in ?? 10))
   )
+
+  // Historical results for rankings tabs
+  const { data: historicalRaw } = await supabase
+    .from('historical_results')
+    .select('member_name, team, year, total_won, shares')
+    .eq('league_id', league.id)
+
+  // Aggregate all-time rankings by member
+  const allTimeMap = new Map<string, AllTimeEntry>()
+  for (const row of historicalRaw ?? []) {
+    const existing = allTimeMap.get(row.member_name)
+    if (existing) {
+      existing.totalWon += row.total_won ?? 0
+      existing.totalShares += row.shares ?? 0
+      existing.yearsPlayed.push(row.year)
+    } else {
+      allTimeMap.set(row.member_name, {
+        name: row.member_name,
+        totalWon: row.total_won ?? 0,
+        totalShares: row.shares ?? 0,
+        yearsPlayed: [row.year],
+        isActive: !!(members ?? []).find((m) => m.name === row.member_name),
+      })
+    }
+  }
+  const allTimeRankings: AllTimeEntry[] = Array.from(allTimeMap.values())
+    .sort((a, b) => b.totalWon - a.totalWon)
+
+  // Aggregate team rankings by team name
+  const teamMap = new Map<string, TeamEntry>()
+  for (const row of historicalRaw ?? []) {
+    if ((row.shares ?? 0) === 0) continue
+    const existing = teamMap.get(row.team)
+    if (existing) {
+      existing.thirteenRunWeeks += row.shares ?? 0
+      existing.totalPaidOut += row.total_won ?? 0
+      if (!existing.yearsWon.includes(row.year)) existing.yearsWon.push(row.year)
+    } else {
+      teamMap.set(row.team, {
+        team: row.team,
+        thirteenRunWeeks: row.shares ?? 0,
+        totalPaidOut: row.total_won ?? 0,
+        yearsWon: [row.year],
+      })
+    }
+  }
+  const teamRankings: TeamEntry[] = Array.from(teamMap.values())
+    .sort((a, b) => b.thirteenRunWeeks - a.thirteenRunWeeks)
 
   // Closest misses
   const closestMisses = streaks
@@ -218,6 +267,13 @@ export default async function LeagueDashboard({ params }: Props) {
                 )
               })}
             </div>
+          </section>
+        )}
+
+        {/* All-Time & Team Rankings Tabs */}
+        {(allTimeRankings.length > 0 || teamRankings.length > 0) && (
+          <section>
+            <RankingsTabs allTime={allTimeRankings} teams={teamRankings} />
           </section>
         )}
 
