@@ -31,5 +31,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/league/:slug/((?!login).*)', '/api/league/:slug/(?!.*login)'],
+  matcher: ['/league/:slug/((?!login).*)'],
 }
