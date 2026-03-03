@@ -18,12 +18,12 @@ Each phase is designed to be handed to Claude Code or Cursor as a discrete worki
 
 Get the database live and historical data seeded. Nothing else works without this.
 
-- [ ] 1.1 Run supabase/schema.sql in Supabase SQL editor - creates leagues, members, game_results, streaks, alert_log tables
-- [ ] 1.2 Add email column to members table
-- [ ] 1.3 Write scripts/seed_history.ts - reads scripts/history_import.json, inserts 8 years of South Brooklyn league data into Supabase
-- [ ] 1.4 Fix MLB Stats API gameType filter - regular season (R) only, filter out spring training and WBC
+- [x] 1.1 Run supabase/schema.sql in Supabase SQL editor - creates leagues, members, game_results, streaks, alert_log tables ✓ claude1
+- [x] 1.2 Add email column to members table ✓ claude1
+- [x] 1.3 Write scripts/seed_history.ts - reads scripts/history_import.json, inserts 8 years of South Brooklyn league data into Supabase ✓ claude1 (8 years × 30 members seeded to Supabase)
+- [x] 1.4 Fix MLB Stats API gameType filter - regular season (R) only, filter out spring training and WBC ✓ claude1 (added gameType=R to fetchTodaySchedule and fetchScheduleForDate)
 - [ ] 1.5 Offseason banner - detect no games, show opening day countdown
-- [ ] 1.6 Spring training banner - Currently showing Spring Training games. MLB Regular Season starts March 25, 2026
+- [x] 1.6 Spring training banner - Currently showing Spring Training games. MLB Regular Season starts March 25, 2026 ✓ claude1
 - [ ] 1.7 Favicon and app icons - browser tab, iOS home screen, OG image
 
 ---
