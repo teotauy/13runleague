@@ -4,6 +4,7 @@ import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/m
 import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
 import RankingsTabs, { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
 import Tooltip from '@/components/Tooltip'
+import SeasonYearTabs from '@/components/SeasonYearTabs'
 
 export const dynamic = 'force-dynamic'
 
@@ -180,95 +181,16 @@ export default async function LeagueDashboard({ params }: Props) {
           </div>
         </header>
 
-        {/* Pot Tracker */}
-        <section className="rounded-lg border border-gray-800 bg-[#111] p-6">
-          <h2 className="text-sm text-gray-500 uppercase tracking-widest mb-4">Pot Tracker</h2>
-          <div className="grid grid-cols-2 gap-6">
-            <Stat
-              label="Current Pot"
-              value={`$${(league.pot_total ?? 0).toLocaleString()}`}
-              highlight
-              explanation="Total money in the league pool"
-            />
-            <Stat label="Weeks Played" value={String(weeksPlayed)} />
-          </div>
-        </section>
-
-        {/* Leaderboard */}
-        <section>
-          <h2 className="text-lg font-bold mb-4">Leaderboard</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm font-mono">
-              <thead>
-                <tr className="text-gray-500 border-b border-gray-800 text-left">
-                  <th className="pb-2 pr-4">Player</th>
-                  <th className="pb-2 pr-4">Team</th>
-                  <th className="pb-2 pr-4">
-                    <Tooltip label="Today's Game" explanation="This team's matchup today (away @ home)">
-                      Today
-                    </Tooltip>
-                  </th>
-                  <th className="pb-2 pr-4">
-                    <Tooltip label="P(13)" explanation="Probability team scores 13+ runs in today's game">
-                      P(13)
-                    </Tooltip>
-                  </th>
-                  <th className="pb-2 pr-4">
-                    <Tooltip label="Drought" explanation="Weeks since this team's last 13-run game">
-                      Drought
-                    </Tooltip>
-                  </th>
-                  <th className="pb-2 pr-4">
-                    <Tooltip label="Best Run" explanation="Longest weekly winning streak">
-                      Best Run
-                    </Tooltip>
-                  </th>
-                  <th className="pb-2">
-                    <Tooltip label="Closest Miss" explanation="Highest-scoring game without reaching 13 runs">
-                      Closest Miss
-                    </Tooltip>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {enrichedMembers.map(({ member, streak, todayGame, todayProb, weeksSinceWin }) => (
-                  <tr key={member.id} className="border-b border-gray-900 hover:bg-[#111]">
-                    <td className="py-3 pr-4 text-white font-semibold">{member.name}</td>
-                    <td className="py-3 pr-4">
-                      <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-200">
-                        {member.assigned_team}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4 text-gray-400">
-                      {todayGame
-                        ? `${todayGame.teams.away.team.abbreviation} @ ${todayGame.teams.home.team.abbreviation}`
-                        : '—'}
-                    </td>
-                    <td className="py-3 pr-4">
-                      {todayProb !== null ? (
-                        <span
-                          className="font-bold"
-                          style={{ color: todayProb > 0.05 ? '#39ff14' : todayProb > 0.02 ? '#f59e0b' : '#9ca3af' }}
-                        >
-                          {(todayProb * 100).toFixed(2)}%
-                        </span>
-                      ) : '—'}
-                    </td>
-                    <td className="py-3 pr-4 text-gray-400">
-                      {weeksSinceWin !== null ? `${weeksSinceWin}w` : '—'}
-                    </td>
-                    <td className="py-3 pr-4 text-gray-400">{streak?.longest_streak ?? 0}W</td>
-                    <td className="py-3 text-gray-400">
-                      {streak?.closest_miss_score !== null && streak?.closest_miss_score !== undefined
-                        ? `${streak.closest_miss_score} runs${streak.closest_miss_date ? ` (${streak.closest_miss_date})` : ''}`
-                        : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        {/* Season Year Tabs - combines Pot Tracker, Leaderboard, and Rankings */}
+        <SeasonYearTabs
+          historicalRaw={historicalRaw}
+          enrichedMembers={enrichedMembers}
+          allTimeMap={allTimeMap}
+          teamsMap={teamMap}
+          potTotal={league.pot_total ?? 0}
+          weeksPlayed={weeksPlayed}
+          leagueName={league.name}
+        />
 
         {/* 13-Run History */}
         {thirteenHistory && thirteenHistory.length > 0 && (
@@ -321,12 +243,6 @@ export default async function LeagueDashboard({ params }: Props) {
           </section>
         )}
 
-        {/* All-Time & Team Rankings Tabs */}
-        {(allTimeRankings.length > 0 || teamRankings.length > 0) && (
-          <section>
-            <RankingsTabs allTime={allTimeRankings} teams={teamRankings} />
-          </section>
-        )}
 
         {/* Footer */}
         <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs space-y-2">
