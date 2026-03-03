@@ -34,7 +34,7 @@ The minimum viable product for running a real league.
 
 - [ ] 2.1 League creation flow - commissioner sets league name, slug, password, weekly buy-in
 - [x] 2.2 Member roster management - add, edit, remove members; track payment status per week ✓ claude1
-- [ ] 2.3 Team assignment UI - commissioner assigns 30 MLB teams at season start; support random draw mode
+- [x] 2.3 Team assignment UI - commissioner assigns 30 MLB teams at season start; support random draw mode ✓ claude1
 - [ ] 2.4 Draft Room - live team draft at season start; two modes: (a) random assign - commissioner triggers, everyone watches teams get assigned in real time; (b) double-blind draw - 30 sealed envelopes, members pick blind, live reveal
 - [ ] 2.5 Weekly pot tracker - shares-based split logic (pot divided by winners that week), rollover if no winners, week runs Sunday-Saturday
 - [ ] 2.6 Payment tracking with manual override - mark members as paid (Venmo, cash, Stripe, etc.); commissioner can override any week with a note
