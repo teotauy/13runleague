@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/mlb'
 import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
 import RankingsTabs, { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
+import Tooltip from '@/components/Tooltip'
 
 export const dynamic = 'force-dynamic'
 
@@ -183,7 +184,12 @@ export default async function LeagueDashboard({ params }: Props) {
         <section className="rounded-lg border border-gray-800 bg-[#111] p-6">
           <h2 className="text-sm text-gray-500 uppercase tracking-widest mb-4">Pot Tracker</h2>
           <div className="grid grid-cols-2 gap-6">
-            <Stat label="Current Pot" value={`$${(league.pot_total ?? 0).toLocaleString()}`} highlight />
+            <Stat
+              label="Current Pot"
+              value={`$${(league.pot_total ?? 0).toLocaleString()}`}
+              highlight
+              explanation="Total money in the league pool"
+            />
             <Stat label="Weeks Played" value={String(weeksPlayed)} />
           </div>
         </section>
@@ -197,11 +203,31 @@ export default async function LeagueDashboard({ params }: Props) {
                 <tr className="text-gray-500 border-b border-gray-800 text-left">
                   <th className="pb-2 pr-4">Player</th>
                   <th className="pb-2 pr-4">Team</th>
-                  <th className="pb-2 pr-4">Today</th>
-                  <th className="pb-2 pr-4">P(13)</th>
-                  <th className="pb-2 pr-4">Drought</th>
-                  <th className="pb-2 pr-4">Best Run</th>
-                  <th className="pb-2">Closest Miss</th>
+                  <th className="pb-2 pr-4">
+                    <Tooltip label="Today's Game" explanation="This team's matchup today (away @ home)">
+                      Today
+                    </Tooltip>
+                  </th>
+                  <th className="pb-2 pr-4">
+                    <Tooltip label="P(13)" explanation="Probability team scores 13+ runs in today's game">
+                      P(13)
+                    </Tooltip>
+                  </th>
+                  <th className="pb-2 pr-4">
+                    <Tooltip label="Drought" explanation="Weeks since this team's last 13-run game">
+                      Drought
+                    </Tooltip>
+                  </th>
+                  <th className="pb-2 pr-4">
+                    <Tooltip label="Best Run" explanation="Longest weekly winning streak">
+                      Best Run
+                    </Tooltip>
+                  </th>
+                  <th className="pb-2">
+                    <Tooltip label="Closest Miss" explanation="Highest-scoring game without reaching 13 runs">
+                      Closest Miss
+                    </Tooltip>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -324,8 +350,8 @@ export default async function LeagueDashboard({ params }: Props) {
   )
 }
 
-function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
+function Stat({ label, value, highlight, explanation }: { label: string; value: string; highlight?: boolean; explanation?: string }) {
+  const content = (
     <div>
       <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{label}</div>
       <div className={`text-2xl font-black font-mono ${highlight ? 'text-[#39ff14]' : 'text-white'}`}>
@@ -333,4 +359,14 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
       </div>
     </div>
   )
+
+  if (explanation) {
+    return (
+      <Tooltip label={label} explanation={explanation}>
+        {content}
+      </Tooltip>
+    )
+  }
+
+  return content
 }
