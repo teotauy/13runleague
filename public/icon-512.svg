@@ -5,9 +5,9 @@
   <!-- Rounded corner background for icon appearance -->
   <rect width="512" height="512" rx="110" fill="#1a1a1a" stroke="#39ff14" stroke-width="8"/>
 
-  <!-- Baseball seams (curved lines) -->
-  <path d="M 160 200 Q 256 140 352 200" fill="none" stroke="#39ff14" stroke-width="6" stroke-linecap="round"/>
-  <path d="M 160 312 Q 256 372 352 312" fill="none" stroke="#39ff14" stroke-width="6" stroke-linecap="round"/>
+  <!-- Baseball seams (curved lines) - Red -->
+  <path d="M 160 200 Q 256 140 352 200" fill="none" stroke="#ff3333" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 160 312 Q 256 372 352 312" fill="none" stroke="#ff3333" stroke-width="6" stroke-linecap="round"/>
 
   <!-- "13" text in neon green -->
   <text x="256" y="320" font-family="monospace" font-size="200" font-weight="bold" fill="#39ff14" text-anchor="middle" dominant-baseline="middle">

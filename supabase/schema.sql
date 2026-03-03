@@ -36,6 +36,29 @@ create table weekly_payments (
 
 create index on weekly_payments (member_id, week_number);
 
+-- Draft Sessions (team draft tracking at season start)
+create table draft_sessions (
+  id uuid primary key default gen_random_uuid(),
+  league_id uuid references leagues(id) on delete cascade,
+  draft_mode text not null,              -- 'random-assign' or 'double-blind'
+  draft_status text default 'pending',   -- 'pending', 'in_progress', 'completed'
+  created_at timestamptz default now(),
+  completed_at timestamptz
+);
+
+-- Draft Picks (tracks each team picked during draft)
+create table draft_picks (
+  id uuid primary key default gen_random_uuid(),
+  draft_session_id uuid references draft_sessions(id) on delete cascade,
+  member_id uuid references members(id) on delete cascade,
+  team_abbr text not null,
+  pick_order integer,                    -- 1-30 for order of picks
+  picked_at timestamptz default now()
+);
+
+create index on draft_sessions (league_id, draft_status);
+create index on draft_picks (draft_session_id);
+
 -- Game Results
 create table game_results (
   id uuid primary key default gen_random_uuid(),
@@ -75,6 +98,8 @@ alter table members enable row level security;
 alter table game_results enable row level security;
 alter table streaks enable row level security;
 alter table weekly_payments enable row level security;
+alter table draft_sessions enable row level security;
+alter table draft_picks enable row level security;
 
 -- Public read for game_results (historical data is public)
 create policy "game_results_public_read"

@@ -46,9 +46,14 @@ export default async function AdminDashboard({ params }: Props) {
               </h1>
               <p className="text-gray-400 text-lg mt-1">{league.name}</p>
             </div>
-            <a href={`/league/${slug}`} className="text-gray-600 text-sm hover:text-gray-400">
-              ← League Dashboard
-            </a>
+            <div className="flex gap-3">
+              <a href={`/league/${slug}/draft`} className="text-gray-600 text-sm hover:text-gray-400">
+                Draft Room →
+              </a>
+              <a href={`/league/${slug}`} className="text-gray-600 text-sm hover:text-gray-400">
+                League Dashboard →
+              </a>
+            </div>
           </div>
         </header>
 
