@@ -40,6 +40,20 @@ export default async function LeagueDashboard({ params }: Props) {
     .order('game_date', { ascending: false })
     .limit(50)
 
+  // Last 13-run game per team — used for drought tracker
+  const { data: lastThirteens } = await supabase
+    .from('game_results')
+    .select('winning_team, game_date')
+    .eq('was_thirteen', true)
+    .order('game_date', { ascending: false })
+
+  const lastWinByTeam = new Map<string, string>()
+  for (const game of lastThirteens ?? []) {
+    if (!lastWinByTeam.has(game.winning_team)) {
+      lastWinByTeam.set(game.winning_team, game.game_date)
+    }
+  }
+
   const games = await fetchTodaySchedule()
 
   // Enrich each member with today's game info and probability
@@ -55,8 +69,14 @@ export default async function LeagueDashboard({ params }: Props) {
 
       const streak = streaks?.find((s) => s.member_id === member.id)
 
+      // Weeks since this member's team last scored 13
+      const lastWinDate = lastWinByTeam.get(teamAbbr)
+      const weeksSinceWin = lastWinDate
+        ? Math.max(0, Math.floor((Date.now() - new Date(lastWinDate).getTime()) / (7 * 24 * 60 * 60 * 1000)))
+        : null
+
       if (!todayGame) {
-        return { member, streak, todayGame: null, todayProb: null }
+        return { member, streak, todayGame: null, todayProb: null, weeksSinceWin }
       }
 
       const isHome = todayGame.teams.home.team.abbreviation === teamAbbr
@@ -72,7 +92,7 @@ export default async function LeagueDashboard({ params }: Props) {
       })
       const prob = calculateThirteenProbability(lambda.pitcherAdjusted)
 
-      return { member, streak, todayGame, todayProb: prob }
+      return { member, streak, todayGame, todayProb: prob, weeksSinceWin }
     })
   )
 
@@ -93,7 +113,10 @@ export default async function LeagueDashboard({ params }: Props) {
     if (existing) {
       existing.totalWon += row.total_won ?? 0
       existing.totalShares += row.shares ?? 0
-      existing.yearsPlayed.push(row.year)
+      // Only add year if not already present (deduplicate)
+      if (!existing.yearsPlayed.includes(row.year)) {
+        existing.yearsPlayed.push(row.year)
+      }
     } else {
       allTimeMap.set(row.member_name, {
         name: row.member_name,
@@ -158,10 +181,9 @@ export default async function LeagueDashboard({ params }: Props) {
         {/* Pot Tracker */}
         <section className="rounded-lg border border-gray-800 bg-[#111] p-6">
           <h2 className="text-sm text-gray-500 uppercase tracking-widest mb-4">Pot Tracker</h2>
-          <div className="grid grid-cols-3 gap-6">
-            <Stat label="Current Pot" value={`$${league.pot_total ?? 0}`} highlight />
+          <div className="grid grid-cols-2 gap-6">
+            <Stat label="Current Pot" value={`$${(league.pot_total ?? 0).toLocaleString()}`} highlight />
             <Stat label="Weeks Played" value={String(weeksPlayed)} />
-            <Stat label="Buy-in / Week" value={`$${league.weekly_buy_in ?? 10}`} />
           </div>
         </section>
 
@@ -176,13 +198,13 @@ export default async function LeagueDashboard({ params }: Props) {
                   <th className="pb-2 pr-4">Team</th>
                   <th className="pb-2 pr-4">Today</th>
                   <th className="pb-2 pr-4">P(13)</th>
-                  <th className="pb-2 pr-4">Streak</th>
-                  <th className="pb-2 pr-4">Best</th>
+                  <th className="pb-2 pr-4">Drought</th>
+                  <th className="pb-2 pr-4">Best Run</th>
                   <th className="pb-2">Closest Miss</th>
                 </tr>
               </thead>
               <tbody>
-                {enrichedMembers.map(({ member, streak, todayGame, todayProb }) => (
+                {enrichedMembers.map(({ member, streak, todayGame, todayProb, weeksSinceWin }) => (
                   <tr key={member.id} className="border-b border-gray-900 hover:bg-[#111]">
                     <td className="py-3 pr-4 text-white font-semibold">{member.name}</td>
                     <td className="py-3 pr-4">
@@ -205,7 +227,9 @@ export default async function LeagueDashboard({ params }: Props) {
                         </span>
                       ) : '—'}
                     </td>
-                    <td className="py-3 pr-4 text-gray-400">{streak?.current_streak ?? 0}W</td>
+                    <td className="py-3 pr-4 text-gray-400">
+                      {weeksSinceWin !== null ? `${weeksSinceWin}w` : '—'}
+                    </td>
                     <td className="py-3 pr-4 text-gray-400">{streak?.longest_streak ?? 0}W</td>
                     <td className="py-3 text-gray-400">
                       {streak?.closest_miss_score !== null && streak?.closest_miss_score !== undefined

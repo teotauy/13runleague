@@ -24,6 +24,13 @@ type Dir = 'asc' | 'desc'
 const ALL_YEARS = [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
 const IRONMAN_COUNT = ALL_YEARS.length
 
+function yearRange(years: number[]): string {
+  const unique = [...new Set(years)].sort((a, b) => a - b)
+  if (unique.length === 0) return '—'
+  if (unique.length === 1) return String(unique[0])
+  return `${unique[0]}–${unique[unique.length - 1]}`
+}
+
 function SortArrow({ active, dir }: { active: boolean; dir: Dir }) {
   if (!active) return <span className="text-gray-700 ml-1">↕</span>
   return <span className="text-[#39ff14] ml-1">{dir === 'desc' ? '↓' : '↑'}</span>
@@ -82,7 +89,7 @@ function AllTimeTable({ data }: { data: AllTimeEntry[] }) {
             <th className="pb-2 pr-4 text-left">#</th>
             <th className="pb-2 pr-4 text-left">Player</th>
             <SortTh label="Years" col="yearsPlayed" current={sortCol} dir={dir} onClick={handleSort} />
-            <SortTh label="Shares" col="totalShares" current={sortCol} dir={dir} onClick={handleSort} />
+            <SortTh label="Wins" col="totalShares" current={sortCol} dir={dir} onClick={handleSort} />
             <SortTh label="Total Won" col="totalWon" current={sortCol} dir={dir} onClick={handleSort} />
             <th className="pb-2 text-left">Badges</th>
           </tr>
@@ -95,7 +102,7 @@ function AllTimeTable({ data }: { data: AllTimeEntry[] }) {
                 <td className="py-2 pr-4 text-gray-600">{i + 1}</td>
                 <td className="py-2 pr-4 text-white font-semibold">{entry.name}</td>
                 <td className="py-2 pr-4 text-gray-400">
-                  {entry.yearsPlayed.sort((a, b) => a - b).join(', ')}
+                  {yearRange(entry.yearsPlayed)}
                 </td>
                 <td className="py-2 pr-4 text-gray-300">{entry.totalShares}</td>
                 <td className="py-2 pr-4 font-bold text-[#39ff14]">${entry.totalWon.toLocaleString()}</td>
@@ -157,8 +164,8 @@ function TeamTable({ data }: { data: TeamEntry[] }) {
               <td className="py-2 pr-4 text-[#39ff14] font-bold">{entry.thirteenRunWeeks}</td>
               <td className="py-2 pr-4 text-gray-300">${entry.totalPaidOut.toLocaleString()}</td>
               <td className="py-2 text-gray-400">
-                {entry.yearsWon.sort((a, b) => a - b).join(', ')}
-                <span className="text-gray-600 ml-1">({entry.yearsWon.length})</span>
+                {yearRange(entry.yearsWon)}
+                <span className="text-gray-600 ml-1">({[...new Set(entry.yearsWon)].length})</span>
               </td>
             </tr>
           ))}

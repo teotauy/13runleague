@@ -54,7 +54,7 @@ What makes this feel like a real league, not a spreadsheet.
 - [ ] 3.3 Past Champions Banner - scrolling hall of fame across top of history page; each champion color-coded to their MLB team that year
 - [ ] 3.4 Dynasty Tracker - surfaces multi-win seasons and dominant stretches (e.g. Brad Brown 3 wins in 2018, Matt Pariseau 19 shares all-time)
 - [ ] 3.5 Historical season browser - year-by-year results, week-by-week breakdown, rollover chains visualized
-- [ ] 3.6 Player profile page - career stats, teams held by year, win history, earnings timeline
+- [ ] 3.6 Player profile page - /league/[slug]/player/[id]; career stats, teams held by year, win history, earnings timeline; clicking player name in leaderboard and rankings navigates here
 - [ ] 3.7 Heartbreak Board - teams that reached 12 runs and stopped; running all-time tally; The Cubs have broken hearts 7 times
 - [ ] 3.8 Cursed Team Badge - algorithmically determined weekly from probability model
 - [ ] 3.9 Random facts widget - first 13-run game in league history, team with most 13-run weeks, team with most 12-run heartbreaks, days since last 13-run game
