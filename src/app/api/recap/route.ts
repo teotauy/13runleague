@@ -75,12 +75,12 @@ export async function POST(request: Request) {
     (leagues ?? []).map(async (league) => {
       const { data: members } = await supabase
         .from('members')
-        .select('name, phone')
+        .select('name, phone, email')
         .eq('league_id', league.id)
 
-      // In production, store email addresses in members table
-      // For now, use a placeholder — add `email` column to members table as needed
-      const emails: string[] = []
+      const emails = (members ?? [])
+        .map((m) => m.email)
+        .filter((e): e is string => !!e)
 
       if (emails.length === 0) return { league: league.name, sent: 0 }
 
