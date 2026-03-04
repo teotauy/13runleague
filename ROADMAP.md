@@ -90,6 +90,18 @@ The minimum viable product for running a real league.
 
 ---
 
+## Phase 2 Quick Wins - League Dashboard Polish
+
+Small UX fixes that came up during 2026 Spring Training setup.
+
+- [x] 2.12 Remove redundant "Pot Tracker" header section from league page — PotBreakdown already owns that real estate; the $0 / 0 weeks card adds nothing ✓
+- [x] 2.13 Closest Miss formatting — show date before score ("4/5 — 12 runs"); tie-break: when two games are equally close to 13, most recent date wins ✓
+- [x] 2.14 Rename "Best" leaderboard column → "Peak" with hover tooltip: "Longest winning streak this season" ✓
+- [ ] 2.15 Badge tooltip polish — all emoji badges (🏆 Ironman, ⭐ Active) already have title= attributes; verify they show on hover on mobile too; consider replacing native tooltips with a custom tooltip component for consistency with Tooltip.tsx
+- [ ] 2.16 Player profile achievement banners — for each year in a player's history, compute whether they were (a) top earner that year, (b) most wins that year; show as small badges per season row ("💰 Top Earner", "🥇 Most Wins"); requires joining against all historical_results for that year
+
+---
+
 ## Phase 3 - Stats and History
 
 What makes this feel like a real league, not a spreadsheet.

@@ -78,10 +78,6 @@ export default async function LeagueDashboard({ params }: Props) {
     })
   )
 
-  const weeksPlayed = Math.ceil(
-    (league.pot_total ?? 0) / ((members?.length ?? 1) * (league.weekly_buy_in ?? 10))
-  )
-
   // Current week data
   const today = new Date()
   const currentWeekNumber = getWeekNumber(today)
@@ -157,13 +153,14 @@ export default async function LeagueDashboard({ params }: Props) {
   const teamRankings: TeamEntry[] = Array.from(teamMap.values())
     .sort((a, b) => b.thirteenRunWeeks - a.thirteenRunWeeks)
 
-  // Closest misses
+  // Closest misses — primary: distance to 13; tie-break: most recent date first
   const closestMisses = streaks
     ?.filter((s) => s.closest_miss_score !== null)
     .sort((a, b) => {
       const aDist = Math.abs((a.closest_miss_score ?? 0) - 13)
       const bDist = Math.abs((b.closest_miss_score ?? 0) - 13)
-      return aDist - bDist
+      if (aDist !== bDist) return aDist - bDist
+      return (b.closest_miss_date ?? '').localeCompare(a.closest_miss_date ?? '')
     })
     .slice(0, 5)
 
@@ -183,16 +180,6 @@ export default async function LeagueDashboard({ params }: Props) {
             <a href="/" className="text-gray-600 text-sm hover:text-gray-400">← Public dashboard</a>
           </div>
         </header>
-
-        {/* Pot Tracker */}
-        <section className="rounded-lg border border-gray-800 bg-[#111] p-6">
-          <h2 className="text-sm text-gray-500 uppercase tracking-widest mb-4">Pot Tracker</h2>
-          <div className="grid grid-cols-3 gap-6">
-            <Stat label="Current Pot" value={`$${league.pot_total ?? 0}`} highlight />
-            <Stat label="Weeks Played" value={String(weeksPlayed)} />
-            <Stat label="Buy-in / Week" value={`$${league.weekly_buy_in ?? 10}`} />
-          </div>
-        </section>
 
         {/* Pot Breakdown */}
         <PotBreakdown
@@ -220,7 +207,7 @@ export default async function LeagueDashboard({ params }: Props) {
                   <th className="pb-2 pr-4">Today</th>
                   <th className="pb-2 pr-4">P(13)</th>
                   <th className="pb-2 pr-4">Streak</th>
-                  <th className="pb-2 pr-4">Best</th>
+                  <th className="pb-2 pr-4" title="Longest winning streak this season">Peak</th>
                   <th className="pb-2">Closest Miss</th>
                 </tr>
               </thead>
@@ -252,7 +239,7 @@ export default async function LeagueDashboard({ params }: Props) {
                     <td className="py-3 pr-4 text-gray-400">{streak?.longest_streak ?? 0}W</td>
                     <td className="py-3 text-gray-400">
                       {streak?.closest_miss_score !== null && streak?.closest_miss_score !== undefined
-                        ? `${streak.closest_miss_score} runs${streak.closest_miss_date ? ` (${streak.closest_miss_date})` : ''}`
+                        ? `${streak.closest_miss_date ? fmtMD(streak.closest_miss_date) + ' — ' : ''}${streak.closest_miss_score} runs`
                         : '—'}
                     </td>
                   </tr>
@@ -299,13 +286,12 @@ export default async function LeagueDashboard({ params }: Props) {
                     key={s.member_id}
                     className="flex items-center gap-3 text-sm rounded bg-[#111] border border-gray-900 px-4 py-2"
                   >
-                    <span className="text-amber-400 font-bold">{s.closest_miss_score}</span>
-                    <span className="text-gray-400">runs</span>
-                    <span className="text-white">{member?.name ?? '—'} ({member?.assigned_team})</span>
-                    <span className="text-gray-500">— {diff === 1 ? 'one run away!' : `${diff} runs away`}</span>
                     {s.closest_miss_date && (
-                      <span className="text-gray-600 font-mono text-xs ml-auto">{s.closest_miss_date}</span>
+                      <span className="text-gray-500 font-mono">{fmtMD(s.closest_miss_date)}</span>
                     )}
+                    <span className="text-amber-400 font-bold">{s.closest_miss_score} runs</span>
+                    <span className="text-white">{member?.name ?? '—'} ({member?.assigned_team})</span>
+                    <span className="text-gray-600 ml-auto">— {diff === 1 ? 'one run away!' : `${diff} runs away`}</span>
                   </div>
                 )
               })}
@@ -332,13 +318,8 @@ export default async function LeagueDashboard({ params }: Props) {
   )
 }
 
-function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <div>
-      <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{label}</div>
-      <div className={`text-2xl font-black font-mono ${highlight ? 'text-[#39ff14]' : 'text-white'}`}>
-        {value}
-      </div>
-    </div>
-  )
+/** "2025-04-05" → "4/5" */
+function fmtMD(dateStr: string): string {
+  const parts = dateStr.split('-')
+  return `${parseInt(parts[1])}/${parseInt(parts[2])}`
 }

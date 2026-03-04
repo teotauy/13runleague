@@ -103,7 +103,7 @@ function AllTimeTable({ data, slug }: { data: AllTimeEntry[]; slug?: string }) {
               <tr key={entry.name} className="border-b border-gray-900 hover:bg-[#111]">
                 <td className="py-2 pr-4 text-gray-600">{i + 1}</td>
                 <td className="py-2 pr-4 text-white font-semibold">
-                  {entry.isActive && <span className="mr-1">⭐</span>}
+                  {entry.isActive && <span className="mr-1" title="Active player (2025)">⭐</span>}
                   {entry.id && slug ? (
                     <Link
                       href={`/league/${slug}/player/${entry.id}`}
