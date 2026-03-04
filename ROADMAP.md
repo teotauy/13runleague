@@ -52,7 +52,7 @@ What makes this feel like a real league, not a spreadsheet.
 
 - [ ] 3.1 League page - All-Time Rankings table - sortable by total won / shares / years played; Ironman badge for all 8 years; active player indicator
 - [ ] 3.2 League page - Team Rankings table - MLB teams sorted by 13-run weeks in league history, total paid out, years won
-- [ ] 3.3 Past Champions Banner - scrolling hall of fame across top of history page; each champion color-coded to their MLB team that year
+- [x] 3.3 Past Champions Banner - scrolling hall of fame across top of history page; each champion color-coded to their MLB team that year ✓ claude-code (teamColors.ts, PastChampionsBanner component, auto-scroll + swipe, all yearly winners)
 - [ ] 3.4 Dynasty Tracker - surfaces multi-win seasons and dominant stretches (e.g. Brad Brown 3 wins in 2018, Matt Pariseau 19 shares all-time)
 - [ ] 3.5 Historical season browser - year-by-year results, week-by-week breakdown, rollover chains visualized
 - [ ] 3.6 Player profile page - /league/[slug]/player/[id]; career stats, teams held by year, win history, earnings timeline; clicking player name in leaderboard and rankings navigates here
