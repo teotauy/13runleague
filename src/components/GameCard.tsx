@@ -81,9 +81,16 @@ export default function GameCard({
       </div>
 
       {/* Lambda breakdown */}
-      <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-        <LambdaCol label={awayTeam} lambda={awayLambda} />
-        <LambdaCol label={homeTeam} lambda={homeLambda} />
+      <div className="space-y-2">
+        <div className="grid grid-cols-3 gap-2 text-[10px] font-mono text-gray-600 uppercase tracking-wider px-1">
+          <div>Base</div>
+          <div>⚾ Park</div>
+          <div>🏠 Pitcher</div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+          <LambdaCol label={awayTeam} lambda={awayLambda} />
+          <LambdaCol label={homeTeam} lambda={homeLambda} />
+        </div>
       </div>
 
       {/* Probability bar */}
@@ -113,14 +120,14 @@ function LambdaCol({ label, lambda }: { label: string; lambda: LambdaBreakdown }
   return (
     <div className="space-y-1">
       <div className="text-gray-500 uppercase tracking-wider text-[10px]">{label}</div>
-      <div className="flex items-center gap-1 text-gray-400">
-        <span className="text-gray-600">base</span> {lambda.base.toFixed(2)}
-      </div>
-      <div className="flex items-center gap-1 text-gray-400">
-        <span className="text-gray-600">park</span> {lambda.parkAdjusted.toFixed(2)}
-      </div>
-      <div className="flex items-center gap-1 text-white font-semibold">
-        <span className="text-gray-600">adj</span> {lambda.pitcherAdjusted.toFixed(2)}
+      <div className="grid grid-cols-3 gap-2 text-gray-400">
+        <div className="text-right">{lambda.base.toFixed(2)}</div>
+        <div className="text-right text-gray-500">
+          {lambda.parkAdjusted.toFixed(2)}
+        </div>
+        <div className="text-right text-white font-semibold">
+          {lambda.pitcherAdjusted.toFixed(2)}
+        </div>
       </div>
     </div>
   )
