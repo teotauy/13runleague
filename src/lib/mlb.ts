@@ -110,7 +110,13 @@ export interface TeamSeason {
 // ---------------------------------------------------------------------------
 
 function todayDate(): string {
-  return new Date().toISOString().split('T')[0]
+  // Get current date in Eastern Time (not UTC)
+  const now = new Date()
+  const etTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+  const year = etTime.getFullYear()
+  const month = String(etTime.getMonth() + 1).padStart(2, '0')
+  const day = String(etTime.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 export async function fetchTodaySchedule(): Promise<MLBGame[]> {
