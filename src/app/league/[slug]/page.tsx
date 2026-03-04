@@ -2,7 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/mlb'
 import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
+import { getWeekNumber, getSeasonYear } from '@/lib/pot'
 import RankingsTabs, { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
+import PotBreakdown from '@/components/PotBreakdown'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,6 +81,24 @@ export default async function LeagueDashboard({ params }: Props) {
   const weeksPlayed = Math.ceil(
     (league.pot_total ?? 0) / ((members?.length ?? 1) * (league.weekly_buy_in ?? 10))
   )
+
+  // Current week data
+  const today = new Date()
+  const currentWeekNumber = getWeekNumber(today)
+  const seasonYear = getSeasonYear(today)
+
+  // Fetch weekly payments for current week
+  const { data: currentWeekPayments } = await supabase
+    .from('weekly_payments')
+    .select('member_id, week_number, payment_status')
+    .eq('week_number', currentWeekNumber)
+
+  // Fetch payouts for current week
+  const { data: currentWeekPayouts } = await supabase
+    .from('payouts')
+    .select('member_id, payout_amount, week_number, winning_team')
+    .eq('week_number', currentWeekNumber)
+    .eq('year', seasonYear)
 
   // Historical results for rankings tabs
   const { data: historicalRaw } = await supabase
@@ -164,6 +184,20 @@ export default async function LeagueDashboard({ params }: Props) {
             <Stat label="Buy-in / Week" value={`$${league.weekly_buy_in ?? 10}`} />
           </div>
         </section>
+
+        {/* Pot Breakdown */}
+        <PotBreakdown
+          members={members ?? []}
+          payments={currentWeekPayments ?? []}
+          currentWeek={currentWeekNumber}
+          weeklyBuyIn={league.weekly_buy_in ?? 10}
+          payouts={currentWeekPayouts?.map((p) => ({
+            member_name: members?.find((m) => m.id === p.member_id)?.name ?? 'Unknown',
+            payout_amount: p.payout_amount,
+            week_number: p.week_number,
+            winning_team: p.winning_team,
+          })) ?? []}
+        />
 
         {/* Leaderboard */}
         <section>
