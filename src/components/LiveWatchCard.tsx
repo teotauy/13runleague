@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { fetchLiveFeedClient } from '@/lib/mlb'
 import { getConditionalProbability, type LiveGameState } from '@/lib/probability'
 import type { MLBLiveGame } from '@/lib/mlb'
+import Tooltip from './Tooltip'
 
 interface LiveWatchCardProps {
   gamePk: number
@@ -290,7 +291,12 @@ function ProbBadge({
     <div className="rounded bg-[#111] p-2 space-y-1">
       <div className="text-xs text-gray-500 font-mono uppercase">{label}</div>
       <div className="text-lg font-bold font-mono" style={{ color }}>
-        {pct}%
+        <Tooltip
+          label="P(13)"
+          explanation="Live probability of reaching exactly 13 runs from the current game state. Calculated using 16M+ historical Retrosheet games."
+        >
+          {pct}%
+        </Tooltip>
       </div>
       <div className="text-[10px] text-gray-600 font-mono">
         {source === 'lookup' ? '📚 Retrosheet' : '📐 Poisson'}

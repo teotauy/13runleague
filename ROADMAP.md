@@ -96,9 +96,11 @@ Small UX fixes that came up during 2026 Spring Training setup.
 
 - [x] 2.12 Remove redundant "Pot Tracker" header section from league page — PotBreakdown already owns that real estate; the $0 / 0 weeks card adds nothing ✓
 - [x] 2.13 Closest Miss formatting — show date before score ("4/5 — 12 runs"); tie-break: when two games are equally close to 13, most recent date wins ✓
-- [x] 2.14 Rename "Best" leaderboard column → "Peak" with hover tooltip: "Longest winning streak this season" ✓
-- [ ] 2.15 Badge tooltip polish — all emoji badges (🏆 Ironman, ⭐ Active) already have title= attributes; verify they show on hover on mobile too; consider replacing native tooltips with a custom tooltip component for consistency with Tooltip.tsx
-- [ ] 2.16 Player profile achievement banners — for each year in a player's history, compute whether they were (a) top earner that year, (b) most wins that year; show as small badges per season row ("💰 Top Earner", "🥇 Most Wins"); requires joining against all historical_results for that year
+- [x] 2.14 Leaderboard overhaul — replaced static table with sortable LeaderboardTable client component; columns: P(13) [sortable], Drought (current_streak), Wins (season winning weeks), $$$ (season earnings); all sortable asc/desc ✓
+- [x] 2.15 P(13) tooltips everywhere — custom Tooltip component added to GameCard (Preview + Final), LeaderboardTable header, SeasonYearTabs header (fixed wrong "13+" → "exactly 13"), LiveWatchCard ProbBadge ✓
+- [x] 2.16 Player profile achievement banners — BBRef-style layout: achievement badges top-right (💰 Top Earner [year], 🏆 Most Wins [year], ⚡ Top $/Win [year], 🏟️ Ironman); season circles timeline with team abbreviations color-coded by achievement tier; By Season table rows with neon tint + emoji for leader years ✓
+- [ ] 2.17 Run dedup migration — execute `supabase/migrations/20260304120000_dedup_historical_results.sql` manually in Supabase SQL Editor; adds UNIQUE constraint on (league_id, member_name, year, team); player page has display-level dedup as fallback
+- [ ] 2.18 Badge tooltip polish on mobile — emoji badges (🏆 Ironman, ⭐ Active in RankingsTabs) use native title= which doesn't fire on touch; replace with Tooltip.tsx for consistency on mobile
 
 ---
 
@@ -106,12 +108,12 @@ Small UX fixes that came up during 2026 Spring Training setup.
 
 What makes this feel like a real league, not a spreadsheet.
 
-- [ ] 3.1 League page - All-Time Rankings table - sortable by total won / shares / years played; Ironman badge for all 8 years; active player indicator
-- [ ] 3.2 League page - Team Rankings table - MLB teams sorted by 13-run weeks in league history, total paid out, years won
+- [x] 3.1 League page - All-Time Rankings table - sortable by total won / shares / years played; Ironman badge for all 8 years; active player indicator ✓ (RankingsTabs component, sortable columns, Ironman 🏆 + active ⭐ badges, links to player profiles)
+- [x] 3.2 League page - Team Rankings table - MLB teams sorted by 13-run weeks in league history, total paid out, years won ✓ (RankingsTabs TeamTable tab, sortable)
 - [x] 3.3 Past Champions Banner - scrolling hall of fame across top of history page; each champion color-coded to their MLB team that year ✓ claude-code (teamColors.ts, PastChampionsBanner component, auto-scroll + swipe, all yearly winners)
 - [ ] 3.4 Dynasty Tracker - surfaces multi-win seasons and dominant stretches (e.g. Brad Brown 3 wins in 2018, Matt Pariseau 19 shares all-time)
 - [ ] 3.5 Historical season browser - year-by-year results, week-by-week breakdown, rollover chains visualized
-- [ ] 3.6 Player profile page - /league/[slug]/player/[id]; career stats, teams held by year, win history, earnings timeline; clicking player name in leaderboard and rankings navigates here
+- [x] 3.6 Player profile page - /league/[slug]/player/[id]; career stats, teams held by year, win history, earnings timeline; clicking player name in leaderboard and rankings navigates here ✓ (BBRef-style layout: achievement badges 💰🏆⚡🏟️, season circles timeline, career stats, active streak, by-season table with leader highlights)
 - [ ] 3.7 Heartbreak Board - teams that reached 12 runs and stopped; running all-time tally; The Cubs have broken hearts 7 times
 - [ ] 3.8 Cursed Team Badge - algorithmically determined weekly from probability model
 - [ ] 3.9 Random facts widget - first 13-run game in league history, team with most 13-run weeks, team with most 12-run heartbreaks, days since last 13-run game
@@ -284,8 +286,9 @@ Matt Pariseau, Brad Brown, Cliff Lungaretti, JFC, TJ, Aunt Deb, Whitey, Dianne, 
 - /lib/alerts.ts - SMS alert logic already scaffolded
 - Middleware - league auth via cookie league_auth_{slug}, bcrypt password hashing
 - Theme - dark background, neon green accent #39FF14, monospace numbers
-- WAR stat = dollars per share (not baseball WAR). Solo $900 win = $900/share. Five-way $300 split = $60/share.
+- WAR stat = dollars per share (not baseball WAR). Solo $900 win = $900/share. Five-way $300 split = $60/share. Used in player profile "⚡ Top $/Win" badge.
 - Sweat Factor = P(no other team scores 13 in remaining games this week) given current team already hit 13
+- Player profile badges (src/app/league/[slug]/player/[memberId]/page.tsx): 💰 Top Earner = most total_won in that year; 🏆 Most Wins = most shares (winning weeks) in that year; ⚡ Top $/Win = highest total_won/shares ratio in that year (WAR); 🏟️ Ironman = played every year that appears in historical_results for this league (dynamic — grows automatically when a new season is seeded, no hardcoded year count). All computed by querying all historical_results for the league and finding per-year maximums.
 
 ---
 

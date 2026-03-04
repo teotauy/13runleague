@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Tooltip from './Tooltip'
 
 type SortCol = 'prob' | 'streak' | 'wins' | 'won'
 type Dir = 'asc' | 'desc'
@@ -87,10 +88,12 @@ export default function LeaderboardTable({
     label,
     col,
     title,
+    explanation,
   }: {
     label: string
     col: SortCol
     title?: string
+    explanation?: string
   }) {
     return (
       <th
@@ -98,7 +101,13 @@ export default function LeaderboardTable({
         className="pb-2 pr-4 cursor-pointer select-none hover:text-white transition-colors whitespace-nowrap"
         onClick={() => handleSort(col)}
       >
-        {label}
+        {explanation ? (
+          <Tooltip label={label} explanation={explanation}>
+            {label}
+          </Tooltip>
+        ) : (
+          label
+        )}
         <Arrow col={col} />
       </th>
     )
@@ -112,7 +121,7 @@ export default function LeaderboardTable({
             <th className="pb-2 pr-4">Player</th>
             <th className="pb-2 pr-4">Team</th>
             <th className="pb-2 pr-4">Today</th>
-            <SortTh label="P(13)" col="prob" title="Probability your team scores exactly 13 runs today" />
+            <SortTh label="P(13)" col="prob" explanation="Probability your team scores exactly 13 runs today. Pre-game Poisson model (season stats, park factors, pitcher). Updates live each inning during games." />
             <SortTh label="Drought" col="streak" title="Current consecutive winning weeks this season" />
             <SortTh label="Wins" col="wins" title="Winning weeks this season" />
             <SortTh label="$$$" col="won" title="Money won this season" />

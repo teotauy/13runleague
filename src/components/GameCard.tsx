@@ -1,5 +1,6 @@
 import { getProbabilityTier, getProbabilityColor, type LambdaBreakdown } from '@/lib/probability'
 import { parkFactors } from '@/lib/probability'
+import Tooltip from './Tooltip'
 
 interface GameCardProps {
   gamePk: number
@@ -89,7 +90,12 @@ export default function GameCard({
         ) : (
           /* Probability estimate for Preview games */
           <div className="text-xl font-bold font-mono shrink-0" style={{ color }}>
-            {pct}%
+            <Tooltip
+              label="P(13)"
+              explanation="Probability exactly 13 runs are scored today. Pre-game Poisson model using season run averages, park factors & starting pitcher."
+            >
+              {pct}%
+            </Tooltip>
           </div>
         )}
       </div>
@@ -139,7 +145,14 @@ export default function GameCard({
       {/* For Final games: show the estimated probability in small text for context */}
       {isFinal && (
         <div className="text-xs text-gray-600 font-mono">
-          Pre-game P(13): {pct}%
+          Pre-game{' '}
+          <Tooltip
+            label="P(13)"
+            explanation="Probability exactly 13 runs are scored today. Pre-game Poisson model using season run averages, park factors & starting pitcher."
+          >
+            P(13)
+          </Tooltip>
+          : {pct}%
           {(awayHit13 || homeHit13) && (
             <span className="text-[#39ff14] ml-2 font-bold">✓ HIT 13!</span>
           )}

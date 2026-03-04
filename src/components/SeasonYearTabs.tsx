@@ -210,7 +210,7 @@ export default function SeasonYearTabs({
                     </Tooltip>
                   </th>
                   <th className="pb-2 pr-4">
-                    <Tooltip label="P(13)" explanation="Probability team scores 13+ runs in today's game">
+                    <Tooltip label="P(13)" explanation="Probability your team scores exactly 13 runs today. Pre-game Poisson model (season stats, park factors, pitcher). Updates live each inning during games.">
                       P(13)
                     </Tooltip>
                   </th>
