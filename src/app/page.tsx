@@ -300,6 +300,8 @@ export default async function HomePage({ searchParams }: PageProps) {
                     awaySource={awayResult.source}
                     homeSource={homeResult.source}
                     innings={innings}
+                    awayLambda={awayLambdaVal}
+                    homeLambda={homeLambdaVal}
                   />
                 )
               })}

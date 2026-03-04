@@ -187,6 +187,19 @@ export async function fetchLiveFeed(gamePk: number): Promise<MLBLiveGame> {
   return res.json()
 }
 
+/**
+ * Client-side live feed fetch without Next.js revalidation
+ * Use this in React components for real-time polling (e.g., LiveWatchCard)
+ */
+export async function fetchLiveFeedClient(gamePk: number): Promise<MLBLiveGame> {
+  const url = `${MLB_API}/api/v1.1/game/${gamePk}/feed/live`
+
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`MLB live feed fetch failed: ${res.status}`)
+
+  return res.json()
+}
+
 // ---------------------------------------------------------------------------
 // Team season stats
 // ---------------------------------------------------------------------------
