@@ -135,6 +135,7 @@ The reason people check their phones during games.
     - Final score: Final - Red Sox 11, Yankees 4.
 - [ ] 4.7 Alert deduplication - alert_log table prevents repeat messages per game per event type
 - [ ] 4.8 SMS opt-in flow - phone number, team preference, threshold setting, consent checkbox with timestamp, STOP handler
+- [ ] 4.9 Live game indicators - visual "LIVE" badge with pulsing indicator on game cards in the heatmap; show inning and current score for games in progress; make it immediately obvious which games are happening right now
 
 ---
 
