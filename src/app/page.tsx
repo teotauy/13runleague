@@ -130,25 +130,31 @@ export default async function HomePage({ searchParams }: PageProps) {
   const activeLiveFeeds = liveFeeds.filter(Boolean) as MLBLiveGame[]
 
   // Scoreboard data for ALL live games
-  const scoreboardGames = activeLiveFeeds.map((feed) => ({
-    gamePk: feed.gamePk,
-    away: {
-      team: feed.gameData.teams.away.team.abbreviation,
-      runs: feed.liveData.linescore.teams.away.runs,
-    },
-    home: {
-      team: feed.gameData.teams.home.team.abbreviation,
-      runs: feed.liveData.linescore.teams.home.runs,
-    },
-    inning: feed.liveData.linescore.currentInning,
-    isTopInning: feed.liveData.linescore.isTopInning,
-    outs: feed.liveData.linescore.outs || 0,
-    runners: {
-      first: !!feed.liveData.linescore.runners?.first,
-      second: !!feed.liveData.linescore.runners?.second,
-      third: !!feed.liveData.linescore.runners?.third,
-    },
-  }))
+  const scoreboardGames = activeLiveFeeds.flatMap((feed) => {
+    try {
+      return [{
+        gamePk: feed.gamePk,
+        away: {
+          team: feed.gameData.teams.away.team.abbreviation,
+          runs: feed.liveData.linescore.teams.away.runs ?? 0,
+        },
+        home: {
+          team: feed.gameData.teams.home.team.abbreviation,
+          runs: feed.liveData.linescore.teams.home.runs ?? 0,
+        },
+        inning: feed.liveData.linescore.currentInning ?? 1,
+        isTopInning: feed.liveData.linescore.isTopInning ?? true,
+        outs: feed.liveData.linescore.outs ?? 0,
+        runners: {
+          first: !!feed.liveData.linescore.runners?.first,
+          second: !!feed.liveData.linescore.runners?.second,
+          third: !!feed.liveData.linescore.runners?.third,
+        },
+      }]
+    } catch {
+      return []
+    }
+  })
 
   // Watch games: 9+ runs (high probability of exactly 13)
   const watchGames = activeLiveFeeds.filter((feed) => {
@@ -189,6 +195,7 @@ export default async function HomePage({ searchParams }: PageProps) {
             <p className="text-gray-500 mt-1 text-sm">
               Live probability dashboard —{' '}
               {new Date().toLocaleDateString('en-US', {
+                timeZone: 'America/New_York',
                 weekday: 'long',
                 month: 'long',
                 day: 'numeric',
