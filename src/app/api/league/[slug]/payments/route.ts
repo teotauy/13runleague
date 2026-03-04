@@ -23,28 +23,43 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       .eq('week_number', body.week_number)
       .single()
 
+    // Build update payload with optional override_note
+    const updatePayload: Record<string, any> = {
+      payment_status: body.payment_status,
+      updated_at: new Date().toISOString(),
+    }
+
+    // Add override_note if provided
+    if (body.override_note !== undefined) {
+      updatePayload.override_note = body.override_note
+    }
+
     let result
 
     if (existing) {
       // Update existing record
       result = await supabase
         .from('weekly_payments')
-        .update({
-          payment_status: body.payment_status,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', existing.id)
         .select()
         .single()
     } else {
       // Create new record
+      const insertPayload: Record<string, any> = {
+        member_id: body.member_id,
+        week_number: body.week_number,
+        payment_status: body.payment_status,
+      }
+
+      // Add override_note if provided
+      if (body.override_note !== undefined) {
+        insertPayload.override_note = body.override_note
+      }
+
       result = await supabase
         .from('weekly_payments')
-        .insert({
-          member_id: body.member_id,
-          week_number: body.week_number,
-          payment_status: body.payment_status,
-        })
+        .insert(insertPayload)
         .select()
         .single()
     }

@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import OverrideModal from './OverrideModal'
+import Tooltip from '../Tooltip'
 
 interface Member {
   id: string
@@ -14,7 +16,7 @@ interface Payment {
   member_id: string
   week_number: number
   payment_status: string
-  override_note?: string
+  override_note?: string | null
 }
 
 interface Props {
@@ -30,13 +32,32 @@ export default function PaymentBoard({ members, payments, leagueSlug }: Props) {
   const [isLoading, setIsLoading] = useState(false)
   const [weeks, setWeeks] = useState<number[]>([1, 2, 3, 4, 5]) // Show last 5 weeks by default
   const [newWeek, setNewWeek] = useState(6)
+  const [overrideModal, setOverrideModal] = useState<{
+    memberId: string
+    memberName: string
+    weekNumber: number
+  } | null>(null)
 
   // Get current week (simplified: assume week 1 is the first week of the year)
   const currentWeek = Math.ceil((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
 
+  const getPayment = (memberId: string, week: number): Payment | undefined => {
+    return payments.find((p) => p.member_id === memberId && p.week_number === week)
+  }
+
   const getPaymentStatus = (memberId: string, week: number): PaymentStatus => {
-    const payment = payments.find((p) => p.member_id === memberId && p.week_number === week)
+    const payment = getPayment(memberId, week)
     return (payment?.payment_status as PaymentStatus) || 'unpaid'
+  }
+
+  const isOverridden = (memberId: string, week: number): boolean => {
+    const payment = getPayment(memberId, week)
+    return !!payment?.override_note
+  }
+
+  const getOverrideNote = (memberId: string, week: number): string | null => {
+    const payment = getPayment(memberId, week)
+    return payment?.override_note || null
   }
 
   const handleCycleStatus = async (memberId: string, week: number) => {
@@ -124,18 +145,46 @@ export default function PaymentBoard({ members, payments, leagueSlug }: Props) {
                 <td className="px-4 py-3 text-white font-semibold">{member.name}</td>
                 {weeks.map((week) => {
                   const status = getPaymentStatus(member.id, week)
+                  const overridden = isOverridden(member.id, week)
+                  const overrideNote = getOverrideNote(member.id, week)
+
                   return (
                     <td
                       key={`${member.id}-${week}`}
-                      className="text-center px-3 py-3 border-l border-gray-800"
+                      className={`text-center px-2 py-2 border-l border-gray-800 ${
+                        overridden ? 'border-[#39ff14] border-l-4 bg-[#0a0a0a]' : ''
+                      }`}
                     >
-                      <button
-                        onClick={() => handleCycleStatus(member.id, week)}
-                        disabled={isLoading}
-                        className={`w-12 py-1 rounded font-bold text-xs transition-colors ${getStatusColor(status)} hover:opacity-80 disabled:opacity-50`}
-                      >
-                        {status}
-                      </button>
+                      <div className="flex gap-1 justify-center items-center">
+                        <Tooltip
+                          label="Payment Status"
+                          explanation={overrideNote ? `Override: ${overrideNote}` : 'Click to cycle through statuses'}
+                        >
+                          <button
+                            onClick={() => handleCycleStatus(member.id, week)}
+                            disabled={isLoading}
+                            className={`px-2 py-1 rounded font-bold text-xs transition-colors ${getStatusColor(status)} hover:opacity-80 disabled:opacity-50 ${
+                              overridden ? 'italic' : ''
+                            }`}
+                          >
+                            {overridden ? '✓' : ''} {status}
+                          </button>
+                        </Tooltip>
+                        <button
+                          onClick={() =>
+                            setOverrideModal({
+                              memberId: member.id,
+                              memberName: member.name,
+                              weekNumber: week,
+                            })
+                          }
+                          disabled={isLoading}
+                          className="px-1.5 py-1 rounded text-xs bg-gray-800 text-gray-200 hover:bg-gray-700 disabled:opacity-50 font-semibold"
+                          title="Add override note"
+                        >
+                          ⚙
+                        </button>
+                      </div>
                     </td>
                   )
                 })}
@@ -163,7 +212,28 @@ export default function PaymentBoard({ members, payments, leagueSlug }: Props) {
           <div className="w-8 h-6 bg-green-900 rounded"></div>
           <span>Paid</span>
         </div>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-6 bg-[#111] border-l-4 border-[#39ff14] rounded"></div>
+          <span>Overridden</span>
+        </div>
       </div>
+
+      {/* Override Modal */}
+      {overrideModal && (
+        <OverrideModal
+          memberId={overrideModal.memberId}
+          memberName={overrideModal.memberName}
+          weekNumber={overrideModal.weekNumber}
+          currentStatus={getPaymentStatus(overrideModal.memberId, overrideModal.weekNumber)}
+          currentNote={getOverrideNote(overrideModal.memberId, overrideModal.weekNumber)}
+          leagueSlug={leagueSlug}
+          onClose={() => setOverrideModal(null)}
+          onSuccess={() => {
+            setOverrideModal(null)
+            router.refresh()
+          }}
+        />
+      )}
     </div>
   )
 }
