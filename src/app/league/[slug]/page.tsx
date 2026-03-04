@@ -218,7 +218,7 @@ export default async function LeagueDashboard({ params }: Props) {
               <tbody>
                 {enrichedMembers.map(({ member, streak, todayGame, todayProb }) => (
                   <tr key={member.id} className="border-b border-gray-900 hover:bg-[#111]">
-                    <td className="py-3 pr-4 text-white font-semibold">{member.name}</td>
+                    <td className="py-3 pr-4"><a href={`/league/${slug}/player/${member.id}`} className="text-white font-semibold hover:text-[#39ff14] transition-colors">{member.name}</a></td>
                     <td className="py-3 pr-4">
                       <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-200">
                         {member.assigned_team}
