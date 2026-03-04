@@ -54,10 +54,19 @@ export default async function PlayerPage({ params }: Props) {
     .eq('member_id', memberId)
     .single()
 
+  // Deduplicate by year+team (safety net in case seed was run multiple times)
+  const seen = new Set<string>()
+  const deduped = (historical ?? []).filter((row) => {
+    const key = `${row.year}-${row.team}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+
   // Calculate career stats
-  const totalWon = (historical ?? []).reduce((sum, r) => sum + (r.total_won ?? 0), 0)
-  const totalWins = (historical ?? []).reduce((sum, r) => sum + (r.shares ?? 0), 0)
-  const yearsPlayed = [...new Set((historical ?? []).map((r) => r.year))].sort((a, b) => b - a)
+  const totalWon = deduped.reduce((sum, r) => sum + (r.total_won ?? 0), 0)
+  const totalWins = deduped.reduce((sum, r) => sum + (r.shares ?? 0), 0)
+  const yearsPlayed = [...new Set(deduped.map((r) => r.year))].sort((a, b) => b - a)
 
   const careerStats = {
     totalWon,
@@ -66,7 +75,7 @@ export default async function PlayerPage({ params }: Props) {
   }
 
   // Group historical by year for display
-  const historicalByYear = (historical ?? []).map((row) => ({
+  const historicalByYear = deduped.map((row) => ({
     year: row.year,
     team: row.team,
     wins: row.shares,
