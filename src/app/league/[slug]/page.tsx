@@ -2,7 +2,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/mlb'
 import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
-import { getWeekNumber, getSeasonYear } from '@/lib/pot'
+import { getWeekNumber, getSeasonYear, getWinnersForWeek } from '@/lib/pot'
 import RankingsTabs, { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
 import PotBreakdown from '@/components/PotBreakdown'
 
@@ -93,12 +93,21 @@ export default async function LeagueDashboard({ params }: Props) {
     .select('member_id, week_number, payment_status')
     .eq('week_number', currentWeekNumber)
 
-  // Fetch payouts for current week
+  // Fetch payouts for current week (settled end-of-week amounts)
   const { data: currentWeekPayouts } = await supabase
     .from('payouts')
     .select('member_id, payout_amount, week_number, winning_team')
     .eq('week_number', currentWeekNumber)
     .eq('year', seasonYear)
+
+  // Winners this week from game_results — available as soon as a team scores 13,
+  // before payouts are settled on Sunday
+  const thisWeekWinners = await getWinnersForWeek(
+    league.id,
+    currentWeekNumber,
+    seasonYear,
+    supabase
+  )
 
   // Historical results for rankings tabs
   const { data: historicalRaw } = await supabase
@@ -192,11 +201,10 @@ export default async function LeagueDashboard({ params }: Props) {
           currentWeek={currentWeekNumber}
           weeklyBuyIn={league.weekly_buy_in ?? 10}
           potTotal={league.pot_total ?? 0}
-          payouts={currentWeekPayouts?.map((p) => ({
-            member_name: members?.find((m) => m.id === p.member_id)?.name ?? 'Unknown',
+          weekWinners={thisWeekWinners}
+          settledPayouts={currentWeekPayouts?.map((p) => ({
+            member_id: p.member_id,
             payout_amount: p.payout_amount,
-            week_number: p.week_number,
-            winning_team: p.winning_team,
           })) ?? []}
         />
 

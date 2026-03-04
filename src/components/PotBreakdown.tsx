@@ -13,11 +13,16 @@ interface Payment {
   payment_status: string
 }
 
-interface Payout {
+interface WeekWinner {
+  member_id: string
   member_name: string
+  team: string
+  game_date: string
+}
+
+interface SettledPayout {
+  member_id: string
   payout_amount: number
-  week_number: number
-  winning_team: string
 }
 
 interface Props {
@@ -25,8 +30,11 @@ interface Props {
   payments: Payment[]
   currentWeek: number
   weeklyBuyIn: number
-  payouts: Payout[]
   potTotal: number
+  // Winners derived from game_results — populated as soon as a team scores 13 this week
+  weekWinners: WeekWinner[]
+  // Payout amounts once the admin settles at end of week (optional)
+  settledPayouts: SettledPayout[]
 }
 
 export default function PotBreakdown({
@@ -34,8 +42,9 @@ export default function PotBreakdown({
   payments,
   currentWeek,
   weeklyBuyIn,
-  payouts,
   potTotal,
+  weekWinners,
+  settledPayouts,
 }: Props) {
   const analysis = useMemo(() => {
     const paidThisWeek = payments.filter(
@@ -48,26 +57,20 @@ export default function PotBreakdown({
 
     const totalMembers = members.length
     const weeklyPot = weeklyBuyIn * totalMembers
+    // Pot is set at the start of the week (rollover + this week's buy-ins) and never
+    // changes mid-week. Payouts are only settled on Sunday.
+    const displayPot = potTotal + weeklyPot
     const paymentPercentage =
       totalMembers > 0 ? Math.round((paidThisWeek / totalMembers) * 100) : 0
-
-    const weekPayouts = payouts.filter((p) => p.week_number === currentWeek)
-    const totalDistributed = weekPayouts.reduce((sum, p) => sum + p.payout_amount, 0)
-
-    // If payouts have been recorded, use the actual amount paid out (stable for the week).
-    // Otherwise show what's currently at stake: rollover + this week's buy-ins.
-    const displayPot = totalDistributed > 0 ? totalDistributed : potTotal + weeklyPot
 
     return {
       totalMembers,
       paidThisWeek,
       halfPaidThisWeek,
-      weeklyPot,
       displayPot,
       paymentPercentage,
-      weekPayouts,
     }
-  }, [members, payments, currentWeek, weeklyBuyIn, payouts, potTotal])
+  }, [members, payments, currentWeek, weeklyBuyIn, potTotal])
 
   return (
     <div className="rounded-lg border border-gray-800 bg-[#111] p-6 space-y-6">
@@ -77,17 +80,24 @@ export default function PotBreakdown({
           <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
             Winners this week
           </div>
-          {analysis.weekPayouts.length > 0 ? (
+          {weekWinners.length > 0 ? (
             <div className="space-y-2">
-              {analysis.weekPayouts.map((p, idx) => (
-                <div key={idx} className="flex items-center gap-3">
-                  <span className="text-[#39ff14] font-bold text-lg leading-tight">
-                    {p.member_name}
-                  </span>
-                  <span className="text-gray-500 text-sm">({p.winning_team})</span>
-                  <span className="text-gray-400 text-sm font-mono">${p.payout_amount}</span>
-                </div>
-              ))}
+              {weekWinners.map((w) => {
+                const payout = settledPayouts.find((p) => p.member_id === w.member_id)
+                return (
+                  <div key={w.member_id} className="flex items-center gap-3">
+                    <span className="text-[#39ff14] font-bold text-lg leading-tight">
+                      {w.member_name}
+                    </span>
+                    <span className="text-gray-500 text-sm">({w.team})</span>
+                    {payout && (
+                      <span className="text-gray-400 text-sm font-mono">
+                        ${payout.payout_amount}
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           ) : (
             <div className="text-gray-400 text-lg font-semibold">None</div>
