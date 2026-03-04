@@ -73,6 +73,12 @@ export interface MLBLiveGame {
       currentInning: number
       currentInningOrdinal: string
       isTopInning: boolean
+      outs: number // 0, 1, 2, or 3
+      runners?: {
+        first?: { playerId: number }
+        second?: { playerId: number }
+        third?: { playerId: number }
+      }
       teams: {
         away: { runs: number; hits: number; errors: number }
         home: { runs: number; hits: number; errors: number }

@@ -2,6 +2,7 @@ import { fetchTodaySchedule, fetchTeamSeasonStats, fetchPitcherEra, fetchLiveFee
 import { buildLambda, gameThirteenProbability, getConditionalProbability } from '@/lib/probability'
 import GameCard from '@/components/GameCard'
 import LiveWatchCard from '@/components/LiveWatchCard'
+import LiveScoreboard from '@/components/LiveScoreboard'
 import ScorigramiGrid from '@/components/ScorigramiGrid'
 import type { MLBGame, MLBLiveGame } from '@/lib/mlb'
 import type { LiveGameState } from '@/lib/probability'
@@ -127,6 +128,29 @@ export default async function HomePage({ searchParams }: PageProps) {
     liveGames.map((g) => fetchLiveFeed(g.gamePk).catch(() => null))
   )
   const activeLiveFeeds = liveFeeds.filter(Boolean) as MLBLiveGame[]
+
+  // Scoreboard data for ALL live games
+  const scoreboardGames = activeLiveFeeds.map((feed) => ({
+    gamePk: feed.gamePk,
+    away: {
+      team: feed.gameData.teams.away.team.abbreviation,
+      runs: feed.liveData.linescore.teams.away.runs,
+    },
+    home: {
+      team: feed.gameData.teams.home.team.abbreviation,
+      runs: feed.liveData.linescore.teams.home.runs,
+    },
+    inning: feed.liveData.linescore.currentInning,
+    isTopInning: feed.liveData.linescore.isTopInning,
+    outs: feed.liveData.linescore.outs || 0,
+    runners: {
+      first: !!feed.liveData.linescore.runners?.first,
+      second: !!feed.liveData.linescore.runners?.second,
+      third: !!feed.liveData.linescore.runners?.third,
+    },
+  }))
+
+  // Watch games: 9+ runs (high probability of exactly 13)
   const watchGames = activeLiveFeeds.filter((feed) => {
     const { away, home } = feed.liveData.linescore.teams
     return away.runs >= 9 || home.runs >= 9
@@ -238,6 +262,9 @@ export default async function HomePage({ searchParams }: PageProps) {
             ⚠ MLB Stats API unavailable: {fetchError}. Showing fallback Poisson estimates.
           </div>
         )}
+
+        {/* Live Scoreboard - Shows all in-progress games */}
+        <LiveScoreboard games={scoreboardGames} />
 
         {/* Live 13-Watch */}
         {watchGames.length > 0 && (
