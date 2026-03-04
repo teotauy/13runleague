@@ -226,7 +226,8 @@ export default async function HomePage({ searchParams }: PageProps) {
           if (!isOffseason) return null
 
           // Calculate days to next Opening Day (Mar 25)
-          const nextYear = month < 2 ? now.getFullYear() : now.getFullYear() + 1
+          // Use next year if we're after March 25, otherwise use current year
+          const nextYear = (month > 2 || (month === 2 && day >= 25)) ? now.getFullYear() + 1 : now.getFullYear()
           const openingDay = new Date(`${nextYear}-03-25T00:00:00-04:00`)
           const msDiff = openingDay.getTime() - now.getTime()
           const daysLeft = Math.ceil(msDiff / (1000 * 60 * 60 * 24))
