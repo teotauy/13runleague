@@ -36,13 +36,13 @@ The minimum viable product for running a real league.
 - [x] 2.2 Member roster management - add, edit, remove members; track payment status per week ✓ claude1
 - [x] 2.3 Team assignment UI - commissioner assigns 30 MLB teams at season start; support random draw mode ✓ claude1
 - [x] 2.4 Draft Room - live team draft at season start; two modes: (a) random assign - commissioner triggers, everyone watches teams get assigned in real time; (b) double-blind draw - 30 sealed envelopes, members pick blind, live reveal ✓ claude1
-- [ ] 2.5 Weekly pot tracker - shares-based split logic (pot divided by winners that week), rollover if no winners, week runs Sunday-Saturday
-- [ ] 2.6 Payment tracking with manual override - mark members as paid (Venmo, cash, Stripe, etc.); commissioner can override any week with a note
+- [x] 2.5 Weekly pot tracker - shares-based split logic (pot divided by winners that week), rollover if no winners, week runs Sunday-Saturday ✓ claude-code (pot.ts service, calculate-payouts API, PotBreakdown component, payout controls in admin)
+- [x] 2.6 Payment tracking with manual override - mark members as paid (Venmo, cash, Stripe, etc.); commissioner can override any week with a note ✓ claude-code (OverrideModal, PaymentBoard enhancements, override_note field)
 - [ ] 2.7 Commissioner result override - manually correct game results, adjust payouts, add notes
-- [ ] 2.8 League password auth - cookie-based, middleware enforces noindex on all /league/[slug] routes
+- [x] 2.8 League password auth - cookie-based, middleware enforces noindex on all /league/[slug] routes ✓ claude-code (proxy.ts auth checks on 5 pages)
 - [ ] 2.9 Draft board team rankings - sortable by Win Rate / Dollar Rate / WAR / Spring Training; filterable to available teams only; updates live as teams are picked
-- [ ] 2.10 Tooltips and stat explainers - hover tooltips for all stats, stats glossary page, explain WAR/Dollar Rate/Win Rate/Sweat Factor/Park Factors
-- [ ] 2.11 Season year tabs — sticky nav bar across the top of the league dashboard; Tab 1: current year (e.g. 2026, active season — leaderboard, drought, P(13), today's games); Tab 2: All Time (existing rankings tabs); subsequent tabs: past seasons in reverse order (2025, 2024, 2023...) each showing that year's member/team assignments, week-by-week winners, pot total, and 13-run games; active tab highlighted in neon green
+- [x] 2.10 Tooltips and stat explainers - hover tooltips for all stats, stats glossary page, explain WAR/Dollar Rate/Win Rate/Sweat Factor/Park Factors ✓ claude-code
+- [x] 2.11 Season year tabs — sticky nav bar across the top of the league dashboard; Tab 1: current year (e.g. 2026, active season — leaderboard, drought, P(13), today's games); Tab 2: All Time (existing rankings tabs); subsequent tabs: past seasons in reverse order (2025, 2024, 2023...) each showing that year's member/team assignments, week-by-week winners, pot total, and 13-run games; active tab highlighted in neon green ✓ claude-code
 
 ---
 
