@@ -376,6 +376,9 @@ export default async function HomePage({ searchParams }: PageProps) {
                     homeLambda={homeLambda}
                     combinedProbability={combinedProb}
                     isBlended={isBlended}
+                    gameStatus={game.status.abstractGameState}
+                    awayScore={game.teams.away.score}
+                    homeScore={game.teams.home.score}
                   />
                 )
               )}
