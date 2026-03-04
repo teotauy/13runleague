@@ -48,18 +48,22 @@ export default function PotBreakdown({
 
     const totalMembers = members.length
     const weeklyPot = weeklyBuyIn * totalMembers
-    const totalPot = potTotal + weeklyPot
     const paymentPercentage =
       totalMembers > 0 ? Math.round((paidThisWeek / totalMembers) * 100) : 0
 
     const weekPayouts = payouts.filter((p) => p.week_number === currentWeek)
+    const totalDistributed = weekPayouts.reduce((sum, p) => sum + p.payout_amount, 0)
+
+    // If payouts have been recorded, use the actual amount paid out (stable for the week).
+    // Otherwise show what's currently at stake: rollover + this week's buy-ins.
+    const displayPot = totalDistributed > 0 ? totalDistributed : potTotal + weeklyPot
 
     return {
       totalMembers,
       paidThisWeek,
       halfPaidThisWeek,
       weeklyPot,
-      totalPot,
+      displayPot,
       paymentPercentage,
       weekPayouts,
     }
@@ -93,7 +97,7 @@ export default function PotBreakdown({
         <div className="text-right shrink-0">
           <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Pot</div>
           <div className="text-4xl font-black font-mono text-[#39ff14]">
-            ${analysis.totalPot}
+            ${analysis.displayPot}
           </div>
           <div className="text-xs text-gray-600 mt-1">Week {currentWeek}</div>
         </div>
