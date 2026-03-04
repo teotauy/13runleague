@@ -113,9 +113,9 @@ export default function LeaderboardTable({
             <th className="pb-2 pr-4">Team</th>
             <th className="pb-2 pr-4">Today</th>
             <SortTh label="P(13)" col="prob" title="Probability your team scores exactly 13 runs today" />
-            <SortTh label="Streak" col="streak" title="Current consecutive winning weeks this season" />
+            <SortTh label="Drought" col="streak" title="Current consecutive winning weeks this season" />
             <SortTh label="Wins" col="wins" title="Winning weeks this season" />
-            <SortTh label="Won" col="won" title="Money won this season" />
+            <SortTh label="$$$" col="won" title="Money won this season" />
             <th className="pb-2">Closest Miss</th>
           </tr>
         </thead>
