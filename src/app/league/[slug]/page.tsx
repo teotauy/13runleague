@@ -5,6 +5,7 @@ import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
 import { getWeekNumber, getSeasonYear, getWinnersForWeek } from '@/lib/pot'
 import RankingsTabs, { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
 import PotBreakdown from '@/components/PotBreakdown'
+import LeaderboardTable, { type LeaderboardRow } from '@/components/LeaderboardTable'
 
 export const dynamic = 'force-dynamic'
 
@@ -105,6 +106,28 @@ export default async function LeagueDashboard({ params }: Props) {
     supabase
   )
 
+  // All payouts this season — for leaderboard Wins + Won columns
+  const { data: seasonPayouts } = await supabase
+    .from('payouts')
+    .select('member_id, payout_amount')
+    .eq('year', seasonYear)
+
+  const seasonStatsMap = new Map<string, { wins: number; totalWon: number }>()
+  for (const p of seasonPayouts ?? []) {
+    const existing = seasonStatsMap.get(p.member_id) ?? { wins: 0, totalWon: 0 }
+    existing.wins += 1
+    existing.totalWon += p.payout_amount
+    seasonStatsMap.set(p.member_id, existing)
+  }
+
+  // Combine enriched member data with season stats for the leaderboard
+  const leaderboardRows: LeaderboardRow[] = enrichedMembers.map(
+    ({ member, streak, todayGame, todayProb }) => {
+      const ss = seasonStatsMap.get(member.id) ?? { wins: 0, totalWon: 0 }
+      return { member, streak, todayGame, todayProb, seasonWins: ss.wins, seasonWon: ss.totalWon }
+    }
+  )
+
   // Historical results for rankings tabs
   const { data: historicalRaw } = await supabase
     .from('historical_results')
@@ -198,55 +221,7 @@ export default async function LeagueDashboard({ params }: Props) {
         {/* Leaderboard */}
         <section>
           <h2 className="text-lg font-bold mb-4">Leaderboard</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm font-mono">
-              <thead>
-                <tr className="text-gray-500 border-b border-gray-800 text-left">
-                  <th className="pb-2 pr-4">Player</th>
-                  <th className="pb-2 pr-4">Team</th>
-                  <th className="pb-2 pr-4">Today</th>
-                  <th className="pb-2 pr-4">P(13)</th>
-                  <th className="pb-2 pr-4">Streak</th>
-                  <th className="pb-2 pr-4" title="Longest winning streak this season">Peak</th>
-                  <th className="pb-2">Closest Miss</th>
-                </tr>
-              </thead>
-              <tbody>
-                {enrichedMembers.map(({ member, streak, todayGame, todayProb }) => (
-                  <tr key={member.id} className="border-b border-gray-900 hover:bg-[#111]">
-                    <td className="py-3 pr-4"><a href={`/league/${slug}/player/${member.id}`} className="text-white font-semibold hover:text-[#39ff14] transition-colors">{member.name}</a></td>
-                    <td className="py-3 pr-4">
-                      <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-200">
-                        {member.assigned_team}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4 text-gray-400">
-                      {todayGame
-                        ? `${todayGame.teams.away.team.abbreviation} @ ${todayGame.teams.home.team.abbreviation}`
-                        : '—'}
-                    </td>
-                    <td className="py-3 pr-4">
-                      {todayProb !== null ? (
-                        <span
-                          className="font-bold"
-                          style={{ color: todayProb > 0.05 ? '#39ff14' : todayProb > 0.02 ? '#f59e0b' : '#9ca3af' }}
-                        >
-                          {(todayProb * 100).toFixed(2)}%
-                        </span>
-                      ) : '—'}
-                    </td>
-                    <td className="py-3 pr-4 text-gray-400">{streak?.current_streak ?? 0}W</td>
-                    <td className="py-3 pr-4 text-gray-400">{streak?.longest_streak ?? 0}W</td>
-                    <td className="py-3 text-gray-400">
-                      {streak?.closest_miss_score !== null && streak?.closest_miss_score !== undefined
-                        ? `${streak.closest_miss_date ? fmtMD(streak.closest_miss_date) + ' — ' : ''}${streak.closest_miss_score} runs`
-                        : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <LeaderboardTable rows={leaderboardRows} slug={slug} />
         </section>
 
         {/* 13-Run History */}
