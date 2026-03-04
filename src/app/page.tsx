@@ -159,7 +159,7 @@ export default async function HomePage({ searchParams }: PageProps) {
   // Watch games: 9+ runs (high probability of exactly 13)
   const watchGames = activeLiveFeeds.filter((feed) => {
     const { away, home } = feed.liveData.linescore.teams
-    return away.runs >= 9 || home.runs >= 9
+    return (away?.runs ?? 0) >= 9 || (home?.runs ?? 0) >= 9
   })
 
   // Scorigami: top teams from today's highest-probability games
@@ -317,16 +317,16 @@ export default async function HomePage({ searchParams }: PageProps) {
 
                 const innings = linescore.innings.map((inn) => ({
                   num: inn.num,
-                  away: inn.away.runs,
-                  home: inn.home.runs,
+                  away: inn.away?.runs,
+                  home: inn.home?.runs,
                 }))
 
                 return (
                   <LiveWatchCard
                     key={feed.gamePk}
                     gamePk={feed.gamePk}
-                    awayTeam={feed.gameData.teams.away.team.abbreviation}
-                    homeTeam={feed.gameData.teams.home.team.abbreviation}
+                    awayTeam={feed.gameData.teams.away.team?.abbreviation ?? '???'}
+                    homeTeam={feed.gameData.teams.home.team?.abbreviation ?? '???' }
                     awayRuns={awayRuns}
                     homeRuns={homeRuns}
                     inning={inning}
