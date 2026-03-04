@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import { getWeekNumber, getSeasonYear } from '@/lib/pot'
 import MemberRoster from '@/components/admin/MemberRoster'
 import PaymentBoard from '@/components/admin/PaymentBoard'
 import TeamAssignment from '@/components/admin/TeamAssignment'
@@ -42,6 +43,25 @@ export default async function AdminDashboard({ params }: Props) {
     .select('id, member_id, week_number, payment_status, override_note')
     .in('member_id', (members ?? []).map((m) => m.id))
     .order('week_number', { ascending: false })
+
+  // Get current week and year for payout tracking
+  const today = new Date()
+  const currentWeekNumber = getWeekNumber(today)
+  const seasonYear = getSeasonYear(today)
+
+  // Fetch payout status for all weeks
+  const { data: payoutLedger } = await supabase
+    .from('weekly_pot_ledger')
+    .select('week_number, number_of_winners, pot_amount, calculated_at')
+    .eq('league_id', league.id)
+    .eq('year', seasonYear)
+
+  const payoutInfo = payoutLedger?.map((entry) => ({
+    week_number: entry.week_number,
+    calculated: entry.calculated_at !== null,
+    total_distributed: entry.number_of_winners > 0 ? Math.floor((entry.pot_amount || 0) / entry.number_of_winners) * entry.number_of_winners : 0,
+    number_of_winners: entry.number_of_winners,
+  })) ?? []
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-white">
@@ -92,6 +112,8 @@ export default async function AdminDashboard({ params }: Props) {
             members={members ?? []}
             payments={payments ?? []}
             leagueSlug={slug}
+            payouts={payoutInfo}
+            year={seasonYear}
           />
         </section>
       </div>

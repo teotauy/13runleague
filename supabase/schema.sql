@@ -124,4 +124,40 @@ alter table historical_results enable row level security;
 create policy "historical_results_public_read"
   on historical_results for select using (true);
 
+-- Weekly Pot Ledger (tracks pot state per week for audit trail)
+create table weekly_pot_ledger (
+  id uuid primary key default gen_random_uuid(),
+  league_id uuid references leagues(id) on delete cascade,
+  week_number integer not null,
+  year integer not null,
+  pot_amount integer not null,           -- base pot amount (e.g., $300)
+  rollover_from_week integer,            -- previous week if no winners
+  number_of_winners integer default 0,
+  payout_per_share integer default 0,
+  calculated_at timestamptz,
+  created_at timestamptz default now()
+);
+
+create unique index on weekly_pot_ledger (league_id, year, week_number);
+alter table weekly_pot_ledger enable row level security;
+
+-- Payouts (core payout tracking per winner per week)
+create table payouts (
+  id uuid primary key default gen_random_uuid(),
+  league_id uuid references leagues(id) on delete cascade,
+  member_id uuid references members(id) on delete cascade,
+  week_number integer not null,
+  year integer not null,
+  winning_team text not null,            -- team abbreviation that scored 13
+  payout_amount integer not null,        -- amount member earned
+  shares_count integer default 1,        -- how many winners split the pot
+  game_date date not null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index on payouts (league_id, year, week_number);
+create index on payouts (member_id, year);
+alter table payouts enable row level security;
+
 -- Service role has full access (used by API routes with SUPABASE_SERVICE_ROLE_KEY)

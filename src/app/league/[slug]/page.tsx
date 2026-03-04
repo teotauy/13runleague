@@ -1,11 +1,10 @@
-import { cookies } from 'next/headers'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/mlb'
 import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
+import { getWeekNumber, getSeasonYear } from '@/lib/pot'
 import RankingsTabs, { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
-import Tooltip from '@/components/Tooltip'
-import SeasonYearTabs from '@/components/SeasonYearTabs'
+import PotBreakdown from '@/components/PotBreakdown'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,15 +14,7 @@ interface Props {
 
 export default async function LeagueDashboard({ params }: Props) {
   const { slug } = await params
-
-  // Auth check - defense in depth (middleware will redirect, but check here too)
-  const cookieStore = await cookies()
-  const authCookie = cookieStore.get(`league_auth_${slug}`)
-  if (!authCookie) {
-    notFound()
-  }
-
-  const supabase = createServiceClient()
+  const supabase = await createClient()
   const season = currentSeason()
 
   const { data: league, error } = await supabase
@@ -51,24 +42,6 @@ export default async function LeagueDashboard({ params }: Props) {
     .order('game_date', { ascending: false })
     .limit(50)
 
-  // Historical results — fetched early; used for drought calc AND rankings tabs
-  const { data: historicalRaw } = await supabase
-    .from('historical_results')
-    .select('member_name, team, year, total_won, shares, week_wins')
-    .eq('league_id', league.id)
-
-  // Most recent 13-run week per team (drought tracker)
-  // week_wins is an array of league week numbers; season start ≈ April 1 each year
-  const teamLastWinMap = new Map<string, { year: number; week: number }>()
-  for (const row of historicalRaw ?? []) {
-    if (!row.week_wins?.length) continue
-    const maxWeek = Math.max(...row.week_wins)
-    const existing = teamLastWinMap.get(row.team)
-    if (!existing || row.year > existing.year || (row.year === existing.year && maxWeek > existing.week)) {
-      teamLastWinMap.set(row.team, { year: row.year, week: maxWeek })
-    }
-  }
-
   const games = await fetchTodaySchedule()
 
   // Enrich each member with today's game info and probability
@@ -84,17 +57,8 @@ export default async function LeagueDashboard({ params }: Props) {
 
       const streak = streaks?.find((s) => s.member_id === member.id)
 
-      // Weeks since this member's team last scored 13 (from historical week data)
-      const lastWin = teamLastWinMap.get(teamAbbr)
-      const weeksSinceWin = lastWin
-        ? Math.max(0, Math.floor(
-            (Date.now() - (new Date(lastWin.year, 3, 1).getTime() + (lastWin.week - 1) * 7 * 24 * 60 * 60 * 1000))
-            / (7 * 24 * 60 * 60 * 1000)
-          ))
-        : null
-
       if (!todayGame) {
-        return { member, streak, todayGame: null, todayProb: null, weeksSinceWin }
+        return { member, streak, todayGame: null, todayProb: null }
       }
 
       const isHome = todayGame.teams.home.team.abbreviation === teamAbbr
@@ -110,7 +74,7 @@ export default async function LeagueDashboard({ params }: Props) {
       })
       const prob = calculateThirteenProbability(lambda.pitcherAdjusted)
 
-      return { member, streak, todayGame, todayProb: prob, weeksSinceWin }
+      return { member, streak, todayGame, todayProb: prob }
     })
   )
 
@@ -118,26 +82,45 @@ export default async function LeagueDashboard({ params }: Props) {
     (league.pot_total ?? 0) / ((members?.length ?? 1) * (league.weekly_buy_in ?? 10))
   )
 
+  // Current week data
+  const today = new Date()
+  const currentWeekNumber = getWeekNumber(today)
+  const seasonYear = getSeasonYear(today)
+
+  // Fetch weekly payments for current week
+  const { data: currentWeekPayments } = await supabase
+    .from('weekly_payments')
+    .select('member_id, week_number, payment_status')
+    .eq('week_number', currentWeekNumber)
+
+  // Fetch payouts for current week
+  const { data: currentWeekPayouts } = await supabase
+    .from('payouts')
+    .select('member_id, payout_amount, week_number, winning_team')
+    .eq('week_number', currentWeekNumber)
+    .eq('year', seasonYear)
+
+  // Historical results for rankings tabs
+  const { data: historicalRaw } = await supabase
+    .from('historical_results')
+    .select('member_name, team, year, total_won, shares')
+    .eq('league_id', league.id)
+
   // Aggregate all-time rankings by member
   const allTimeMap = new Map<string, AllTimeEntry>()
   for (const row of historicalRaw ?? []) {
     const existing = allTimeMap.get(row.member_name)
-    const member = (members ?? []).find((m) => m.name === row.member_name)
     if (existing) {
       existing.totalWon += row.total_won ?? 0
       existing.totalShares += row.shares ?? 0
-      // Only add year if not already present (deduplicate)
-      if (!existing.yearsPlayed.includes(row.year)) {
-        existing.yearsPlayed.push(row.year)
-      }
+      existing.yearsPlayed.push(row.year)
     } else {
       allTimeMap.set(row.member_name, {
         name: row.member_name,
         totalWon: row.total_won ?? 0,
         totalShares: row.shares ?? 0,
         yearsPlayed: [row.year],
-        isActive: !!member,
-        id: member?.id,
+        isActive: !!(members ?? []).find((m) => m.name === row.member_name),
       })
     }
   }
@@ -192,17 +175,83 @@ export default async function LeagueDashboard({ params }: Props) {
           </div>
         </header>
 
-        {/* Season Year Tabs - combines Pot Tracker, Leaderboard, and Rankings */}
-        <SeasonYearTabs
-          historicalRaw={historicalRaw ?? []}
-          enrichedMembers={enrichedMembers}
-          allTimeMap={allTimeMap}
-          teamsMap={teamMap}
-          potTotal={league.pot_total ?? 0}
-          weeksPlayed={weeksPlayed}
-          leagueName={league.name}
-          slug={slug}
+        {/* Pot Tracker */}
+        <section className="rounded-lg border border-gray-800 bg-[#111] p-6">
+          <h2 className="text-sm text-gray-500 uppercase tracking-widest mb-4">Pot Tracker</h2>
+          <div className="grid grid-cols-3 gap-6">
+            <Stat label="Current Pot" value={`$${league.pot_total ?? 0}`} highlight />
+            <Stat label="Weeks Played" value={String(weeksPlayed)} />
+            <Stat label="Buy-in / Week" value={`$${league.weekly_buy_in ?? 10}`} />
+          </div>
+        </section>
+
+        {/* Pot Breakdown */}
+        <PotBreakdown
+          members={members ?? []}
+          payments={currentWeekPayments ?? []}
+          currentWeek={currentWeekNumber}
+          weeklyBuyIn={league.weekly_buy_in ?? 10}
+          payouts={currentWeekPayouts?.map((p) => ({
+            member_name: members?.find((m) => m.id === p.member_id)?.name ?? 'Unknown',
+            payout_amount: p.payout_amount,
+            week_number: p.week_number,
+            winning_team: p.winning_team,
+          })) ?? []}
         />
+
+        {/* Leaderboard */}
+        <section>
+          <h2 className="text-lg font-bold mb-4">Leaderboard</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm font-mono">
+              <thead>
+                <tr className="text-gray-500 border-b border-gray-800 text-left">
+                  <th className="pb-2 pr-4">Player</th>
+                  <th className="pb-2 pr-4">Team</th>
+                  <th className="pb-2 pr-4">Today</th>
+                  <th className="pb-2 pr-4">P(13)</th>
+                  <th className="pb-2 pr-4">Streak</th>
+                  <th className="pb-2 pr-4">Best</th>
+                  <th className="pb-2">Closest Miss</th>
+                </tr>
+              </thead>
+              <tbody>
+                {enrichedMembers.map(({ member, streak, todayGame, todayProb }) => (
+                  <tr key={member.id} className="border-b border-gray-900 hover:bg-[#111]">
+                    <td className="py-3 pr-4 text-white font-semibold">{member.name}</td>
+                    <td className="py-3 pr-4">
+                      <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-200">
+                        {member.assigned_team}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4 text-gray-400">
+                      {todayGame
+                        ? `${todayGame.teams.away.team.abbreviation} @ ${todayGame.teams.home.team.abbreviation}`
+                        : '—'}
+                    </td>
+                    <td className="py-3 pr-4">
+                      {todayProb !== null ? (
+                        <span
+                          className="font-bold"
+                          style={{ color: todayProb > 0.05 ? '#39ff14' : todayProb > 0.02 ? '#f59e0b' : '#9ca3af' }}
+                        >
+                          {(todayProb * 100).toFixed(2)}%
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td className="py-3 pr-4 text-gray-400">{streak?.current_streak ?? 0}W</td>
+                    <td className="py-3 pr-4 text-gray-400">{streak?.longest_streak ?? 0}W</td>
+                    <td className="py-3 text-gray-400">
+                      {streak?.closest_miss_score !== null && streak?.closest_miss_score !== undefined
+                        ? `${streak.closest_miss_score} runs${streak.closest_miss_date ? ` (${streak.closest_miss_date})` : ''}`
+                        : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         {/* 13-Run History */}
         {thirteenHistory && thirteenHistory.length > 0 && (
@@ -255,22 +304,18 @@ export default async function LeagueDashboard({ params }: Props) {
           </section>
         )}
 
+        {/* All-Time & Team Rankings Tabs */}
+        {(allTimeRankings.length > 0 || teamRankings.length > 0) && (
+          <section>
+            <RankingsTabs allTime={allTimeRankings} teams={teamRankings} />
+          </section>
+        )}
 
         {/* Footer */}
-        <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs space-y-2">
+        <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs">
           <p>
             The information used here was obtained free of charge from and is copyrighted by Retrosheet.
             Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
-          </p>
-          <p>
-            <a
-              href="https://buymeacoffee.com/colbyblack"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-yellow-500 hover:text-yellow-400 transition-colors"
-            >
-              ☕ Buy me a coffee
-            </a>
           </p>
         </footer>
       </div>
@@ -278,8 +323,8 @@ export default async function LeagueDashboard({ params }: Props) {
   )
 }
 
-function Stat({ label, value, highlight, explanation }: { label: string; value: string; highlight?: boolean; explanation?: string }) {
-  const content = (
+function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
     <div>
       <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{label}</div>
       <div className={`text-2xl font-black font-mono ${highlight ? 'text-[#39ff14]' : 'text-white'}`}>
@@ -287,14 +332,4 @@ function Stat({ label, value, highlight, explanation }: { label: string; value: 
       </div>
     </div>
   )
-
-  if (explanation) {
-    return (
-      <Tooltip label={label} explanation={explanation}>
-        {content}
-      </Tooltip>
-    )
-  }
-
-  return content
 }

@@ -2,8 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import OverrideModal from './OverrideModal'
-import Tooltip from '../Tooltip'
 
 interface Member {
   id: string
@@ -16,48 +14,66 @@ interface Payment {
   member_id: string
   week_number: number
   payment_status: string
-  override_note?: string | null
+  override_note?: string
+}
+
+interface PayoutInfo {
+  week_number: number
+  calculated: boolean
+  total_distributed?: number
+  number_of_winners?: number
 }
 
 interface Props {
   members: Member[]
   payments: Payment[]
   leagueSlug: string
+  payouts?: PayoutInfo[]
+  year?: number
 }
 
 type PaymentStatus = 'unpaid' | '50%' | 'paid'
 
-export default function PaymentBoard({ members, payments, leagueSlug }: Props) {
+export default function PaymentBoard({ members, payments, leagueSlug, payouts = [], year = new Date().getFullYear() }: Props) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [calculatingWeek, setCalculatingWeek] = useState<number | null>(null)
   const [weeks, setWeeks] = useState<number[]>([1, 2, 3, 4, 5]) // Show last 5 weeks by default
   const [newWeek, setNewWeek] = useState(6)
-  const [overrideModal, setOverrideModal] = useState<{
-    memberId: string
-    memberName: string
-    weekNumber: number
-  } | null>(null)
 
   // Get current week (simplified: assume week 1 is the first week of the year)
   const currentWeek = Math.ceil((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
 
-  const getPayment = (memberId: string, week: number): Payment | undefined => {
-    return payments.find((p) => p.member_id === memberId && p.week_number === week)
-  }
-
   const getPaymentStatus = (memberId: string, week: number): PaymentStatus => {
-    const payment = getPayment(memberId, week)
+    const payment = payments.find((p) => p.member_id === memberId && p.week_number === week)
     return (payment?.payment_status as PaymentStatus) || 'unpaid'
   }
 
-  const isOverridden = (memberId: string, week: number): boolean => {
-    const payment = getPayment(memberId, week)
-    return !!payment?.override_note
+  const getPayoutStatus = (week: number): PayoutInfo | undefined => {
+    return payouts.find((p) => p.week_number === week)
   }
 
-  const getOverrideNote = (memberId: string, week: number): string | null => {
-    const payment = getPayment(memberId, week)
-    return payment?.override_note || null
+  const handleCalculatePayouts = async (week: number) => {
+    setCalculatingWeek(week)
+    try {
+      const res = await fetch(`/api/league/${leagueSlug}/calculate-payouts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          week_number: week,
+          year,
+        }),
+      })
+
+      if (!res.ok) throw new Error('Failed to calculate payouts')
+
+      router.refresh()
+    } catch (err) {
+      console.error(err)
+      alert('Error calculating payouts')
+    } finally {
+      setCalculatingWeek(null)
+    }
   }
 
   const handleCycleStatus = async (memberId: string, week: number) => {
@@ -145,46 +161,18 @@ export default function PaymentBoard({ members, payments, leagueSlug }: Props) {
                 <td className="px-4 py-3 text-white font-semibold">{member.name}</td>
                 {weeks.map((week) => {
                   const status = getPaymentStatus(member.id, week)
-                  const overridden = isOverridden(member.id, week)
-                  const overrideNote = getOverrideNote(member.id, week)
-
                   return (
                     <td
                       key={`${member.id}-${week}`}
-                      className={`text-center px-2 py-2 border-l border-gray-800 ${
-                        overridden ? 'border-[#39ff14] border-l-4 bg-[#0a0a0a]' : ''
-                      }`}
+                      className="text-center px-3 py-3 border-l border-gray-800"
                     >
-                      <div className="flex gap-1 justify-center items-center">
-                        <Tooltip
-                          label="Payment Status"
-                          explanation={overrideNote ? `Override: ${overrideNote}` : 'Click to cycle through statuses'}
-                        >
-                          <button
-                            onClick={() => handleCycleStatus(member.id, week)}
-                            disabled={isLoading}
-                            className={`px-2 py-1 rounded font-bold text-xs transition-colors ${getStatusColor(status)} hover:opacity-80 disabled:opacity-50 ${
-                              overridden ? 'italic' : ''
-                            }`}
-                          >
-                            {overridden ? '✓' : ''} {status}
-                          </button>
-                        </Tooltip>
-                        <button
-                          onClick={() =>
-                            setOverrideModal({
-                              memberId: member.id,
-                              memberName: member.name,
-                              weekNumber: week,
-                            })
-                          }
-                          disabled={isLoading}
-                          className="px-1.5 py-1 rounded text-xs bg-gray-800 text-gray-200 hover:bg-gray-700 disabled:opacity-50 font-semibold"
-                          title="Add override note"
-                        >
-                          ⚙
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleCycleStatus(member.id, week)}
+                        disabled={isLoading}
+                        className={`w-12 py-1 rounded font-bold text-xs transition-colors ${getStatusColor(status)} hover:opacity-80 disabled:opacity-50`}
+                      >
+                        {status}
+                      </button>
                     </td>
                   )
                 })}
@@ -198,8 +186,33 @@ export default function PaymentBoard({ members, payments, leagueSlug }: Props) {
         )}
       </div>
 
+      {/* Payout Calculation Controls */}
+      <div className="mt-6 p-4 rounded-lg border border-gray-800 bg-[#0a0a0a]">
+        <h3 className="text-sm font-semibold text-white mb-3">Payout Calculation</h3>
+        <p className="text-xs text-gray-400 mb-4">Calculate and distribute payouts for specific weeks</p>
+        <div className="flex gap-2 flex-wrap">
+          {weeks.map((week) => {
+            const payoutStatus = getPayoutStatus(week)
+            return (
+              <button
+                key={week}
+                onClick={() => handleCalculatePayouts(week)}
+                disabled={isLoading || calculatingWeek === week}
+                className={`px-3 py-2 rounded text-xs font-semibold transition-colors ${
+                  payoutStatus?.calculated
+                    ? 'bg-blue-900 text-blue-200 hover:bg-blue-800'
+                    : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {calculatingWeek === week ? '⏳ W' : payoutStatus?.calculated ? '✓ W' : 'W'}{week}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Legend */}
-      <div className="flex gap-4 text-xs text-gray-400">
+      <div className="flex gap-4 text-xs text-gray-400 flex-wrap">
         <div className="flex items-center gap-2">
           <div className="w-8 h-6 bg-red-900 rounded"></div>
           <span>Unpaid</span>
@@ -213,27 +226,10 @@ export default function PaymentBoard({ members, payments, leagueSlug }: Props) {
           <span>Paid</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-6 bg-[#111] border-l-4 border-[#39ff14] rounded"></div>
-          <span>Overridden</span>
+          <div className="w-8 h-6 bg-blue-900 rounded"></div>
+          <span>Payouts Calculated</span>
         </div>
       </div>
-
-      {/* Override Modal */}
-      {overrideModal && (
-        <OverrideModal
-          memberId={overrideModal.memberId}
-          memberName={overrideModal.memberName}
-          weekNumber={overrideModal.weekNumber}
-          currentStatus={getPaymentStatus(overrideModal.memberId, overrideModal.weekNumber)}
-          currentNote={getOverrideNote(overrideModal.memberId, overrideModal.weekNumber)}
-          leagueSlug={leagueSlug}
-          onClose={() => setOverrideModal(null)}
-          onSuccess={() => {
-            setOverrideModal(null)
-            router.refresh()
-          }}
-        />
-      )}
     </div>
   )
 }
