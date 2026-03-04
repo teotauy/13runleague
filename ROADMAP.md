@@ -98,6 +98,7 @@ The reason people check their phones during games.
 
 Discovery and shareability.
 
+- [ ] 5.1 Add login button/link to homepage that routes to league access/login
 - [ ] 5.1 Public dashboard (/) - today's games + probability cards; no login required
 - [ ] 5.2 What is a 13 Run League? explainer section on homepage
 - [ ] 5.3 /history - all-time 13-run game tracker; searchable by team, year, score

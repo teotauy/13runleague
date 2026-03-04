@@ -67,6 +67,8 @@ export default function PotBreakdown({
     }
   }, [members, payments, currentWeek, weeklyBuyIn, payouts])
 
+  const perMemberBuyIn = (analysis.currentPotBase / analysis.totalMembers).toFixed(2)
+
   return (
     <div className="space-y-6">
       {/* Current Pot Status */}
@@ -78,7 +80,7 @@ export default function PotBreakdown({
           <div className="text-center mb-4">
             <div className="text-4xl font-bold text-[#39ff14]">${analysis.currentPotBase}</div>
             <div className="text-sm text-gray-400 mt-1">
-              ${(analysis.currentPotBase / analysis.totalMembers).toFixed(2)} × {analysis.totalMembers} members
+              ${perMemberBuyIn} × {analysis.totalMembers} members
             </div>
           </div>
 

@@ -109,18 +109,50 @@ export interface TeamSeason {
 // Schedule
 // ---------------------------------------------------------------------------
 
-function todayDate(): string {
-  // Get current date in Eastern Time using Intl.DateTimeFormat (reliable across all Node.js environments)
+/**
+ * Formats a Date to a YYYY-MM-DD string in Eastern Time.
+ */
+function etDateString(date: Date): string {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).formatToParts(new Date())
+  }).formatToParts(date)
   const y = parts.find((p) => p.type === 'year')!.value
   const m = parts.find((p) => p.type === 'month')!.value
   const d = parts.find((p) => p.type === 'day')!.value
   return `${y}-${m}-${d}`
+}
+
+/**
+ * Returns the current "baseball date" (YYYY-MM-DD) in Eastern Time.
+ *
+ * Baseball day doesn't turn over until 6 AM ET — a game that starts on
+ * March 3rd and runs until 2 AM due to rain delays or extra innings is
+ * still a March 3rd game as far as the schedule is concerned.
+ */
+export function baseballToday(): string {
+  const now = new Date()
+
+  // Get the current hour in ET
+  const etHourParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    hour: '2-digit',
+    hour12: false,
+  }).formatToParts(now)
+  const etHour = parseInt(etHourParts.find((p) => p.type === 'hour')!.value, 10)
+
+  // Before 6 AM ET → still the previous baseball day
+  if (etHour < 6) {
+    return etDateString(new Date(now.getTime() - 24 * 60 * 60 * 1000))
+  }
+
+  return etDateString(now)
+}
+
+function todayDate(): string {
+  return baseballToday()
 }
 
 export async function fetchTodaySchedule(): Promise<MLBGame[]> {

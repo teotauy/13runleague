@@ -1,4 +1,4 @@
-import { fetchTodaySchedule, fetchTeamSeasonStats, fetchPitcherEra, fetchLiveFeed, fetchTeamGameLog, currentSeason, fetchLastSeasonRunsPerGame } from '@/lib/mlb'
+import { fetchTodaySchedule, fetchTeamSeasonStats, fetchPitcherEra, fetchLiveFeed, fetchTeamGameLog, currentSeason, fetchLastSeasonRunsPerGame, baseballToday } from '@/lib/mlb'
 import { buildLambda, gameThirteenProbability, getConditionalProbability } from '@/lib/probability'
 import GameCard from '@/components/GameCard'
 import LiveWatchCard from '@/components/LiveWatchCard'
@@ -194,7 +194,7 @@ export default async function HomePage({ searchParams }: PageProps) {
             </h1>
             <p className="text-gray-500 mt-1 text-sm">
               Live probability dashboard —{' '}
-              {new Date().toLocaleDateString('en-US', {
+              {new Date(baseballToday() + 'T12:00:00-04:00').toLocaleDateString('en-US', {
                 timeZone: 'America/New_York',
                 weekday: 'long',
                 month: 'long',
@@ -224,18 +224,20 @@ export default async function HomePage({ searchParams }: PageProps) {
 
         {/* Offseason countdown banner — shown Oct 5 through Mar 24 */}
         {(() => {
-          const now = new Date()
-          const month = now.getMonth()
-          const day = now.getDate()
+          // Use baseball today (6 AM ET cutoff) so late-night games don't flip the date
+          const todayStr = baseballToday() // YYYY-MM-DD
+          const [y, mo, dy] = todayStr.split('-').map(Number)
+          const month = mo - 1 // 0-indexed for consistency with Date methods
+          const day = dy
           // Offseason: Oct 5 - Mar 24
           const isOffseason = (month > 9) || (month === 9 && day >= 5) || (month < 2) || (month === 2 && day < 25)
 
           if (!isOffseason) return null
 
           // Calculate days to next Opening Day (Mar 25)
-          // Use next year if we're after March 25, otherwise use current year
-          const nextYear = (month > 2 || (month === 2 && day >= 25)) ? now.getFullYear() + 1 : now.getFullYear()
+          const nextYear = (month > 2 || (month === 2 && day >= 25)) ? y + 1 : y
           const openingDay = new Date(`${nextYear}-03-25T00:00:00-04:00`)
+          const now = new Date(`${todayStr}T12:00:00-04:00`) // noon on baseball today
           const msDiff = openingDay.getTime() - now.getTime()
           const daysLeft = Math.ceil(msDiff / (1000 * 60 * 60 * 24))
 
@@ -253,7 +255,7 @@ export default async function HomePage({ searchParams }: PageProps) {
         })()}
 
         {/* Spring Training banner — shown until Opening Day */}
-        {new Date() < new Date('2026-03-25T00:00:00-04:00') && (
+        {new Date(baseballToday() + 'T12:00:00-04:00') < new Date('2026-03-25T00:00:00-04:00') && (
           <div className="rounded border border-blue-900 bg-blue-950/30 px-4 py-3 text-blue-300 text-sm flex items-start gap-3">
             <span className="text-lg leading-none mt-0.5">⚾</span>
             <div>
