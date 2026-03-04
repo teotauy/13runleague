@@ -191,6 +191,7 @@ export default async function LeagueDashboard({ params }: Props) {
           payments={currentWeekPayments ?? []}
           currentWeek={currentWeekNumber}
           weeklyBuyIn={league.weekly_buy_in ?? 10}
+          potTotal={league.pot_total ?? 0}
           payouts={currentWeekPayouts?.map((p) => ({
             member_name: members?.find((m) => m.id === p.member_id)?.name ?? 'Unknown',
             payout_amount: p.payout_amount,
