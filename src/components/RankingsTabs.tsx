@@ -62,7 +62,7 @@ function SortTh({
   )
 }
 
-function AllTimeTable({ data }: { data: AllTimeEntry[] }) {
+function AllTimeTable({ data, slug }: { data: AllTimeEntry[]; slug?: string }) {
   const [sortCol, setSortCol] = useState<AllTimeSort>('totalWon')
   const [dir, setDir] = useState<Dir>('desc')
 
@@ -224,7 +224,7 @@ export default function RankingsTabs({
       </div>
 
       {tab === 'alltime' ? (
-        <AllTimeTable data={allTime} />
+        <AllTimeTable data={allTime} slug={slug} />
       ) : (
         <TeamTable data={teams} />
       )}

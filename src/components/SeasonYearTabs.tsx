@@ -52,7 +52,7 @@ export default function SeasonYearTabs({
   leagueName,
   slug,
 }: SeasonYearTabsProps) {
-  const [selectedYear, setSelectedYear] = useState(2026)
+  const [selectedYear, setSelectedYear] = useState<number | 'alltime'>(2026)
 
   // Get unique years from historical data
   const availableYears = [
