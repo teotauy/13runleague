@@ -78,7 +78,7 @@ What makes this feel like a real league, not a spreadsheet.
 
 The reason people check their phones during games.
 
-- [ ] 4.1 Probability cards - Poisson model per game, rolling window selector (5/10/20/full), park factors, pitcher adjustment, early season blended model badge
+- [x] 4.1 Probability cards - Poisson model per game, rolling window selector (5/10/20/full), park factors, pitcher adjustment, early season blended model badge ✓ claude-code (GameCard enhanced with clear lambda breakdown headers, rolling window UI, blending badge, error handling, no-games state)
 - [ ] 4.2 Live game tracker - real-time score updates via MLB Stats API; poll every 30s during game hours
 - [ ] 4.3 Historical probability lookup - use public/data/thirteen_lookup.json for in-game probability (inning + current score); fall back to Poisson if sample under 25
 - [ ] 4.4 On Deck Alert - team has 10+ runs after 7th inning, early heads-up: Get ready - Cubs have 11 after 7
