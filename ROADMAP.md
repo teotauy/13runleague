@@ -8,6 +8,50 @@ Live: 13runleague.com
 
 ---
 
+## Phase 0 - Database Safety ⚠️
+
+**READ THIS BEFORE TOUCHING THE DATABASE. NON-NEGOTIABLE.**
+
+On March 3, 2026 the Supabase database was scrubbed by an agent running destructive SQL. These rules exist to prevent that from ever happening again.
+
+### The Rules
+
+- **0.1 Enable Supabase Point-in-Time Recovery** — Go to Supabase Dashboard → Project Settings → Add-ons, enable PITR. **REQUIRED before any further development.** Allows rollback to any second in the last 7 days.
+
+- **0.2 All database changes go in migration files** — Never paste raw SQL into the Supabase editor. Every change gets a new file in `supabase/migrations/` with a timestamp prefix (e.g. `20260304000000_description.sql`). The migration history is the source of truth.
+
+- **0.3 All seed and migration scripts must be idempotent** — Safe to run multiple times without destroying existing data. Always use `INSERT ... ON CONFLICT DO NOTHING` or equivalent. **Never use DROP TABLE, TRUNCATE, or DELETE without explicit user confirmation.**
+
+- **0.4 End-of-session backup ritual** — Run this after every working session:
+  ```bash
+  supabase db dump -f backup_$(date +%Y%m%d_%H%M).sql
+  git add supabase/
+  git commit -m "chore: end of session backup [date]"
+  git push
+  ```
+
+- **0.5 Never re-run the seed script without checking first** — Before running `npm run seed`, always run a `SELECT COUNT(*)` on the affected tables to confirm they are empty or that the script is safe to re-run.
+
+### For Claude Code and Cursor Agents
+
+- **State out loud** which migration file you are creating or modifying
+- **Never run `supabase db reset`** without explicit user confirmation
+- **Never drop or truncate tables**
+- **If unsure whether a change is destructive, ask first**
+
+### Recovery Procedure (if something goes wrong)
+
+1. Stop all agents immediately
+2. Go to Supabase Dashboard → Database → Backups
+3. If PITR is enabled, restore to the timestamp before the damage
+4. If PITR is not enabled, restore from the most recent `backup_YYYYMMDD.sql` file:
+   ```bash
+   psql [connection string] < backup_YYYYMMDD.sql
+   ```
+5. Verify row counts match expectations before resuming work
+
+---
+
 ## How to Use This Roadmap
 
 Each phase is designed to be handed to Claude Code or Cursor as a discrete working session. Copy the phase heading and its task list as your prompt context. The scripts/history_import.json file contains 8 years of pre-processed historical data ready to seed.
