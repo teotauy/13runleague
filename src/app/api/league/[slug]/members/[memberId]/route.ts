@@ -33,9 +33,10 @@ export async function PATCH(
     if (error) throw error
 
     return NextResponse.json(data)
-  } catch (err) {
-    console.error(err)
-    return NextResponse.json({ error: 'Failed to update member' }, { status: 500 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('Member update error:', err)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
 

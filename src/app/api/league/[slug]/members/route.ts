@@ -41,8 +41,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     if (error) throw error
 
     return NextResponse.json(data, { status: 201 })
-  } catch (err) {
-    console.error(err)
-    return NextResponse.json({ error: 'Failed to add member' }, { status: 500 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('Member create error:', err)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
