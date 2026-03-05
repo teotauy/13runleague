@@ -17,9 +17,10 @@ export default async function LeagueLoginPage({ params, searchParams }: Props) {
     const password = formData.get('password') as string
     const supabase = createServiceClient()
 
+    // Fetch core password hash (always present)
     const { data: league, error: dbError } = await supabase
       .from('leagues')
-      .select('password_hash, member_password_hash')
+      .select('password_hash')
       .eq('slug', slug)
       .single()
 
@@ -41,9 +42,15 @@ export default async function LeagueLoginPage({ params, searchParams }: Props) {
       redirect(`/league/${slug}/admin`)
     }
 
-    // Check member (view-only) password
-    if (league.member_password_hash) {
-      const isMember = await bcrypt.compare(password, league.member_password_hash)
+    // Check member (view-only) password — column may not exist yet, handle gracefully
+    const { data: memberPwRow } = await supabase
+      .from('leagues')
+      .select('member_password_hash')
+      .eq('slug', slug)
+      .single()
+
+    if (memberPwRow?.member_password_hash) {
+      const isMember = await bcrypt.compare(password, memberPwRow.member_password_hash)
       if (isMember) {
         const cookieStore = await cookies()
         cookieStore.set(`league_auth_${slug}`, 'member', {
