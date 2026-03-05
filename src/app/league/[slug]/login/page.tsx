@@ -37,7 +37,7 @@ export default async function LeagueLoginPage({ params, searchParams }: Props) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 7,
-        path: `/league/${slug}`,
+        path: '/',
       })
       redirect(`/league/${slug}/admin`)
     }
@@ -58,7 +58,7 @@ export default async function LeagueLoginPage({ params, searchParams }: Props) {
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
           maxAge: 60 * 60 * 24 * 7,
-          path: `/league/${slug}`,
+          path: '/',
         })
         redirect(`/league/${slug}`)
       }
