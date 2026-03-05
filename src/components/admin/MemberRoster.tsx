@@ -21,9 +21,10 @@ interface Props {
   leagueId: string
   leagueSlug: string
   members: Member[]
+  previousNames?: string[]
 }
 
-export default function MemberRoster({ leagueId, leagueSlug, members }: Props) {
+export default function MemberRoster({ leagueId, leagueSlug, members, previousNames = [] }: Props) {
   const router = useRouter()
   const [isAddingMember, setIsAddingMember] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -69,13 +70,16 @@ export default function MemberRoster({ leagueId, leagueSlug, members }: Props) {
         }),
       })
 
-      if (!res.ok) throw new Error('Failed to save member')
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body?.error ?? `HTTP ${res.status}`)
+      }
 
       setIsAddingMember(false)
       router.refresh()
     } catch (err) {
       console.error(err)
-      alert('Error saving member')
+      alert(`Error saving member: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
     }
@@ -128,11 +132,19 @@ export default function MemberRoster({ leagueId, leagueSlug, members }: Props) {
                 <input
                   type="text"
                   required
+                  list="previous-players"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full bg-[#0a0a0a] border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-[#39ff14]"
                   placeholder="e.g. John Smith"
                 />
+                {previousNames.length > 0 && (
+                  <datalist id="previous-players">
+                    {previousNames.map((name) => (
+                      <option key={name} value={name} />
+                    ))}
+                  </datalist>
+                )}
               </div>
 
               <div>

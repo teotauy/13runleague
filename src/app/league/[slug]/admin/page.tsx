@@ -38,6 +38,13 @@ export default async function AdminDashboard({ params }: Props) {
 
   if (error || !league) notFound()
 
+  // Previous player names for autocomplete in the Add Member form
+  const { data: historicalNames } = await supabase
+    .from('historical_results')
+    .select('member_name')
+    .eq('league_id', league.id)
+  const previousNames = [...new Set((historicalNames ?? []).map((r) => r.member_name))].sort()
+
   // Optional query — member_password_hash column added in migration 20260305010000
   // Gracefully handles the case where the migration hasn't run yet
   const { data: leagueAuth } = await supabase
@@ -90,12 +97,15 @@ export default async function AdminDashboard({ params }: Props) {
               </h1>
               <p className="text-gray-400 text-lg mt-1">{league.name}</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-center">
               <a href={`/league/${slug}/draft`} className="text-gray-600 text-sm hover:text-gray-400">
                 Draft Room →
               </a>
               <a href={`/league/${slug}`} className="text-gray-600 text-sm hover:text-gray-400">
                 League Dashboard →
+              </a>
+              <a href={`/api/league/${slug}/logout`} className="text-gray-600 text-xs hover:text-red-400 transition-colors">
+                Log out
               </a>
             </div>
           </div>
@@ -126,6 +136,7 @@ export default async function AdminDashboard({ params }: Props) {
             leagueId={league.id}
             leagueSlug={slug}
             members={members ?? []}
+            previousNames={previousNames}
           />
         </section>
 
