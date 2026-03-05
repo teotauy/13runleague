@@ -136,9 +136,8 @@ export default function MemberRoster({ leagueId, leagueSlug, members }: Props) {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-400 mb-1">MLB Team</label>
+                <label className="block text-sm text-gray-400 mb-1">MLB Team (optional)</label>
                 <select
-                  required
                   value={formData.team}
                   onChange={(e) => setFormData({ ...formData, team: e.target.value })}
                   className="w-full bg-[#0a0a0a] border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-[#39ff14]"

@@ -31,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       .insert({
         league_id: league.id,
         name: body.name,
-        assigned_team: body.assigned_team,
+        assigned_team: body.assigned_team ?? '',
         phone: body.phone,
         email: body.email,
       })

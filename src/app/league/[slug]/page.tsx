@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/mlb'
@@ -6,6 +7,7 @@ import { getWeekNumber, getSeasonYear, getWinnersForWeek } from '@/lib/pot'
 import RankingsTabs, { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
 import PotBreakdown from '@/components/PotBreakdown'
 import LeaderboardTable, { type LeaderboardRow } from '@/components/LeaderboardTable'
+import LeagueDashboardHeader from '@/components/LeagueDashboardHeader'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +19,11 @@ export default async function LeagueDashboard({ params }: Props) {
   const { slug } = await params
   const supabase = createServiceClient()
   const season = currentSeason()
+
+  const cookieStore = await cookies()
+  const authCookie = cookieStore.get(`league_auth_${slug}`)
+  const role: 'admin' | 'member' =
+    authCookie?.value === 'admin' || authCookie?.value === 'authenticated' ? 'admin' : 'member'
 
   const { data: league, error } = await supabase
     .from('leagues')
@@ -192,17 +199,11 @@ export default async function LeagueDashboard({ params }: Props) {
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
 
         {/* Header */}
-        <header>
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-black">
-                <span className="text-[#39ff14]">13</span> Run League
-              </h1>
-              <p className="text-gray-400 text-lg mt-1">{league.name}</p>
-            </div>
-            <a href="/" className="text-gray-600 text-sm hover:text-gray-400">← Public dashboard</a>
-          </div>
-        </header>
+        <LeagueDashboardHeader
+          leagueName={league.name}
+          slug={slug}
+          role={role}
+        />
 
         {/* Pot Breakdown */}
         <PotBreakdown

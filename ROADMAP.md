@@ -101,6 +101,8 @@ Small UX fixes that came up during 2026 Spring Training setup.
 - [x] 2.16 Player profile achievement banners — BBRef-style layout: achievement badges top-right (💰 Top Earner [year], 🏆 Most Wins [year], ⚡ Top $/Win [year], 🏟️ Ironman); season circles timeline with team abbreviations color-coded by achievement tier; By Season table rows with neon tint + emoji for leader years ✓
 - [ ] 2.17 Run dedup migration — execute `supabase/migrations/20260304120000_dedup_historical_results.sql` manually in Supabase SQL Editor; adds UNIQUE constraint on (league_id, member_name, year, team); player page has display-level dedup as fallback
 - [ ] 2.18 Badge tooltip polish on mobile — emoji badges (🏆 Ironman, ⭐ Active in RankingsTabs) use native title= which doesn't fire on touch; replace with Tooltip.tsx for consistency on mobile
+- [x] 2.19 Pre-season state management — admin-only section on admin page showing each 2025 member with Yes/No/Maybe returning dropdown + Paid/Not Paid checkbox; vacancy counter warns commissioner how many slots need filling before the draft; migration adds pre_season_returning + pre_season_paid columns to members ✓
+- [ ] 2.20 Two-tier auth — member password (shared read-only view for all 30 players) + admin password (commissioner full access); cookie stores { role: 'member' | 'admin' }; middleware gates admin routes; members see league dashboard but not admin panel
 
 ---
 

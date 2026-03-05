@@ -203,6 +203,16 @@ export default async function HomePage({ searchParams }: PageProps) {
             </p>
           </div>
 
+          <div className="flex flex-col sm:items-end gap-2">
+            {process.env.NEXT_PUBLIC_LEAGUE_SLUG && (
+              <a
+                href={`/league/${process.env.NEXT_PUBLIC_LEAGUE_SLUG}`}
+                className="self-start sm:self-auto px-4 py-2 bg-[#39ff14] text-black text-sm font-bold rounded hover:bg-[#2de010] transition-colors"
+              >
+                League Login →
+              </a>
+            )}
+
           {/* Rolling window selector */}
           <div className="flex items-center gap-1 bg-[#111] border border-gray-800 rounded p-1">
             <span className="text-xs text-gray-500 px-2">Window:</span>
@@ -219,6 +229,7 @@ export default async function HomePage({ searchParams }: PageProps) {
                 {WINDOW_LABELS[w]}
               </a>
             ))}
+          </div>
           </div>
         </header>
 

@@ -19,7 +19,7 @@ export default async function LeagueLoginPage({ params, searchParams }: Props) {
 
     const { data: league, error: dbError } = await supabase
       .from('leagues')
-      .select('password_hash')
+      .select('password_hash, member_password_hash')
       .eq('slug', slug)
       .single()
 
@@ -27,21 +27,37 @@ export default async function LeagueLoginPage({ params, searchParams }: Props) {
       redirect(`/league/${slug}/login?error=not_found`)
     }
 
-    const valid = await bcrypt.compare(password, league.password_hash)
-    if (!valid) {
-      redirect(`/league/${slug}/login?error=invalid`)
+    // Check admin password first
+    const isAdmin = await bcrypt.compare(password, league.password_hash)
+    if (isAdmin) {
+      const cookieStore = await cookies()
+      cookieStore.set(`league_auth_${slug}`, 'admin', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+        path: `/league/${slug}`,
+      })
+      redirect(`/league/${slug}/admin`)
     }
 
-    const cookieStore = await cookies()
-    cookieStore.set(`league_auth_${slug}`, 'authenticated', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: `/league/${slug}`,
-    })
+    // Check member (view-only) password
+    if (league.member_password_hash) {
+      const isMember = await bcrypt.compare(password, league.member_password_hash)
+      if (isMember) {
+        const cookieStore = await cookies()
+        cookieStore.set(`league_auth_${slug}`, 'member', {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 7,
+          path: `/league/${slug}`,
+        })
+        redirect(`/league/${slug}`)
+      }
+    }
 
-    redirect(`/league/${slug}`)
+    redirect(`/league/${slug}/login?error=invalid`)
   }
 
   return (
