@@ -4,10 +4,11 @@ import { notFound } from 'next/navigation'
 import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/mlb'
 import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
 import { getWeekNumber, getSeasonYear, getWinnersForWeek } from '@/lib/pot'
-import RankingsTabs, { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
+import { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
 import PotBreakdown from '@/components/PotBreakdown'
 import LeaderboardTable, { type LeaderboardRow } from '@/components/LeaderboardTable'
 import LeagueDashboardHeader from '@/components/LeagueDashboardHeader'
+import LeagueTabs from '@/components/LeagueTabs'
 
 export const dynamic = 'force-dynamic'
 
@@ -196,7 +197,7 @@ export default async function LeagueDashboard({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-white">
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
+      <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
         {/* Header */}
         <LeagueDashboardHeader
@@ -205,90 +206,95 @@ export default async function LeagueDashboard({ params }: Props) {
           role={role}
         />
 
-        {/* Pot Breakdown */}
-        <PotBreakdown
-          members={members ?? []}
-          payments={currentWeekPayments ?? []}
-          currentWeek={currentWeekNumber}
-          weeklyBuyIn={league.weekly_buy_in ?? 10}
-          potTotal={league.pot_total ?? 0}
-          weekWinners={thisWeekWinners}
-          settledPayouts={currentWeekPayouts?.map((p) => ({
-            member_id: p.member_id,
-            payout_amount: p.payout_amount,
-          })) ?? []}
-        />
+        {/* Tabbed content — spreadsheet-style horizontal nav */}
+        <LeagueTabs
+          historicalRaw={(historicalRaw ?? []) as { member_name: string; team: string; year: number; total_won: number; shares: number }[]}
+          allTimeRankings={allTimeRankings}
+          teamRankings={teamRankings}
+          slug={slug}
+          currentYear={2026}
+        >
+          {/* ── 2026 tab content (server-rendered) ── */}
 
-        {/* Leaderboard */}
-        <section>
-          <h2 className="text-lg font-bold mb-4">Leaderboard</h2>
-          <LeaderboardTable rows={leaderboardRows} slug={slug} />
-        </section>
+          {/* Pot Breakdown */}
+          <PotBreakdown
+            members={members ?? []}
+            payments={currentWeekPayments ?? []}
+            currentWeek={currentWeekNumber}
+            weeklyBuyIn={league.weekly_buy_in ?? 10}
+            potTotal={league.pot_total ?? 0}
+            weekWinners={thisWeekWinners}
+            settledPayouts={currentWeekPayouts?.map((p) => ({
+              member_id: p.member_id,
+              payout_amount: p.payout_amount,
+            })) ?? []}
+          />
 
-        {/* 13-Run History */}
-        {thirteenHistory && thirteenHistory.length > 0 && (
+          {/* Leaderboard */}
           <section>
-            <h2 className="text-lg font-bold mb-4">13-Run History in this League</h2>
-            <div className="space-y-2">
-              {thirteenHistory.map((result) => (
-                <div
-                  key={`${result.game_date}-${result.home_team}`}
-                  className="flex items-center gap-3 text-sm rounded bg-[#111] border border-gray-900 px-4 py-2"
-                >
-                  <span className="text-[#39ff14] font-bold text-lg">13</span>
-                  <span className="text-gray-400 font-mono">{result.game_date}</span>
-                  <span className="text-white">
-                    <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
-                    {' scored 13 — '}
-                    {result.away_team} @ {result.home_team}{' '}
-                    ({result.away_score}–{result.home_score})
-                  </span>
-                </div>
-              ))}
-            </div>
+            <h2 className="text-lg font-bold mb-4">Leaderboard</h2>
+            <LeaderboardTable rows={leaderboardRows} slug={slug} />
           </section>
-        )}
 
-        {/* Closest Miss Board */}
-        {closestMisses && closestMisses.length > 0 && (
-          <section>
-            <h2 className="text-lg font-bold mb-4">Closest Miss Board 💔</h2>
-            <div className="space-y-2">
-              {closestMisses.map((s) => {
-                const member = members?.find((m) => m.id === s.member_id)
-                const diff = Math.abs((s.closest_miss_score ?? 0) - 13)
-                return (
+          {/* 13-Run History */}
+          {thirteenHistory && thirteenHistory.length > 0 && (
+            <section>
+              <h2 className="text-lg font-bold mb-4">13-Run History in this League</h2>
+              <div className="space-y-2">
+                {thirteenHistory.map((result) => (
                   <div
-                    key={s.member_id}
+                    key={`${result.game_date}-${result.home_team}`}
                     className="flex items-center gap-3 text-sm rounded bg-[#111] border border-gray-900 px-4 py-2"
                   >
-                    {s.closest_miss_date && (
-                      <span className="text-gray-500 font-mono">{fmtMD(s.closest_miss_date)}</span>
-                    )}
-                    <span className="text-amber-400 font-bold">{s.closest_miss_score} runs</span>
-                    <span className="text-white">{member?.name ?? '—'} ({member?.assigned_team})</span>
-                    <span className="text-gray-600 ml-auto">— {diff === 1 ? 'one run away!' : `${diff} runs away`}</span>
+                    <span className="text-[#39ff14] font-bold text-lg">13</span>
+                    <span className="text-gray-400 font-mono">{result.game_date}</span>
+                    <span className="text-white">
+                      <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
+                      {' scored 13 — '}
+                      {result.away_team} @ {result.home_team}{' '}
+                      ({result.away_score}–{result.home_score})
+                    </span>
                   </div>
-                )
-              })}
-            </div>
-          </section>
-        )}
+                ))}
+              </div>
+            </section>
+          )}
 
-        {/* All-Time & Team Rankings Tabs */}
-        {(allTimeRankings.length > 0 || teamRankings.length > 0) && (
-          <section>
-            <RankingsTabs allTime={allTimeRankings} teams={teamRankings} />
-          </section>
-        )}
+          {/* Closest Miss Board */}
+          {closestMisses && closestMisses.length > 0 && (
+            <section>
+              <h2 className="text-lg font-bold mb-4">Closest Miss Board 💔</h2>
+              <div className="space-y-2">
+                {closestMisses.map((s) => {
+                  const member = members?.find((m) => m.id === s.member_id)
+                  const diff = Math.abs((s.closest_miss_score ?? 0) - 13)
+                  return (
+                    <div
+                      key={s.member_id}
+                      className="flex items-center gap-3 text-sm rounded bg-[#111] border border-gray-900 px-4 py-2"
+                    >
+                      {s.closest_miss_date && (
+                        <span className="text-gray-500 font-mono">{fmtMD(s.closest_miss_date)}</span>
+                      )}
+                      <span className="text-amber-400 font-bold">{s.closest_miss_score} runs</span>
+                      <span className="text-white">{member?.name ?? '—'} ({member?.assigned_team})</span>
+                      <span className="text-gray-600 ml-auto">— {diff === 1 ? 'one run away!' : `${diff} runs away`}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
+          )}
 
-        {/* Footer */}
-        <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs">
-          <p>
-            The information used here was obtained free of charge from and is copyrighted by Retrosheet.
-            Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
-          </p>
-        </footer>
+          {/* Footer — inside current year tab */}
+          <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs">
+            <p>
+              The information used here was obtained free of charge from and is copyrighted by Retrosheet.
+              Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
+            </p>
+          </footer>
+        </LeagueTabs>
+
       </div>
     </main>
   )
