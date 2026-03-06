@@ -54,11 +54,26 @@ export default async function AdminDashboard({ params }: Props) {
     .single()
   const hasMemberPassword = !!(leagueAuth as { member_password_hash?: string | null } | null)?.member_password_hash
 
+  // Base member fetch — always safe (uses original schema columns only)
   const { data: members } = await supabase
     .from('members')
-    .select('id, name, assigned_team, phone, email, pre_season_returning, pre_season_paid')
+    .select('id, name, assigned_team, phone, email')
     .eq('league_id', league.id)
     .order('name')
+
+  // Optional pre-season columns — added in migration 20260305000000
+  // Gracefully returns null if the migration hasn't been run in production yet
+  const { data: preSeasonData } = await supabase
+    .from('members')
+    .select('id, pre_season_returning, pre_season_paid')
+    .eq('league_id', league.id)
+
+  // Merge pre-season data into members (defaults to null/false if migration not run)
+  const membersWithPreSeason = (members ?? []).map((m) => ({
+    ...m,
+    pre_season_returning: (preSeasonData?.find((p) => p.id === m.id)?.pre_season_returning as 'yes' | 'no' | 'maybe' | null) ?? null,
+    pre_season_paid: (preSeasonData?.find((p) => p.id === m.id)?.pre_season_paid as boolean | null) ?? false,
+  }))
 
   const { data: payments } = await supabase
     .from('weekly_payments')
@@ -119,13 +134,7 @@ export default async function AdminDashboard({ params }: Props) {
           </div>
           <PreSeasonStatus
             leagueSlug={slug}
-            members={(members ?? []).map((m) => ({
-              id: m.id,
-              name: m.name,
-              assigned_team: m.assigned_team,
-              pre_season_returning: (m.pre_season_returning as 'yes' | 'no' | 'maybe' | null) ?? null,
-              pre_season_paid: m.pre_season_paid ?? false,
-            }))}
+            members={membersWithPreSeason}
           />
         </section>
 
