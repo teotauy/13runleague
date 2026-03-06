@@ -214,8 +214,7 @@ export default function MemberRoster({ leagueId, leagueSlug, members, previousNa
             <tr className="border-b border-gray-800 bg-[#0a0a0a]">
               <th className="text-left px-4 py-3 text-gray-400 font-semibold">Name</th>
               <th className="text-left px-4 py-3 text-gray-400 font-semibold">Team</th>
-              <th className="text-left px-4 py-3 text-gray-400 font-semibold">Phone</th>
-              <th className="text-left px-4 py-3 text-gray-400 font-semibold">Email</th>
+              <th className="text-left px-4 py-3 text-gray-400 font-semibold hidden sm:table-cell">Contact</th>
               <th className="text-right px-4 py-3 text-gray-400 font-semibold">Actions</th>
             </tr>
           </thead>
@@ -224,13 +223,19 @@ export default function MemberRoster({ leagueId, leagueSlug, members, previousNa
               <tr key={member.id} className="border-b border-gray-900 hover:bg-[#0a0a0a]">
                 <td className="px-4 py-3 text-white font-semibold">{member.name}</td>
                 <td className="px-4 py-3">
-                  <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-200 text-xs font-mono">
-                    {member.assigned_team}
-                  </span>
+                  {member.assigned_team ? (
+                    <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-200 text-xs font-mono">
+                      {member.assigned_team}
+                    </span>
+                  ) : (
+                    <span className="text-gray-700 text-xs">—</span>
+                  )}
                 </td>
-                <td className="px-4 py-3 text-gray-400">{member.phone ?? '—'}</td>
-                <td className="px-4 py-3 text-gray-400 text-xs">{member.email ?? '—'}</td>
-                <td className="px-4 py-3 text-right space-x-2">
+                <td className="px-4 py-3 hidden sm:table-cell">
+                  <div className="text-gray-400 text-xs">{member.email ?? '—'}</div>
+                  {member.phone && <div className="text-gray-600 text-xs">{member.phone}</div>}
+                </td>
+                <td className="px-4 py-3 text-right space-x-3">
                   <button
                     onClick={() => handleOpenEdit(member)}
                     className="text-[#39ff14] hover:text-[#2fd400] font-semibold text-xs"
