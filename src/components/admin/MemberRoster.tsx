@@ -72,7 +72,8 @@ export default function MemberRoster({ leagueId, leagueSlug, members, previousNa
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        throw new Error(body?.error ?? `HTTP ${res.status}`)
+        const detail = body?.details ? ` — ${body.details}` : ''
+        throw new Error((body?.error ?? `HTTP ${res.status}`) + detail)
       }
 
       setIsAddingMember(false)

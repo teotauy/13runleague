@@ -97,8 +97,15 @@ export default function GameCard({
           /* Probability estimate for Preview games */
           <div className="text-xl font-bold font-mono shrink-0" style={{ color }}>
             <Tooltip
-              label="P(13)"
-              explanation="Probability exactly 13 runs are scored today. Pre-game Poisson model using season run averages, park factors & starting pitcher."
+              label="P(13) — What does this mean?"
+              explanation={[
+                'Odds that exactly 13 runs are scored today (combined, either team).',
+                'Uses a Poisson model — think of it as the "how often does this happen?" math.',
+                '↓ Three inputs:',
+                '① Base: team\'s season run average',
+                '② Park: venue run environment',
+                '③ Pitcher: starter ERA adjustment',
+              ]}
             >
               {pct}%
             </Tooltip>
@@ -137,9 +144,34 @@ export default function GameCard({
       {!isFinal && (
         <div className="space-y-2">
           <div className="grid grid-cols-3 gap-2 text-[10px] font-mono text-gray-600 uppercase tracking-wider px-1">
-            <div>Base</div>
-            <div>⚾ Park</div>
-            <div>🏠 Pitcher</div>
+            <Tooltip
+              label="Base λ"
+              explanation={[
+                'Expected runs based on season averages.',
+                'Both teams\' offensive & pitching numbers, blended with league baseline.',
+              ]}
+            >
+              <div className="underline decoration-dotted cursor-help">Base</div>
+            </Tooltip>
+            <Tooltip
+              label="⚾ Park"
+              explanation={[
+                'Base λ adjusted for today\'s venue.',
+                'Hitter-friendly parks (like Coors) push the number up; pitcher-friendly parks push it down.',
+              ]}
+            >
+              <div className="underline decoration-dotted cursor-help">⚾ Park</div>
+            </Tooltip>
+            <Tooltip
+              label="🏠 Pitcher"
+              explanation={[
+                'Final λ after accounting for today\'s starting pitcher.',
+                'An ace with a low ERA reduces expected runs; a weak starter increases them.',
+                'This is the number fed into P(13).',
+              ]}
+            >
+              <div className="underline decoration-dotted cursor-help">🏠 Pitcher</div>
+            </Tooltip>
           </div>
           <div className="grid grid-cols-2 gap-3 text-xs font-mono">
             <LambdaCol label={awayTeam} lambda={awayLambda} />
@@ -153,8 +185,11 @@ export default function GameCard({
         <div className="text-xs text-gray-600 font-mono">
           Pre-game{' '}
           <Tooltip
-            label="P(13)"
-            explanation="Probability exactly 13 runs are scored today. Pre-game Poisson model using season run averages, park factors & starting pitcher."
+            label="Pre-game P(13)"
+            explanation={[
+              'What the model predicted before first pitch.',
+              'Poisson model using season run averages, park factor & starting pitcher.',
+            ]}
           >
             P(13)
           </Tooltip>
