@@ -102,7 +102,7 @@ Small UX fixes that came up during 2026 Spring Training setup.
 - [ ] 2.17 Run dedup migration — execute `supabase/migrations/20260304120000_dedup_historical_results.sql` manually in Supabase SQL Editor; adds UNIQUE constraint on (league_id, member_name, year, team); player page has display-level dedup as fallback
 - [ ] 2.18 Badge tooltip polish on mobile — emoji badges (🏆 Ironman, ⭐ Active in RankingsTabs) use native title= which doesn't fire on touch; replace with Tooltip.tsx for consistency on mobile
 - [x] 2.19 Pre-season state management — admin-only section on admin page showing each 2025 member with Yes/No/Maybe returning dropdown + Paid/Not Paid checkbox; vacancy counter warns commissioner how many slots need filling before the draft; migration adds pre_season_returning + pre_season_paid columns to members ✓
-- [ ] 2.20 Two-tier auth — member password (shared read-only view for all 30 players) + admin password (commissioner full access); cookie stores { role: 'member' | 'admin' }; middleware gates admin routes; members see league dashboard but not admin panel
+- [x] 2.20 Two-tier auth — member password (shared read-only view for all 30 players) + admin password (commissioner full access); cookie stores { role: 'member' | 'admin' }; middleware gates admin routes; members see league dashboard but not admin panel ✓
 
 ---
 
@@ -190,7 +190,8 @@ Keep it simple. Commissioner is the source of truth.
 - [ ] 7.2 Manual payment override - commissioner marks any member as paid; add note (e.g. cash at bar, Venmo @colby)
 - [ ] 7.3 Pot calculation dashboard - auto-calculates weekly pot from paid members; shows expected vs actual
 - [ ] 7.4 Stripe integration (optional v2) - members pay via Stripe; auto-marks as paid; commissioner still has override
-- [ ] 7.5 Buy Me a Coffee button - on public homepage and history page
+- [ ] 7.5 Auto email payment reminders — send "invoice"-style emails to unpaid members via Resend; email shows member name, which weeks are unpaid, total amount owed, and Venmo/payment instructions; cadence is configurable per-league (e.g. every Monday, every N days after week closes, or manual trigger only); commissioner can preview the email, send to all unpaid at once or to individual members; opt-out flag per member; template lives in admin settings
+- [ ] 7.6 Buy Me a Coffee button - on public homepage and history page
 
 ---
 
