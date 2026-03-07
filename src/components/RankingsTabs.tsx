@@ -28,7 +28,7 @@ interface HistoricalRow {
 }
 
 type AllTimeSort = 'totalWon' | 'totalShares' | 'yearsPlayed'
-type TeamSort = 'thirteenRunWeeks' | 'totalPaidOut' | 'yearsWon'
+type TeamSort = 'thirteenRunWeeks' | 'totalPaidOut'
 type Dir = 'asc' | 'desc'
 
 const ALL_YEARS = [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
@@ -297,10 +297,8 @@ function TeamTable({ data }: { data: TeamEntry[] }) {
   }
 
   const sorted = [...data].sort((a, b) => {
-    let av: number, bv: number
-    if (sortCol === 'thirteenRunWeeks') { av = a.thirteenRunWeeks; bv = b.thirteenRunWeeks }
-    else if (sortCol === 'totalPaidOut') { av = a.totalPaidOut; bv = b.totalPaidOut }
-    else { av = a.yearsWon.length; bv = b.yearsWon.length }
+    const av = sortCol === 'thirteenRunWeeks' ? a.thirteenRunWeeks : a.totalPaidOut
+    const bv = sortCol === 'thirteenRunWeeks' ? b.thirteenRunWeeks : b.totalPaidOut
     return dir === 'desc' ? bv - av : av - bv
   })
 
@@ -313,7 +311,6 @@ function TeamTable({ data }: { data: TeamEntry[] }) {
             <th className="pb-2 pr-4 text-left">Team</th>
             <SortTh label="13-Run Weeks" col="thirteenRunWeeks" current={sortCol} dir={dir} onClick={handleSort} />
             <SortTh label="Total Paid Out" col="totalPaidOut" current={sortCol} dir={dir} onClick={handleSort} />
-            <SortTh label="Years Won" col="yearsWon" current={sortCol} dir={dir} onClick={handleSort} />
           </tr>
         </thead>
         <tbody>
@@ -322,11 +319,7 @@ function TeamTable({ data }: { data: TeamEntry[] }) {
               <td className="py-2 pr-4 text-gray-600">{i + 1}</td>
               <td className="py-2 pr-4 text-white font-semibold">{entry.team}</td>
               <td className="py-2 pr-4 text-[#39ff14] font-bold">{entry.thirteenRunWeeks}</td>
-              <td className="py-2 pr-4 text-gray-300">${entry.totalPaidOut.toLocaleString()}</td>
-              <td className="py-2 text-gray-400">
-                {yearRange(entry.yearsWon)}
-                <span className="text-gray-600 ml-1">({[...new Set(entry.yearsWon)].length})</span>
-              </td>
+              <td className="py-2 text-gray-300">${entry.totalPaidOut.toLocaleString()}</td>
             </tr>
           ))}
         </tbody>

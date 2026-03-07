@@ -103,6 +103,10 @@ Small UX fixes that came up during 2026 Spring Training setup.
 - [ ] 2.18 Badge tooltip polish on mobile — emoji badges (🏆 Ironman, ⭐ Active in RankingsTabs) use native title= which doesn't fire on touch; replace with Tooltip.tsx for consistency on mobile
 - [x] 2.19 Pre-season state management — admin-only section on admin page showing each 2025 member with Yes/No/Maybe returning dropdown + Paid/Not Paid checkbox; vacancy counter warns commissioner how many slots need filling before the draft; migration adds pre_season_returning + pre_season_paid columns to members ✓
 - [x] 2.20 Two-tier auth — member password (shared read-only view for all 30 players) + admin password (commissioner full access); cookie stores { role: 'member' | 'admin' }; middleware gates admin routes; members see league dashboard but not admin panel ✓
+- [x] 2.21 PaymentBoard collapse + bulk-pay — collapsible panel with summary pill (X/Y paid · N behind) always visible; "✓ All" button per member row marks all weeks paid in one click for annual payers ✓
+- [x] 2.22 All-time rankings badge system — 5 emoji badges computed from data: 🏆 Ironman (every season), 👑 Career Wins Leader, 💰 Career Money Leader, 🔥 Single-Season Wins Record, 💸 Single-Season Money Record; legend shows only badge types present ✓
+- [x] 2.23 Cliff Lungaretti 2020 data fix — migration 20260306010000_fix_cliff_2020.sql corrects shares=0/total_won=0 to shares=1/total_won=1050 for Week 1 2020 ✓
+- [x] 2.24 Team rankings cleanup — removed "Years Won" column (misleading in context); table now shows 13-Run Weeks + Total Paid Out only ✓
 
 ---
 
@@ -111,7 +115,9 @@ Small UX fixes that came up during 2026 Spring Training setup.
 What makes this feel like a real league, not a spreadsheet.
 
 - [x] 3.1 League page - All-Time Rankings table - sortable by total won / shares / years played; Ironman badge for all 8 years; active player indicator ✓ (RankingsTabs component, sortable columns, Ironman 🏆 + active ⭐ badges, links to player profiles)
-- [x] 3.2 League page - Team Rankings table - MLB teams sorted by 13-run weeks in league history, total paid out, years won ✓ (RankingsTabs TeamTable tab, sortable)
+- [x] 3.2 League page - Team Rankings table - MLB teams sorted by 13-run weeks in league history + total paid out ✓ (RankingsTabs TeamTable tab, sortable)
+- [x] 3.9 MLB historical lore zone — ThirteenRunLore component with 4 stat panels (By Franchise, By Day of Week, Home vs Visitor, By Month) + interactive year chart (1877–2025); mouse scrubbing crosshair with year/count tooltip; MLB milestone markers (schedule changes, expansions, strikes, COVID); green South Brooklyn era overlay ✓
+- [x] 3.10 Retrosheet historical seed — seed_retrosheet_games.ts seeded 2,973 thirteen-run games from 1877–2025 into game_results; ~100 Retrosheet team code mappings; game_pk idempotent with retro- prefix ✓
 - [x] 3.3 Past Champions Banner - scrolling hall of fame across top of history page; each champion color-coded to their MLB team that year ✓ claude-code (teamColors.ts, PastChampionsBanner component, auto-scroll + swipe, all yearly winners)
 - [ ] 3.4 Dynasty Tracker - surfaces multi-win seasons and dominant stretches (e.g. Brad Brown 3 wins in 2018, Matt Pariseau 19 shares all-time)
 - [ ] 3.5 Historical season browser - year-by-year results, week-by-week breakdown, rollover chains visualized
@@ -140,9 +146,11 @@ The reason people check their phones during games.
 
 - [x] 4.1 Probability cards - Poisson model per game, rolling window selector (5/10/20/full), park factors, pitcher adjustment, early season blended model badge ✓ claude-code (GameCard enhanced with clear lambda breakdown headers, rolling window UI, blending badge, error handling, no-games state)
 - [x] 4.2 Live game tracker - real-time score updates via MLB Stats API; poll every 30s during game hours ✓ claude-code (30-second polling in LiveWatchCard, real-time probability recalculation, UI indicators for last update time and loading state)
-- [ ] 4.3 Historical probability lookup - use public/data/thirteen_lookup.json for in-game probability (inning + current score); fall back to Poisson if sample under 25
-- [ ] 4.4 On Deck Alert - team has 10+ runs after 7th inning, early heads-up: Get ready - Cubs have 11 after 7
-- [ ] 4.5 In-app threshold alerts - over 40% show indicator, over 65% highlight card, over 80% banner
+- [x] 4.3 13-run game card celebration — full-width "⚡ 13-Run Game" banner, dark green glow border + background, score number bumped to text-2xl, FINAL badge turns green, card no longer dimmed ✓
+- [x] 4.4 Today in the League strip — compact per-member scoreboard at top of league dashboard; sorted by 13-run games → Live → Preview (prob desc) → Final → Off day; shows LIVE pulse, game time ET, or FINAL per row; green tint on 13-run rows; links to MLB Gameday ✓
+- [ ] 4.5 Historical probability lookup - use public/data/thirteen_lookup.json for in-game probability (inning + current score); fall back to Poisson if sample under 25
+- [ ] 4.6 On Deck Alert - team has 10+ runs after 7th inning, early heads-up: Get ready - Cubs have 11 after 7
+- [ ] 4.7 In-app threshold alerts - over 40% show indicator, over 65% highlight card, over 80% banner
 - [ ] 4.6 SMS alerts via Twilio - 5 event types:
     - Threshold alert (over 80%): Red Sox have 9 runs in the 6th. P(final=13): 71%
     - Live 13 alert: Red Sox have 13 runs! Game still going...
@@ -160,8 +168,8 @@ The reason people check their phones during games.
 Discovery and shareability.
 
 - [ ] 5.1 Add login button/link to homepage that routes to league access/login
-- [ ] 5.1 Public dashboard (/) - today's games + probability cards; no login required
-- [ ] 5.2 What is a 13 Run League? explainer section on homepage
+- [x] 5.1 Public dashboard (/) - today's games + probability cards; no login required ✓
+- [x] 5.2 What is a 13 Run League? explainer section on homepage — LeagueExplainer component with How a Week Works, What Makes It Fun, Origin Story, Why This Site Exists; also shown on league page ✓
 - [ ] 5.3 /history - all-time 13-run game tracker; searchable by team, year, score
 - [ ] 5.4 /matchup/[away]/[home] - head-to-head analysis; historical 13-run rates for each team at that ballpark
 - [ ] 5.5 Win Celebration Page - auto-generate shareable image via @vercel/og when a team scores 13; winner name, team, pot amount
@@ -200,9 +208,10 @@ Keep it simple. Commissioner is the source of truth.
 Required before Twilio SMS goes live.
 
 - [ ] 8.1 /sms-terms page - Twilio compliance; opt-in language, STOP instructions, message frequency, data rates
-- [ ] 8.2 /privacy page - data collected, how it is used, contact info
-- [ ] 8.3 Twilio use case submission - submit A2P 10DLC registration with proof of consent URL
-- [ ] 8.4 Resend domain verification - verify 13runleague.com in Resend dashboard
+- [x] 8.2 /privacy page — data collection, Supabase/Retrosheet/MLB API/Vercel/Resend attribution, no-wagering note ✓
+- [x] 8.3 /terms page — Terms of Use with formal No Wagering clause, probability disclaimer, IP, liability limitation; links to /privacy ✓
+- [ ] 8.4 Twilio use case submission - submit A2P 10DLC registration with proof of consent URL
+- [ ] 8.5 Resend domain verification - verify 13runleague.com in Resend dashboard
 
 ---
 
