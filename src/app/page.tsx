@@ -1,6 +1,6 @@
 import { fetchTodaySchedule, fetchTeamSeasonStats, fetchPitcherEra, fetchLiveFeed, fetchTeamGameLog, currentSeason, fetchLastSeasonRunsPerGame, baseballToday } from '@/lib/mlb'
 import { buildLambda, gameThirteenProbability, getConditionalProbability } from '@/lib/probability'
-import GameCard from '@/components/GameCard'
+import CollapsibleGameCard from '@/components/CollapsibleGameCard'
 import LiveWatchCard from '@/components/LiveWatchCard'
 import LiveScoreboard from '@/components/LiveScoreboard'
 import ScorigramiGrid from '@/components/ScorigramiGrid'
@@ -368,11 +368,12 @@ export default async function HomePage({ searchParams }: PageProps) {
           </section>
         )}
 
-        {/* Today's Games Heatmap */}
+        {/* Today's Games */}
         <section>
-          <h2 className="text-lg font-bold text-white mb-4">
-            Today&apos;s Games — Probability Heatmap
-          </h2>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="text-lg font-bold text-white">Today&apos;s Games</h2>
+            <span className="text-xs text-gray-700">sorted by P(13) · tap to expand</span>
+          </div>
           {enrichedGames.length === 0 ? (
             <div className="rounded border border-gray-800 bg-[#111] px-6 py-16 text-center space-y-2">
               <div className="text-gray-500 font-mono text-lg">No games scheduled today</div>
@@ -384,10 +385,10 @@ export default async function HomePage({ searchParams }: PageProps) {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-2">
               {enrichedGames.map(
                 ({ game, awayLambda, homeLambda, combinedProb, isBlended, awayPitcherName, homePitcherName }) => (
-                  <GameCard
+                  <CollapsibleGameCard
                     key={game.gamePk}
                     gamePk={game.gamePk}
                     awayTeam={game.teams.away.team.abbreviation}
