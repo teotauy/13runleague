@@ -1,6 +1,8 @@
 'use client'
 
+import Link from 'next/link'
 import YearChart from './YearChart'
+import MiniBar from './MiniBar'
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const
@@ -13,18 +15,6 @@ export interface ThirteenGame {
   winning_team: string | null
   home_score: number
   away_score: number
-}
-
-function MiniBar({ value, max, dim = false }: { value: number; max: number; dim?: boolean }) {
-  const pct = max > 0 ? (value / max) * 100 : 0
-  return (
-    <div className="flex-1 bg-gray-900 rounded-full h-1.5 overflow-hidden">
-      <div
-        className={`h-1.5 rounded-full transition-all ${dim ? 'bg-gray-800' : 'bg-[#39ff14]'}`}
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-  )
 }
 
 export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
@@ -113,7 +103,12 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
                   <span className={`text-xs font-mono w-3 ${i === 0 ? 'text-[#39ff14]' : 'text-gray-700'}`}>
                     {i === 0 ? '▸' : ''}
                   </span>
-                  <span className="text-xs font-mono text-white w-8 shrink-0">{team}</span>
+                  <Link
+                    href={`/teams/${team.toLowerCase()}`}
+                    className="text-xs font-mono text-white w-8 shrink-0 hover:text-[#39ff14] transition-colors underline decoration-dotted"
+                  >
+                    {team}
+                  </Link>
                   <MiniBar value={count} max={maxFranchise} />
                   <span className="text-xs font-mono text-gray-400 w-8 text-right shrink-0">
                     {count.toLocaleString()}

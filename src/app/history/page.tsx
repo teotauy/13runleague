@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import PastChampionsBanner, { type YearlyChampions } from '@/components/PastChampionsBanner'
+import Link from 'next/link'
 
 export const revalidate = 3600
 
@@ -74,19 +75,20 @@ export default async function HistoryPage() {
         {/* Past Champions Banner */}
         <PastChampionsBanner yearlyChampions={yearlyChampions} />
 
-        {/* Summary grid */}
+        {/* Summary grid — each card links to the team's profile page */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
           {teamsSorted.map(([team, teamGames]) => (
-            <div
+            <Link
               key={team}
-              className="rounded bg-[#111] border border-gray-900 p-3 text-center"
+              href={`/teams/${team.toLowerCase()}`}
+              className="rounded bg-[#111] border border-gray-900 p-3 text-center hover:border-gray-700 hover:bg-[#191919] transition-colors block"
             >
               <div className="text-xs text-gray-500 font-mono">{team}</div>
               <div className="text-2xl font-black text-[#39ff14] mt-1">
                 {teamGames!.length}
               </div>
               <div className="text-[10px] text-gray-600">13-run games</div>
-            </div>
+            </Link>
           ))}
         </div>
 
