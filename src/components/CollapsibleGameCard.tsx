@@ -38,34 +38,32 @@ export default function CollapsibleGameCard(props: CollapsibleGameCardProps) {
   const pct      = (combinedProbability * 100).toFixed(2)
   const barWidth = Math.min(combinedProbability * 1000, 100)
 
-  if (open) {
-    return (
-      <div>
-        <GameCard {...props} />
-        <button
-          onClick={() => setOpen(false)}
-          className="w-full text-center py-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors font-mono"
-        >
-          [−] collapse
-        </button>
-      </div>
-    )
-  }
+  const borderColor = hit13 ? '#39ff14' : isFinal ? '#4b5563' : '#374151'
+  const bgColor     = hit13 ? '#071007' : '#1a1a1a'
 
-  return (
+  // The toggle row — always visible, [+] or [−] on the far left
+  const toggleRow = (
     <button
-      onClick={() => setOpen(true)}
-      className={`w-full text-left rounded-lg border overflow-hidden transition-colors group ${
-        isFinal && !hit13 ? 'opacity-50' : ''
-      }`}
+      onClick={() => setOpen(o => !o)}
+      className={`w-full text-left overflow-hidden transition-colors group ${
+        open ? '' : 'rounded-lg'
+      } ${isFinal && !hit13 ? 'opacity-50' : ''}`}
       style={{
-        borderColor: hit13 ? '#39ff14' : isFinal ? '#4b5563' : '#374151',
-        backgroundColor: hit13 ? '#071007' : '#1a1a1a',
-        boxShadow: hit13 ? '0 0 16px rgba(57, 255, 20, 0.10)' : undefined,
+        borderWidth: 1,
+        borderStyle: 'solid',
+        borderColor,
+        borderBottomColor: open ? 'transparent' : borderColor,
+        borderRadius: open ? '0.5rem 0.5rem 0 0' : undefined,
+        backgroundColor: bgColor,
+        boxShadow: hit13 && !open ? '0 0 16px rgba(57, 255, 20, 0.10)' : undefined,
       }}
     >
-      {/* Compact row */}
-      <div className="flex items-center gap-2 px-4 py-3">
+      <div className="flex items-center gap-3 px-4 py-3">
+
+        {/* Toggle indicator — leftmost, always first */}
+        <span className="text-gray-400 group-hover:text-white transition-colors text-xs font-mono font-bold shrink-0 w-5 text-center">
+          {open ? '[−]' : '[+]'}
+        </span>
 
         {/* Live pulse */}
         {isLive && (
@@ -100,21 +98,31 @@ export default function CollapsibleGameCard(props: CollapsibleGameCardProps) {
             {pct}%
           </span>
         )}
-
-        {/* Expand indicator */}
-        <span className="text-gray-500 group-hover:text-gray-300 transition-colors text-xs font-mono shrink-0 ml-2">
-          [+]
-        </span>
       </div>
 
-      {/* Thin bar at bottom */}
-      <div className="h-[2px] bg-gray-800">
-        {hit13 ? (
-          <div className="h-full bg-[#39ff14]/40 w-full" />
-        ) : !isFinal ? (
-          <div className="h-full" style={{ width: `${barWidth}%`, backgroundColor: color }} />
-        ) : null}
-      </div>
+      {/* Thin prob bar — only when collapsed */}
+      {!open && (
+        <div className="h-[2px] bg-gray-800">
+          {hit13 ? (
+            <div className="h-full bg-[#39ff14]/40 w-full" />
+          ) : !isFinal ? (
+            <div className="h-full" style={{ width: `${barWidth}%`, backgroundColor: color }} />
+          ) : null}
+        </div>
+      )}
     </button>
   )
+
+  if (open) {
+    return (
+      <div style={{ borderRadius: '0.5rem', overflow: 'hidden', boxShadow: hit13 ? '0 0 16px rgba(57, 255, 20, 0.10)' : undefined }}>
+        {toggleRow}
+        <div style={{ border: `1px solid ${borderColor}`, borderTop: 'none', borderRadius: '0 0 0.5rem 0.5rem', overflow: 'hidden' }}>
+          <GameCard {...props} />
+        </div>
+      </div>
+    )
+  }
+
+  return toggleRow
 }
