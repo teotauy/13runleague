@@ -50,12 +50,28 @@ export default function GameCard({
   // Highlight if either team scored exactly 13
   const awayHit13 = hasScore && awayScore === 13
   const homeHit13 = hasScore && homeScore === 13
+  const hit13 = awayHit13 || homeHit13
 
   return (
     <div
-      className={`rounded-lg border bg-[#111] p-4 flex flex-col gap-3 transition-all ${isFinal ? 'opacity-60' : ''}`}
-      style={{ borderColor: tier === 'high' && !isFinal ? color : isFinal ? '#374151' : '#1f2937' }}
+      className={`rounded-lg border p-4 flex flex-col gap-3 transition-all ${isFinal && !hit13 ? 'opacity-60' : ''}`}
+      style={{
+        borderColor: hit13 ? '#39ff14' : (tier === 'high' && !isFinal ? color : isFinal ? '#374151' : '#1f2937'),
+        backgroundColor: hit13 ? '#071007' : '#111',
+        boxShadow: hit13 ? '0 0 28px rgba(57, 255, 20, 0.12), inset 0 0 60px rgba(57, 255, 20, 0.03)' : undefined,
+      }}
     >
+      {/* 13-run banner — spans full card width */}
+      {hit13 && (
+        <div className="flex items-center justify-between -mx-4 -mt-4 mb-1 px-4 py-2 rounded-t-lg bg-[#39ff14]/10 border-b border-[#39ff14]/20">
+          <span className="text-[#39ff14] font-black text-xs tracking-widest uppercase">⚡ 13-Run Game</span>
+          <span className="text-[#39ff14]/50 text-[10px] font-mono">
+            {awayHit13 && homeHit13
+              ? 'both teams scored 13'
+              : `${awayHit13 ? awayTeam : homeTeam} scored 13`}
+          </span>
+        </div>
+      )}
       {/* Header: matchup + score/probability */}
       <div className="flex items-center justify-between gap-2">
         <div className="text-lg font-bold text-white font-mono">
@@ -75,22 +91,18 @@ export default function GameCard({
               </span>
             )}
             <span
-              className={`text-xl font-bold font-mono ${
-                awayHit13 ? 'text-[#39ff14]' : 'text-white'
-              }`}
+              className={`font-bold font-mono ${awayHit13 ? 'text-[#39ff14]' : 'text-white'} ${awayHit13 ? 'text-2xl' : 'text-xl'}`}
             >
               {awayScore}
             </span>
             <span className="text-gray-600 font-mono">–</span>
             <span
-              className={`text-xl font-bold font-mono ${
-                homeHit13 ? 'text-[#39ff14]' : 'text-white'
-              }`}
+              className={`font-bold font-mono ${homeHit13 ? 'text-[#39ff14]' : 'text-white'} ${homeHit13 ? 'text-2xl' : 'text-xl'}`}
             >
               {homeScore}
             </span>
             {isFinal && (
-              <span className="text-xs text-gray-600 font-mono ml-1">FINAL</span>
+              <span className={`text-xs font-mono ml-1 ${hit13 ? 'text-[#39ff14]/60' : 'text-gray-600'}`}>FINAL</span>
             )}
           </div>
         ) : (
@@ -194,9 +206,6 @@ export default function GameCard({
             P(13)
           </Tooltip>
           : {pct}%
-          {(awayHit13 || homeHit13) && (
-            <span className="text-[#39ff14] ml-2 font-bold">✓ HIT 13!</span>
-          )}
         </div>
       )}
 

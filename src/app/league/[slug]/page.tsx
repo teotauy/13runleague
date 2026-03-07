@@ -11,6 +11,7 @@ import LeagueDashboardHeader from '@/components/LeagueDashboardHeader'
 import LeagueTabs from '@/components/LeagueTabs'
 import LeagueExplainer from '@/components/LeagueExplainer'
 import ThirteenRunLore from '@/components/ThirteenRunLore'
+import TodayStrip, { type TodayEntry } from '@/components/TodayStrip'
 
 export const dynamic = 'force-dynamic'
 
@@ -138,6 +139,27 @@ export default async function LeagueDashboard({ params }: Props) {
     }
   )
 
+  // Today in the League strip — one row per member
+  const todayEntries: TodayEntry[] = enrichedMembers.map(({ member, todayGame, todayProb }) => {
+    const teamAbbr = member.assigned_team.toUpperCase()
+    const isHome = todayGame
+      ? todayGame.teams.home.team.abbreviation === teamAbbr
+      : null
+    return {
+      memberName: member.name,
+      team: teamAbbr,
+      gamePk: todayGame?.gamePk ?? null,
+      gameStatus: todayGame?.status.abstractGameState ?? null,
+      awayTeam: todayGame?.teams.away.team.abbreviation ?? null,
+      homeTeam: todayGame?.teams.home.team.abbreviation ?? null,
+      awayScore: todayGame?.teams.away.score ?? null,
+      homeScore: todayGame?.teams.home.score ?? null,
+      gameDate: todayGame?.gameDate ?? null,
+      todayProb,
+      isHome,
+    }
+  })
+
   // Historical results for rankings tabs
   const { data: historicalRaw } = await supabase
     .from('historical_results')
@@ -217,6 +239,9 @@ export default async function LeagueDashboard({ params }: Props) {
           currentYear={2026}
         >
           {/* ── 2026 tab content (server-rendered) ── */}
+
+          {/* Today in the League */}
+          <TodayStrip entries={todayEntries} />
 
           {/* Pot Breakdown */}
           <PotBreakdown
