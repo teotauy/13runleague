@@ -4,6 +4,9 @@ import GameCard from '@/components/GameCard'
 import LiveWatchCard from '@/components/LiveWatchCard'
 import LiveScoreboard from '@/components/LiveScoreboard'
 import ScorigramiGrid from '@/components/ScorigramiGrid'
+import LeagueExplainer from '@/components/LeagueExplainer'
+import ThirteenRunLore from '@/components/ThirteenRunLore'
+import { createServiceClient } from '@/lib/supabase/server'
 import type { MLBGame, MLBLiveGame } from '@/lib/mlb'
 import type { LiveGameState } from '@/lib/probability'
 
@@ -181,6 +184,14 @@ export default async function HomePage({ searchParams }: PageProps) {
       }
     })
   )
+
+  // Historical 13-run games for lore section
+  const supabase = createServiceClient()
+  const { data: thirteenHistory } = await supabase
+    .from('game_results')
+    .select('game_date, home_team, away_team, winning_team, home_score, away_score')
+    .eq('was_thirteen', true)
+    .order('game_date', { ascending: false })
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-white">
@@ -414,6 +425,41 @@ export default async function HomePage({ searchParams }: PageProps) {
           </section>
         )}
 
+        {/* ── Explainer Zone ── */}
+        <LeagueExplainer />
+
+        {/* ── 13-Run History (recent) ── */}
+        {thirteenHistory && thirteenHistory.length > 0 && (
+          <section>
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-lg font-bold">13-Run History</h2>
+              <span className="text-xs text-gray-600 font-mono">most recent</span>
+            </div>
+            <div className="space-y-2">
+              {thirteenHistory.slice(0, 10).map((result) => (
+                <div
+                  key={`${result.game_date}-${result.home_team}`}
+                  className="flex items-center gap-3 text-sm rounded bg-[#111] border border-gray-900 px-4 py-2"
+                >
+                  <span className="text-[#39ff14] font-bold text-lg">13</span>
+                  <span className="text-gray-400 font-mono">{result.game_date}</span>
+                  <span className="text-white">
+                    <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
+                    {' scored 13 — '}
+                    {result.away_team} @ {result.home_team}{' '}
+                    ({result.away_score}–{result.home_score})
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── 13-Run Lore ── */}
+        {thirteenHistory && thirteenHistory.length > 0 && (
+          <ThirteenRunLore games={thirteenHistory} />
+        )}
+
         {/* Footer */}
         <footer className="border-t border-gray-900 pt-6 text-gray-600 text-xs space-y-2">
           <p>
@@ -431,7 +477,7 @@ export default async function HomePage({ searchParams }: PageProps) {
           <p className="text-gray-700">
             Live data via MLB Stats API · Probabilities are estimates, not gambling advice.
           </p>
-          <p>
+          <div className="flex flex-wrap gap-4 items-center">
             <a
               href="https://buymeacoffee.com/colbyblack"
               target="_blank"
@@ -440,7 +486,13 @@ export default async function HomePage({ searchParams }: PageProps) {
             >
               ☕ Buy me a coffee
             </a>
-          </p>
+            <span className="text-gray-800">·</span>
+            <a href="/privacy" className="hover:text-gray-400 transition-colors">Privacy Policy</a>
+            <span className="text-gray-800">·</span>
+            <a href="/terms" className="hover:text-gray-400 transition-colors">Terms of Use</a>
+            <span className="text-gray-800">·</span>
+            <span className="text-gray-700">Built by Red Crow Labs · South Brooklyn</span>
+          </div>
         </footer>
       </div>
     </main>

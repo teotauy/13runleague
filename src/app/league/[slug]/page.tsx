@@ -300,11 +300,18 @@ export default async function LeagueDashboard({ params }: Props) {
           )}
 
           {/* Footer — inside current year tab */}
-          <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs">
+          <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs space-y-2">
             <p>
               The information used here was obtained free of charge from and is copyrighted by Retrosheet.
               Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
             </p>
+            <div className="flex flex-wrap gap-4">
+              <a href="/privacy" className="hover:text-gray-500 transition-colors">Privacy Policy</a>
+              <span className="text-gray-800">·</span>
+              <a href="/terms" className="hover:text-gray-500 transition-colors">Terms of Use</a>
+              <span className="text-gray-800">·</span>
+              <span className="text-gray-800">Built by Red Crow Labs · South Brooklyn</span>
+            </div>
           </footer>
         </LeagueTabs>
 
