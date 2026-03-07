@@ -385,7 +385,7 @@ export default async function HomePage({ searchParams }: PageProps) {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {enrichedGames.map(
                 ({ game, awayLambda, homeLambda, combinedProb, isBlended, awayPitcherName, homePitcherName }) => (
                   <CollapsibleGameCard
@@ -433,7 +433,7 @@ export default async function HomePage({ searchParams }: PageProps) {
         {thirteenHistory && thirteenHistory.length > 0 && (
           <section>
             <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-lg font-bold">13-Run History</h2>
+              <h2 className="text-lg font-bold"><span className="text-[#39ff14]">13</span>-Run History</h2>
               <span className="text-xs text-gray-600 font-mono">most recent</span>
             </div>
             <div className="space-y-2">
@@ -446,7 +446,9 @@ export default async function HomePage({ searchParams }: PageProps) {
                   <span className="text-gray-400 font-mono">{result.game_date}</span>
                   <span className="text-white">
                     <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
-                    {' scored 13 — '}
+                    {' scored '}
+                    <span className="text-[#39ff14] font-bold">13</span>
+                    {' — '}
                     {result.away_team} @ {result.home_team}{' '}
                     ({result.away_score}–{result.home_score})
                   </span>

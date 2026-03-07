@@ -147,6 +147,7 @@ export default async function LeagueDashboard({ params }: Props) {
       : null
     return {
       memberName: member.name,
+      memberId: member.id,
       team: teamAbbr,
       gamePk: todayGame?.gamePk ?? null,
       gameStatus: todayGame?.status.abstractGameState ?? null,
@@ -241,7 +242,7 @@ export default async function LeagueDashboard({ params }: Props) {
           {/* ── 2026 tab content (server-rendered) ── */}
 
           {/* Today in the League */}
-          <TodayStrip entries={todayEntries} />
+          <TodayStrip entries={todayEntries} slug={slug} />
 
           {/* Pot Breakdown */}
           <PotBreakdown
@@ -266,62 +267,72 @@ export default async function LeagueDashboard({ params }: Props) {
           {/* ── Explainer Zone — between live dashboard and lore ── */}
           <LeagueExplainer />
 
-          {/* 13-Run History — recent 10 games */}
+          {/* 13-Run History + Closest Miss Board — side by side */}
           {thirteenHistory && thirteenHistory.length > 0 && (
-            <section>
-              <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-lg font-bold">13-Run History</h2>
-                <span className="text-xs text-gray-600 font-mono">most recent</span>
-              </div>
-              <div className="space-y-2">
-                {thirteenHistory.slice(0, 10).map((result) => (
-                  <div
-                    key={`${result.game_date}-${result.home_team}`}
-                    className="flex items-center gap-3 text-sm rounded bg-[#111] border border-gray-900 px-4 py-2"
-                  >
-                    <span className="text-[#39ff14] font-bold text-lg">13</span>
-                    <span className="text-gray-400 font-mono">{result.game_date}</span>
-                    <span className="text-white">
-                      <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
-                      {' scored 13 — '}
-                      {result.away_team} @ {result.home_team}{' '}
-                      ({result.away_score}–{result.home_score})
-                    </span>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              {/* 13-Run History — recent 10 games */}
+              <section>
+                <div className="flex items-center gap-3 mb-4">
+                  <h2 className="text-lg font-bold"><span className="text-[#39ff14]">13</span>-Run History</h2>
+                  <span className="text-xs text-gray-600 font-mono">most recent</span>
+                </div>
+                <div className="space-y-1.5">
+                  {thirteenHistory.slice(0, 10).map((result) => (
+                    <div
+                      key={`${result.game_date}-${result.home_team}`}
+                      className="flex items-center gap-2 text-xs rounded bg-[#111] border border-gray-900 px-3 py-2"
+                    >
+                      <span className="text-[#39ff14] font-bold font-mono shrink-0">13</span>
+                      <span className="text-gray-600 font-mono shrink-0">{result.game_date}</span>
+                      <span className="text-white truncate">
+                        <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
+                        {' scored '}
+                        <span className="text-[#39ff14] font-bold">13</span>
+                        {' — '}
+                        {result.away_team}@{result.home_team}{' '}
+                        ({result.away_score}–{result.home_score})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Closest Miss Board */}
+              <section>
+                <h2 className="text-lg font-bold mb-4">Closest Miss Board 💔</h2>
+                {closestMisses && closestMisses.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {closestMisses.map((s) => {
+                      const member = members?.find((m) => m.id === s.member_id)
+                      const diff = Math.abs((s.closest_miss_score ?? 0) - 13)
+                      return (
+                        <div
+                          key={s.member_id}
+                          className="flex items-center gap-2 text-xs rounded bg-[#111] border border-gray-900 px-3 py-2"
+                        >
+                          {s.closest_miss_date && (
+                            <span className="text-gray-500 font-mono shrink-0">{fmtMD(s.closest_miss_date)}</span>
+                          )}
+                          <span className="text-amber-400 font-bold shrink-0">{s.closest_miss_score} runs</span>
+                          <span className="text-white truncate">{member?.name ?? '—'} ({member?.assigned_team})</span>
+                          <span className="text-gray-600 ml-auto shrink-0 text-[10px]">
+                            {diff === 1 ? '1 away!' : `${diff} away`}
+                          </span>
+                        </div>
+                      )
+                    })}
                   </div>
-                ))}
-              </div>
-            </section>
+                ) : (
+                  <div className="text-gray-700 text-xs">No near-misses recorded yet.</div>
+                )}
+              </section>
+            </div>
           )}
 
           {/* 13-Run Lore — franchise / day / home-away / month breakdowns */}
           {thirteenHistory && thirteenHistory.length > 0 && (
             <ThirteenRunLore games={thirteenHistory} />
-          )}
-
-          {/* Closest Miss Board */}
-          {closestMisses && closestMisses.length > 0 && (
-            <section>
-              <h2 className="text-lg font-bold mb-4">Closest Miss Board 💔</h2>
-              <div className="space-y-2">
-                {closestMisses.map((s) => {
-                  const member = members?.find((m) => m.id === s.member_id)
-                  const diff = Math.abs((s.closest_miss_score ?? 0) - 13)
-                  return (
-                    <div
-                      key={s.member_id}
-                      className="flex items-center gap-3 text-sm rounded bg-[#111] border border-gray-900 px-4 py-2"
-                    >
-                      {s.closest_miss_date && (
-                        <span className="text-gray-500 font-mono">{fmtMD(s.closest_miss_date)}</span>
-                      )}
-                      <span className="text-amber-400 font-bold">{s.closest_miss_score} runs</span>
-                      <span className="text-white">{member?.name ?? '—'} ({member?.assigned_team})</span>
-                      <span className="text-gray-600 ml-auto">— {diff === 1 ? 'one run away!' : `${diff} runs away`}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
           )}
 
           {/* Footer — inside current year tab */}

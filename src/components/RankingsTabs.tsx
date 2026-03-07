@@ -45,10 +45,12 @@ interface Badge {
 /**
  * Compute all badge awards from the current dataset + optional historicalRaw.
  * Returns a map of player name → Badge[].
+ * Pass `year` when showing a specific season's data (changes "Career" → "{year} Season").
  */
 function computeBadges(
   data: AllTimeEntry[],
-  historicalRaw?: HistoricalRow[]
+  historicalRaw?: HistoricalRow[],
+  year?: number
 ): Map<string, Badge[]> {
   const map = new Map<string, Badge[]>()
   const push = (name: string, badge: Badge) => {
@@ -58,14 +60,16 @@ function computeBadges(
 
   if (data.length === 0) return map
 
-  // Ironman — played every season in ALL_YEARS
-  for (const e of data) {
-    if (e.yearsPlayed.length === IRONMAN_COUNT) {
-      push(e.name, { emoji: '🏆', label: 'Ironman', title: `Ironman — played all ${IRONMAN_COUNT} seasons` })
+  // Ironman — only meaningful in all-time context
+  if (!year) {
+    for (const e of data) {
+      if (e.yearsPlayed.length === IRONMAN_COUNT) {
+        push(e.name, { emoji: '🏆', label: 'Ironman', title: `Ironman — played all ${IRONMAN_COUNT} seasons` })
+      }
     }
   }
 
-  // 👑 Career Wins Leader (most total 13-run weeks, ties included)
+  // 👑 Wins Leader
   const maxShares = Math.max(...data.map((e) => e.totalShares))
   if (maxShares > 0) {
     for (const e of data) {
@@ -73,13 +77,15 @@ function computeBadges(
         push(e.name, {
           emoji: '👑',
           label: 'Wins Leader',
-          title: `Career Wins Leader — ${maxShares} 13-run week${maxShares !== 1 ? 's' : ''}`,
+          title: year
+            ? `${year} Wins Leader — ${maxShares} 13-run week${maxShares !== 1 ? 's' : ''}`
+            : `Career Wins Leader — ${maxShares} 13-run week${maxShares !== 1 ? 's' : ''}`,
         })
       }
     }
   }
 
-  // 💰 Career Money Leader (highest total won, ties included)
+  // 💰 Money Leader
   const maxMoney = Math.max(...data.map((e) => e.totalWon))
   if (maxMoney > 0) {
     for (const e of data) {
@@ -87,14 +93,16 @@ function computeBadges(
         push(e.name, {
           emoji: '💰',
           label: 'Money Leader',
-          title: `Career Money Leader — $${maxMoney.toLocaleString()} all-time`,
+          title: year
+            ? `${year} Money Leader — $${maxMoney.toLocaleString()}`
+            : `Career Money Leader — $${maxMoney.toLocaleString()} all-time`,
         })
       }
     }
   }
 
-  // Single-season records — only computable with historicalRaw
-  if (historicalRaw && historicalRaw.length > 0) {
+  // Single-season records — only computable with historicalRaw, and only in all-time view
+  if (!year && historicalRaw && historicalRaw.length > 0) {
     // 🔥 Single-Season Wins Record
     const maxSingleSeasonShares = Math.max(...historicalRaw.map((r) => r.shares))
     if (maxSingleSeasonShares > 0) {
@@ -169,10 +177,12 @@ function AllTimeTable({
   data,
   slug,
   historicalRaw,
+  year,
 }: {
   data: AllTimeEntry[]
   slug?: string
   historicalRaw?: HistoricalRow[]
+  year?: number
 }) {
   const [sortCol, setSortCol] = useState<AllTimeSort>('totalWon')
   const [dir, setDir] = useState<Dir>('desc')
@@ -194,7 +204,7 @@ function AllTimeTable({
     return dir === 'desc' ? bv - av : av - bv
   })
 
-  const badges = computeBadges(data, historicalRaw)
+  const badges = computeBadges(data, historicalRaw, year)
 
   // Determine which badge types are present so the legend is dynamic
   const allBadges = Array.from(badges.values()).flat()
@@ -270,11 +280,11 @@ function AllTimeTable({
       {allBadges.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
           {hasIronman     && <span>🏆 Ironman — played all {IRONMAN_COUNT} seasons</span>}
-          {hasWinsLeader  && <span>👑 Career Wins Leader</span>}
-          {hasMoneyLeader && <span>💰 Career Money Leader</span>}
+          {hasWinsLeader  && <span>👑 {year ? `${year} Wins Leader` : 'Career Wins Leader'}</span>}
+          {hasMoneyLeader && <span>💰 {year ? `${year} Money Leader` : 'Career Money Leader'}</span>}
           {hasSsnWins     && <span>🔥 Single-Season Wins Record</span>}
           {hasSsnMoney    && <span>💸 Single-Season Money Record</span>}
-          <span className="text-gray-700">· ⭐ Active player</span>
+          {!year && <span className="text-gray-700">· ⭐ Active player</span>}
         </div>
       )}
     </div>
@@ -335,13 +345,17 @@ export default function RankingsTabs({
   teams,
   slug,
   historicalRaw,
+  year,
 }: {
   allTime: AllTimeEntry[]
   teams: TeamEntry[]
   slug?: string
   historicalRaw?: HistoricalRow[]
+  year?: number
 }) {
   const [tab, setTab] = useState<'alltime' | 'teams'>('alltime')
+
+  const playerLabel = year ? `${year} Season Rankings` : 'All-Time Rankings'
 
   return (
     <div>
@@ -355,7 +369,7 @@ export default function RankingsTabs({
               : 'text-gray-500 hover:text-gray-300'
           }`}
         >
-          All-Time Rankings
+          {playerLabel}
         </button>
         <button
           onClick={() => setTab('teams')}
@@ -370,7 +384,7 @@ export default function RankingsTabs({
       </div>
 
       {tab === 'alltime' ? (
-        <AllTimeTable data={allTime} slug={slug} historicalRaw={historicalRaw} />
+        <AllTimeTable data={allTime} slug={slug} historicalRaw={historicalRaw} year={year} />
       ) : (
         <TeamTable data={teams} />
       )}

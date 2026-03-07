@@ -1,5 +1,8 @@
+import Link from 'next/link'
+
 export interface TodayEntry {
   memberName: string
+  memberId?: string
   team: string
   gamePk: number | null
   gameStatus: string | null   // 'Preview' | 'Live' | 'Final' | null
@@ -34,7 +37,13 @@ function sortKey(e: TodayEntry): number {
   return 4  // no game
 }
 
-export default function TodayStrip({ entries }: { entries: TodayEntry[] }) {
+export default function TodayStrip({
+  entries,
+  slug,
+}: {
+  entries: TodayEntry[]
+  slug?: string
+}) {
   if (entries.length === 0) return null
 
   const today = new Intl.DateTimeFormat('en-US', {
@@ -78,8 +87,8 @@ export default function TodayStrip({ entries }: { entries: TodayEntry[] }) {
         <span className="text-xs text-gray-600 font-mono">{today}</span>
       </div>
 
-      <div className="rounded-lg border border-gray-800 overflow-hidden">
-        {sorted.map((entry, i) => {
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+        {sorted.map((entry) => {
           const hit13     = entry.awayScore === 13 || entry.homeScore === 13
           const isFinal   = entry.gameStatus === 'Final'
           const isLive    = entry.gameStatus === 'Live'
@@ -90,17 +99,31 @@ export default function TodayStrip({ entries }: { entries: TodayEntry[] }) {
           const myHit13   = myScore === 13
           const oppHit13  = oppScore === 13
 
+          const nameEl = slug && entry.memberId ? (
+            <Link
+              href={`/league/${slug}/player/${entry.memberId}`}
+              className={`hover:text-[#39ff14] transition-colors ${hit13 ? 'text-[#39ff14]' : 'text-gray-400'}`}
+            >
+              {entry.memberName}
+            </Link>
+          ) : (
+            <span className={hit13 ? 'text-[#39ff14]' : 'text-gray-400'}>
+              {entry.memberName}
+            </span>
+          )
+
           return (
             <div
               key={entry.memberName}
               className={[
-                'flex items-center gap-3 px-4 py-2.5 text-sm',
-                i > 0 ? 'border-t border-gray-900' : '',
-                hit13 ? 'bg-[#39ff14]/[0.04]' : '',
+                'flex items-center gap-3 px-3 py-2 text-sm rounded border',
+                hit13
+                  ? 'bg-[#39ff14]/[0.04] border-[#39ff14]/20'
+                  : 'bg-[#111] border-gray-900',
               ].join(' ')}
             >
               {/* Status indicator */}
-              <div className="w-20 shrink-0">
+              <div className="w-16 shrink-0">
                 {isLive && (
                   <span className="flex items-center gap-1.5">
                     <span className="relative flex h-1.5 w-1.5 shrink-0">
@@ -138,7 +161,7 @@ export default function TodayStrip({ entries }: { entries: TodayEntry[] }) {
               </div>
 
               {/* Score or probability */}
-              <div className="shrink-0 text-right min-w-[72px]">
+              <div className="shrink-0 text-right min-w-[60px]">
                 {(isFinal || isLive) && myScore !== null && oppScore !== null ? (
                   <span className="font-mono text-sm">
                     <span className={`font-bold ${myHit13 ? 'text-[#39ff14] text-base' : 'text-white'}`}>
@@ -158,20 +181,9 @@ export default function TodayStrip({ entries }: { entries: TodayEntry[] }) {
                 )}
               </div>
 
-              {/* Member name + optional gameday link */}
-              <div className="text-gray-600 text-xs shrink-0 w-28 text-right truncate">
-                {entry.gamePk ? (
-                  <a
-                    href={`https://www.mlb.com/gameday/${entry.gamePk}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-gray-400 transition-colors"
-                  >
-                    {entry.memberName}
-                  </a>
-                ) : (
-                  entry.memberName
-                )}
+              {/* Member name — links to player page if slug+memberId available */}
+              <div className="text-xs shrink-0 w-24 text-right truncate font-mono">
+                {nameEl}
               </div>
             </div>
           )

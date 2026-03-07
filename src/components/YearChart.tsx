@@ -123,6 +123,9 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
       ? 'translateX(0%)'
       : 'translateX(-50%)'
 
+  // Make chart wide enough to see all years clearly — ~7px per year
+  const chartPxWidth = Math.max(SVG_W, Math.round(yrSpan * 7))
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -134,13 +137,13 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
         </span>
       </div>
 
-      {/* Chart area */}
-      <div className="relative">
+      {/* Chart area — horizontally scrollable */}
+      <div className="overflow-x-auto pb-1">
+      <div className="relative" style={{ minWidth: `${chartPxWidth}px` }}>
         <svg
           viewBox={`0 0 ${SVG_W} ${SVG_H}`}
           preserveAspectRatio="none"
-          className="w-full h-20"
-          style={{ cursor: 'crosshair' }}
+          style={{ width: '100%', height: '80px', cursor: 'crosshair' }}
         >
           <defs>
             <linearGradient id="ychart-grad-hist" x1="0" y1="0" x2="0" y2="1">
@@ -261,7 +264,7 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
         )}
       </div>
 
-      {/* Axis labels */}
+      {/* Axis labels — scrolls with chart */}
       <div className="relative h-4 mt-0.5">
         {decadeTicks.map((yr) => (
           <span
@@ -272,6 +275,7 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
             {yr}
           </span>
         ))}
+      </div>
       </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-700">

@@ -128,10 +128,7 @@ export default function LeagueTabs({
           const { players, teams } = getYearData(tab)
           return (
             <div className="space-y-2">
-              <div className="text-xs text-gray-600 font-mono uppercase tracking-widest mb-6">
-                {tab} Season
-              </div>
-              <RankingsTabs allTime={players} teams={teams} slug={slug} />
+              <RankingsTabs allTime={players} teams={teams} slug={slug} year={tab} />
             </div>
           )
         })()}
