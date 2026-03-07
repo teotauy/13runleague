@@ -160,7 +160,6 @@ export default async function AdminDashboard({ params }: Props) {
 
         {/* Payment Board */}
         <section>
-          <h2 className="text-xl font-bold mb-4">Payment Status</h2>
           <PaymentBoard
             members={members ?? []}
             payments={payments ?? []}

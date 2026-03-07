@@ -38,11 +38,10 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [calculatingWeek, setCalculatingWeek] = useState<number | null>(null)
-  const [weeks, setWeeks] = useState<number[]>([1, 2, 3, 4, 5]) // Show last 5 weeks by default
+  const [weeks, setWeeks] = useState<number[]>([1, 2, 3, 4, 5])
   const [newWeek, setNewWeek] = useState(6)
-
-  // Get current week (simplified: assume week 1 is the first week of the year)
-  const currentWeek = Math.ceil((new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [markingAllFor, setMarkingAllFor] = useState<string | null>(null)
 
   const getPaymentStatus = (memberId: string, week: number): PaymentStatus => {
     const payment = payments.find((p) => p.member_id === memberId && p.week_number === week)
@@ -53,20 +52,23 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
     return payouts.find((p) => p.week_number === week)
   }
 
+  // Summary stats for collapsed header
+  const totalCells = members.length * weeks.length
+  const paidCells = members.reduce((acc, m) =>
+    acc + weeks.filter((w) => getPaymentStatus(m.id, w) === 'paid').length, 0)
+  const unpaidMembers = members.filter((m) =>
+    weeks.some((w) => getPaymentStatus(m.id, w) !== 'paid')
+  )
+
   const handleCalculatePayouts = async (week: number) => {
     setCalculatingWeek(week)
     try {
       const res = await fetch(`/api/league/${leagueSlug}/calculate-payouts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          week_number: week,
-          year,
-        }),
+        body: JSON.stringify({ week_number: week, year }),
       })
-
       if (!res.ok) throw new Error('Failed to calculate payouts')
-
       router.refresh()
     } catch (err) {
       console.error(err)
@@ -85,15 +87,9 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
       const res = await fetch(`/api/league/${leagueSlug}/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          member_id: memberId,
-          week_number: week,
-          payment_status: next,
-        }),
+        body: JSON.stringify({ member_id: memberId, week_number: week, payment_status: next }),
       })
-
       if (!res.ok) throw new Error('Failed to update payment')
-
       router.refresh()
     } catch (err) {
       console.error(err)
@@ -103,14 +99,32 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
     }
   }
 
+  const handleMarkAllPaid = async (memberId: string) => {
+    setMarkingAllFor(memberId)
+    try {
+      await Promise.all(
+        weeks.map((week) =>
+          fetch(`/api/league/${leagueSlug}/payments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ member_id: memberId, week_number: week, payment_status: 'paid' }),
+          })
+        )
+      )
+      router.refresh()
+    } catch (err) {
+      console.error(err)
+      alert('Error marking all weeks paid')
+    } finally {
+      setMarkingAllFor(null)
+    }
+  }
+
   const getStatusColor = (status: PaymentStatus) => {
     switch (status) {
-      case 'paid':
-        return 'bg-green-900 text-green-200'
-      case '50%':
-        return 'bg-yellow-900 text-yellow-200'
-      default:
-        return 'bg-red-900 text-red-200'
+      case 'paid':   return 'bg-green-900 text-green-200'
+      case '50%':    return 'bg-yellow-900 text-yellow-200'
+      default:       return 'bg-red-900 text-red-200'
     }
   }
 
@@ -121,115 +135,166 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
 
   return (
     <div className="space-y-4">
-      {/* Add Week Button */}
-      <div className="flex gap-2">
-        <input
-          type="number"
-          min="1"
-          max="52"
-          value={newWeek}
-          onChange={(e) => setNewWeek(parseInt(e.target.value) || 1)}
-          className="w-16 bg-[#0a0a0a] border border-gray-700 rounded px-2 py-1 text-white"
-        />
-        <button
-          onClick={handleAddWeek}
-          className="px-3 py-1 bg-[#39ff14] text-black font-bold rounded text-sm hover:bg-[#2fd400]"
-        >
-          + Week
-        </button>
-      </div>
+      {/* Header with collapse toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="flex items-center gap-2 text-sm font-semibold text-gray-300 hover:text-white transition-colors"
+          >
+            <span className="text-gray-600">{isCollapsed ? '▶' : '▼'}</span>
+            Payment Status
+          </button>
+          {/* Summary pill — always visible */}
+          <span className={`px-2 py-0.5 rounded text-xs font-mono ${
+            unpaidMembers.length === 0
+              ? 'bg-green-900 text-green-200'
+              : 'bg-gray-800 text-gray-400'
+          }`}>
+            {paidCells}/{totalCells} paid
+            {unpaidMembers.length > 0 && ` · ${unpaidMembers.length} member${unpaidMembers.length > 1 ? 's' : ''} behind`}
+          </span>
+        </div>
 
-      {/* Payment Grid */}
-      <div className="overflow-x-auto rounded-lg border border-gray-800 bg-[#111]">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b border-gray-800 bg-[#0a0a0a]">
-              <th className="text-left px-4 py-3 text-gray-400 font-semibold">Member</th>
-              {weeks.map((week) => (
-                <th
-                  key={week}
-                  className="text-center px-3 py-3 text-gray-400 font-semibold border-l border-gray-800"
-                >
-                  W{week}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {members.map((member) => (
-              <tr key={member.id} className="border-b border-gray-900 hover:bg-[#0a0a0a]">
-                <td className="px-4 py-3 text-white font-semibold">{member.name}</td>
-                {weeks.map((week) => {
-                  const status = getPaymentStatus(member.id, week)
-                  return (
-                    <td
-                      key={`${member.id}-${week}`}
-                      className="text-center px-3 py-3 border-l border-gray-800"
-                    >
-                      <button
-                        onClick={() => handleCycleStatus(member.id, week)}
-                        disabled={isLoading}
-                        className={`w-12 py-1 rounded font-bold text-xs transition-colors ${getStatusColor(status)} hover:opacity-80 disabled:opacity-50`}
-                      >
-                        {status}
-                      </button>
-                    </td>
-                  )
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {members.length === 0 && (
-          <div className="text-center py-8 text-gray-500">No members to track</div>
+        {!isCollapsed && (
+          <div className="flex gap-2 items-center">
+            <input
+              type="number"
+              min="1"
+              max="52"
+              value={newWeek}
+              onChange={(e) => setNewWeek(parseInt(e.target.value) || 1)}
+              className="w-16 bg-[#0a0a0a] border border-gray-700 rounded px-2 py-1 text-white text-xs"
+            />
+            <button
+              onClick={handleAddWeek}
+              className="px-3 py-1 bg-[#39ff14] text-black font-bold rounded text-xs hover:bg-[#2fd400]"
+            >
+              + Week
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Payout Calculation Controls */}
-      <div className="mt-6 p-4 rounded-lg border border-gray-800 bg-[#0a0a0a]">
-        <h3 className="text-sm font-semibold text-white mb-3">Payout Calculation</h3>
-        <p className="text-xs text-gray-400 mb-4">Calculate and distribute payouts for specific weeks</p>
-        <div className="flex gap-2 flex-wrap">
-          {weeks.map((week) => {
-            const payoutStatus = getPayoutStatus(week)
-            return (
-              <button
-                key={week}
-                onClick={() => handleCalculatePayouts(week)}
-                disabled={isLoading || calculatingWeek === week}
-                className={`px-3 py-2 rounded text-xs font-semibold transition-colors ${
-                  payoutStatus?.calculated
-                    ? 'bg-blue-900 text-blue-200 hover:bg-blue-800'
-                    : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                {calculatingWeek === week ? '⏳ W' : payoutStatus?.calculated ? '✓ W' : 'W'}{week}
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      {/* Collapsible body */}
+      {!isCollapsed && (
+        <>
+          {/* Payment Grid */}
+          <div className="overflow-x-auto rounded-lg border border-gray-800 bg-[#111]">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-gray-800 bg-[#0a0a0a]">
+                  <th className="text-left px-4 py-3 text-gray-400 font-semibold">Member</th>
+                  {weeks.map((week) => (
+                    <th
+                      key={week}
+                      className="text-center px-3 py-3 text-gray-400 font-semibold border-l border-gray-800"
+                    >
+                      W{week}
+                    </th>
+                  ))}
+                  <th className="text-center px-3 py-3 text-gray-500 font-semibold border-l border-gray-800">
+                    All
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((member) => {
+                  const allPaid = weeks.every((w) => getPaymentStatus(member.id, w) === 'paid')
+                  const isMarkingThis = markingAllFor === member.id
+                  return (
+                    <tr key={member.id} className="border-b border-gray-900 hover:bg-[#0a0a0a]">
+                      <td className="px-4 py-3 text-white font-semibold">{member.name}</td>
+                      {weeks.map((week) => {
+                        const status = getPaymentStatus(member.id, week)
+                        return (
+                          <td
+                            key={`${member.id}-${week}`}
+                            className="text-center px-3 py-3 border-l border-gray-800"
+                          >
+                            <button
+                              onClick={() => handleCycleStatus(member.id, week)}
+                              disabled={isLoading || isMarkingThis}
+                              className={`w-12 py-1 rounded font-bold text-xs transition-colors ${getStatusColor(status)} hover:opacity-80 disabled:opacity-50`}
+                            >
+                              {status}
+                            </button>
+                          </td>
+                        )
+                      })}
+                      {/* Mark all weeks paid */}
+                      <td className="text-center px-3 py-3 border-l border-gray-800">
+                        {allPaid ? (
+                          <span className="text-green-600 text-xs font-mono">✓</span>
+                        ) : (
+                          <button
+                            onClick={() => handleMarkAllPaid(member.id)}
+                            disabled={isLoading || isMarkingThis}
+                            title="Mark all displayed weeks as paid"
+                            className="px-2 py-1 rounded text-xs font-bold bg-green-900 text-green-200 hover:bg-green-800 disabled:opacity-50"
+                          >
+                            {isMarkingThis ? '…' : '✓ All'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
 
-      {/* Legend */}
-      <div className="flex gap-4 text-xs text-gray-400 flex-wrap">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-6 bg-red-900 rounded"></div>
-          <span>Unpaid</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-6 bg-yellow-900 rounded"></div>
-          <span>50%</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-6 bg-green-900 rounded"></div>
-          <span>Paid</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-6 bg-blue-900 rounded"></div>
-          <span>Payouts Calculated</span>
-        </div>
-      </div>
+            {members.length === 0 && (
+              <div className="text-center py-8 text-gray-500">No members to track</div>
+            )}
+          </div>
+
+          {/* Payout Calculation Controls */}
+          <div className="mt-2 p-4 rounded-lg border border-gray-800 bg-[#0a0a0a]">
+            <h3 className="text-sm font-semibold text-white mb-1">Payout Calculation</h3>
+            <p className="text-xs text-gray-500 mb-3">Calculate and distribute payouts for specific weeks</p>
+            <div className="flex gap-2 flex-wrap">
+              {weeks.map((week) => {
+                const payoutStatus = getPayoutStatus(week)
+                return (
+                  <button
+                    key={week}
+                    onClick={() => handleCalculatePayouts(week)}
+                    disabled={isLoading || calculatingWeek === week}
+                    className={`px-3 py-2 rounded text-xs font-semibold transition-colors ${
+                      payoutStatus?.calculated
+                        ? 'bg-blue-900 text-blue-200 hover:bg-blue-800'
+                        : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {calculatingWeek === week ? '⏳ W' : payoutStatus?.calculated ? '✓ W' : 'W'}{week}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex gap-4 text-xs text-gray-500 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 h-4 bg-red-900 rounded"></div>
+              <span>Unpaid</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 h-4 bg-yellow-900 rounded"></div>
+              <span>50%</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 h-4 bg-green-900 rounded"></div>
+              <span>Paid</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 h-4 bg-blue-900 rounded"></div>
+              <span>Payouts Calculated</span>
+            </div>
+            <span className="text-gray-600 ml-2">· Click any cell to cycle status · ✓ All marks every displayed week as paid</span>
+          </div>
+        </>
+      )}
     </div>
   )
 }

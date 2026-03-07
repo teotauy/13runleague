@@ -9,6 +9,8 @@ import PotBreakdown from '@/components/PotBreakdown'
 import LeaderboardTable, { type LeaderboardRow } from '@/components/LeaderboardTable'
 import LeagueDashboardHeader from '@/components/LeagueDashboardHeader'
 import LeagueTabs from '@/components/LeagueTabs'
+import LeagueExplainer from '@/components/LeagueExplainer'
+import ThirteenRunLore from '@/components/ThirteenRunLore'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,12 +46,12 @@ export default async function LeagueDashboard({ params }: Props) {
     .from('streaks')
     .select('member_id, current_streak, longest_streak, closest_miss_score, closest_miss_date')
 
+  // Fetch ALL 13-run games — small dataset, used for both the recent list and lore stats
   const { data: thirteenHistory } = await supabase
     .from('game_results')
     .select('game_date, home_team, away_team, winning_team, home_score, away_score')
     .eq('was_thirteen', true)
     .order('game_date', { ascending: false })
-    .limit(50)
 
   const games = await fetchTodaySchedule()
 
@@ -236,12 +238,18 @@ export default async function LeagueDashboard({ params }: Props) {
             <LeaderboardTable rows={leaderboardRows} slug={slug} />
           </section>
 
-          {/* 13-Run History */}
+          {/* ── Explainer Zone — between live dashboard and lore ── */}
+          <LeagueExplainer />
+
+          {/* 13-Run History — recent 10 games */}
           {thirteenHistory && thirteenHistory.length > 0 && (
             <section>
-              <h2 className="text-lg font-bold mb-4">13-Run History in this League</h2>
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-lg font-bold">13-Run History</h2>
+                <span className="text-xs text-gray-600 font-mono">most recent</span>
+              </div>
               <div className="space-y-2">
-                {thirteenHistory.map((result) => (
+                {thirteenHistory.slice(0, 10).map((result) => (
                   <div
                     key={`${result.game_date}-${result.home_team}`}
                     className="flex items-center gap-3 text-sm rounded bg-[#111] border border-gray-900 px-4 py-2"
@@ -258,6 +266,11 @@ export default async function LeagueDashboard({ params }: Props) {
                 ))}
               </div>
             </section>
+          )}
+
+          {/* 13-Run Lore — franchise / day / home-away / month breakdowns */}
+          {thirteenHistory && thirteenHistory.length > 0 && (
+            <ThirteenRunLore games={thirteenHistory} />
           )}
 
           {/* Closest Miss Board */}

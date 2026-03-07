@@ -121,7 +121,7 @@ export default function LeagueTabs({
         )}
 
         {tab === 'alltime' && (
-          <RankingsTabs allTime={allTimeRankings} teams={teamRankings} slug={slug} />
+          <RankingsTabs allTime={allTimeRankings} teams={teamRankings} slug={slug} historicalRaw={historicalRaw} />
         )}
 
         {typeof tab === 'number' && tab !== currentYear && (() => {
