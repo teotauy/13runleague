@@ -1,3 +1,7 @@
+'use client'
+
+import YearChart from './YearChart'
+
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const
 const BASEBALL_MONTHS = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct']
@@ -215,134 +219,19 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
 
       </div>
 
-      {/* Bottom row — by year SVG area chart (full width) */}
-      {(() => {
-        if (yearOrdered.length < 2) return null
-
-        const SVG_W = 800
-        const SVG_H = 72
-        const LEAGUE_YEAR = 2018
-
-        const minYr = yearOrdered[0][0]
-        const maxYr = yearOrdered[yearOrdered.length - 1][0]
-        const yrSpan = maxYr - minYr
-
-        // Build count lookup for every year in range
-        const countByYear = new Map(yearOrdered)
-
-        // Generate (x, y) for every calendar year in range
-        type Pt = { yr: number; x: number; y: number; league: boolean }
-        const pts: Pt[] = []
-        for (let yr = minYr; yr <= maxYr; yr++) {
-          const count = countByYear.get(yr) ?? 0
-          const x = yrSpan > 0 ? ((yr - minYr) / yrSpan) * SVG_W : 0
-          const y = count > 0 ? SVG_H - (count / maxYear) * (SVG_H - 4) : SVG_H
-          pts.push({ yr, x, y, league: yr >= LEAGUE_YEAR })
-        }
-
-        // Area path helpers
-        const toD = (subset: Pt[]) => {
-          if (subset.length === 0) return ''
-          const first = subset[0]
-          const last = subset[subset.length - 1]
-          return (
-            `M ${first.x.toFixed(1)} ${SVG_H} ` +
-            subset.map(p => `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ') +
-            ` L ${last.x.toFixed(1)} ${SVG_H} Z`
-          )
-        }
-        const toLine = (subset: Pt[]) =>
-          subset.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-
-        const histPts   = pts.filter(p => !p.league)
-        const leaguePts = pts.filter(p => p.league)
-
-        // Decade tick marks
-        const firstDecade = Math.ceil(minYr / 20) * 20
-        const ticks: number[] = []
-        for (let y = firstDecade; y <= maxYr; y += 20) ticks.push(y)
-
-        const xOf = (yr: number) => ((yr - minYr) / yrSpan) * SVG_W
-
-        return (
-          <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                By Year
-              </h3>
-              <span className="text-xs text-gray-700 font-mono">
-                {minYr}–{maxYr} · peak {peakYearEntry[0]} ({peakYearEntry[1].toLocaleString()} games)
-              </span>
-            </div>
-
-            <svg
-              viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-              preserveAspectRatio="none"
-              className="w-full h-20"
-              aria-label="13-run games by year"
-            >
-              <defs>
-                <linearGradient id="grad-hist" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#374151" stopOpacity="0.7" />
-                  <stop offset="100%" stopColor="#374151" stopOpacity="0.1" />
-                </linearGradient>
-                <linearGradient id="grad-league" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#39ff14" stopOpacity="0.6" />
-                  <stop offset="100%" stopColor="#39ff14" stopOpacity="0.05" />
-                </linearGradient>
-              </defs>
-
-              {/* Baseline */}
-              <line x1="0" y1={SVG_H} x2={SVG_W} y2={SVG_H} stroke="#1f2937" strokeWidth="1" />
-
-              {/* Historical area + line */}
-              {histPts.length > 1 && (
-                <>
-                  <path d={toD(histPts)} fill="url(#grad-hist)" />
-                  <polyline points={toLine(histPts)} fill="none" stroke="#4b5563" strokeWidth="1" strokeLinejoin="round" />
-                </>
-              )}
-
-              {/* League-era area + line */}
-              {leaguePts.length > 1 && (
-                <>
-                  <path d={toD(leaguePts)} fill="url(#grad-league)" />
-                  <polyline points={toLine(leaguePts)} fill="none" stroke="#39ff14" strokeWidth="1.5" strokeLinejoin="round" />
-                </>
-              )}
-
-              {/* Decade tick lines */}
-              {ticks.map(yr => (
-                <line key={yr} x1={xOf(yr).toFixed(1)} y1={SVG_H - 4} x2={xOf(yr).toFixed(1)} y2={SVG_H} stroke="#374151" strokeWidth="1" />
-              ))}
-            </svg>
-
-            {/* Axis labels */}
-            <div className="relative h-4 mt-0.5">
-              {ticks.map(yr => (
-                <span
-                  key={yr}
-                  className="absolute text-xs text-gray-700 font-mono -translate-x-1/2"
-                  style={{ left: `${(xOf(yr) / SVG_W) * 100}%` }}
-                >
-                  {yr}
-                </span>
-              ))}
-            </div>
-
-            <div className="flex gap-4 mt-2 text-xs text-gray-700">
-              <span className="flex items-center gap-1.5">
-                <span className="inline-block w-6 h-1.5 bg-gray-600 rounded" />
-                MLB history
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="inline-block w-6 h-1.5 bg-[#39ff14] rounded" />
-                South Brooklyn era (2018–)
-              </span>
-            </div>
-          </div>
-        )
-      })()}
+      {/* Bottom row — by year interactive chart (full width, client component) */}
+      {yearOrdered.length >= 2 && (
+        <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
+          <YearChart
+            yearData={yearOrdered}
+            minYr={firstYear!}
+            maxYr={lastYear!}
+            maxCount={maxYear}
+            peakYear={peakYearEntry[0]}
+            peakCount={peakYearEntry[1]}
+          />
+        </div>
+      )}
 
     </section>
   )
