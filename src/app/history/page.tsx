@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import PastChampionsBanner, { type YearlyChampions } from '@/components/PastChampionsBanner'
+import HeartbreakBoard from '@/components/HeartbreakBoard'
 import SiteFooter from '@/components/SiteFooter'
 
 export const revalidate = 3600
@@ -13,6 +14,14 @@ export default async function HistoryPage() {
     .eq('was_thirteen', true)
     .order('game_date', { ascending: false })
     .limit(200)
+
+  // Fetch heartbreak games — was_thirteen + one team scored exactly 12
+  const { data: heartbreakGames } = await supabase
+    .from('game_results')
+    .select('game_date, home_team, away_team, home_score, away_score, winning_team')
+    .eq('was_thirteen', true)
+    .or('home_score.eq.12,away_score.eq.12')
+    .order('game_date', { ascending: false })
 
   // Fetch historical results for champions banner
   const { data: historicalData } = await supabase
@@ -90,6 +99,9 @@ export default async function HistoryPage() {
             </div>
           ))}
         </div>
+
+        {/* Heartbreak Board */}
+        <HeartbreakBoard games={heartbreakGames ?? []} />
 
         {/* Full log */}
         <section>
