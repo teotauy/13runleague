@@ -7,6 +7,7 @@ import PaymentBoard from '@/components/admin/PaymentBoard'
 import TeamAssignment from '@/components/admin/TeamAssignment'
 import PreSeasonStatus from '@/components/admin/PreSeasonStatus'
 import MemberPasswordForm from '@/components/admin/MemberPasswordForm'
+import RecalculateStreaksButton from '@/components/admin/RecalculateStreaksButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -148,6 +149,15 @@ export default async function AdminDashboard({ params }: Props) {
             payouts={payoutInfo}
             year={seasonYear}
           />
+        </section>
+
+        {/* Streaks */}
+        <section>
+          <h2 className="text-xl font-bold mb-1">Streaks &amp; Droughts</h2>
+          <p className="text-xs text-gray-600 mb-4">
+            Automatically recalculated whenever payouts are settled. Use this to backfill or repair the leaderboard's Drought column.
+          </p>
+          <RecalculateStreaksButton leagueSlug={slug} year={seasonYear} />
         </section>
 
         {/* League Settings */}

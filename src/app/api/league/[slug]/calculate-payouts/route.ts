@@ -8,6 +8,7 @@ import {
   recordPayouts,
   getSeasonYear,
 } from '@/lib/pot'
+import { recalculateStreaks } from '@/lib/streaks'
 
 interface CalculatePayoutsRequest {
   week_number: number
@@ -100,6 +101,9 @@ export async function POST(
       },
       supabase
     )
+
+    // Recalculate streaks (drought) for all members — runs after every settlement
+    await recalculateStreaks(leagueId, year, supabase)
 
     // Calculate total distributed
     const totalDistributed = payouts.reduce((sum, p) => sum + p.payout_amount, 0)
