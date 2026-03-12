@@ -1,9 +1,12 @@
 import { fetchTodaySchedule, fetchTeamSeasonStats, fetchPitcherEra, fetchLiveFeed, fetchTeamGameLog, currentSeason, fetchLastSeasonRunsPerGame, baseballToday } from '@/lib/mlb'
 import { buildLambda, gameThirteenProbability, getConditionalProbability } from '@/lib/probability'
-import GameCard from '@/components/GameCard'
+import CollapsibleGameCard from '@/components/CollapsibleGameCard'
 import LiveWatchCard from '@/components/LiveWatchCard'
 import LiveScoreboard from '@/components/LiveScoreboard'
 import ScorigramiGrid from '@/components/ScorigramiGrid'
+import LeagueExplainer from '@/components/LeagueExplainer'
+import ThirteenRunLore from '@/components/ThirteenRunLore'
+import { createServiceClient } from '@/lib/supabase/server'
 import type { MLBGame, MLBLiveGame } from '@/lib/mlb'
 import type { LiveGameState } from '@/lib/probability'
 
@@ -182,6 +185,14 @@ export default async function HomePage({ searchParams }: PageProps) {
     })
   )
 
+  // Historical 13-run games for lore section
+  const supabase = createServiceClient()
+  const { data: thirteenHistory } = await supabase
+    .from('game_results')
+    .select('game_date, home_team, away_team, winning_team, home_score, away_score')
+    .eq('was_thirteen', true)
+    .order('game_date', { ascending: false })
+
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-white">
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-10">
@@ -357,11 +368,12 @@ export default async function HomePage({ searchParams }: PageProps) {
           </section>
         )}
 
-        {/* Today's Games Heatmap */}
+        {/* Today's Games */}
         <section>
-          <h2 className="text-lg font-bold text-white mb-4">
-            Today&apos;s Games — Probability Heatmap
-          </h2>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="text-lg font-bold text-white">Today&apos;s Games</h2>
+            <span className="text-xs text-gray-700">sorted by P(13) · tap to expand</span>
+          </div>
           {enrichedGames.length === 0 ? (
             <div className="rounded border border-gray-800 bg-[#111] px-6 py-16 text-center space-y-2">
               <div className="text-gray-500 font-mono text-lg">No games scheduled today</div>
@@ -373,27 +385,36 @@ export default async function HomePage({ searchParams }: PageProps) {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {enrichedGames.map(
-                ({ game, awayLambda, homeLambda, combinedProb, isBlended, awayPitcherName, homePitcherName }) => (
-                  <GameCard
-                    key={game.gamePk}
-                    gamePk={game.gamePk}
-                    awayTeam={game.teams.away.team.abbreviation}
-                    homeTeam={game.teams.home.team.abbreviation}
-                    venueName={game.venue.name}
-                    venueId={String(game.venue.id)}
-                    awayPitcher={awayPitcherName}
-                    homePitcher={homePitcherName}
-                    awayLambda={awayLambda}
-                    homeLambda={homeLambda}
-                    combinedProbability={combinedProb}
-                    isBlended={isBlended}
-                    gameStatus={game.status.abstractGameState}
-                    awayScore={game.teams.away.score}
-                    homeScore={game.teams.home.score}
-                  />
-                )
+                ({ game, awayLambda, homeLambda, combinedProb, isBlended, awayPitcherName, homePitcherName }) => {
+                  // 4.5 — pass live inning state for in-game conditional lookup
+                  const liveFeed = activeLiveFeeds.find(f => f.gamePk === game.gamePk)
+                  const liveInning = liveFeed?.liveData.linescore.currentInning
+                  const liveIsTop = liveFeed?.liveData.linescore.isTopInning
+
+                  return (
+                    <CollapsibleGameCard
+                      key={game.gamePk}
+                      gamePk={game.gamePk}
+                      awayTeam={game.teams.away.team.abbreviation}
+                      homeTeam={game.teams.home.team.abbreviation}
+                      venueName={game.venue.name}
+                      venueId={String(game.venue.id)}
+                      awayPitcher={awayPitcherName}
+                      homePitcher={homePitcherName}
+                      awayLambda={awayLambda}
+                      homeLambda={homeLambda}
+                      combinedProbability={combinedProb}
+                      isBlended={isBlended}
+                      gameStatus={game.status.abstractGameState}
+                      awayScore={game.teams.away.score}
+                      homeScore={game.teams.home.score}
+                      inning={liveInning}
+                      isTopInning={liveIsTop}
+                    />
+                  )
+                }
               )}
             </div>
           )}
@@ -414,6 +435,43 @@ export default async function HomePage({ searchParams }: PageProps) {
           </section>
         )}
 
+        {/* ── Explainer Zone ── */}
+        <LeagueExplainer />
+
+        {/* ── 13-Run History (recent) ── */}
+        {thirteenHistory && thirteenHistory.length > 0 && (
+          <section>
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-lg font-bold"><span className="text-[#39ff14]">13</span>-Run History</h2>
+              <span className="text-xs text-gray-600 font-mono">most recent</span>
+            </div>
+            <div className="space-y-2">
+              {thirteenHistory.slice(0, 10).map((result) => (
+                <div
+                  key={`${result.game_date}-${result.home_team}`}
+                  className="flex items-center gap-3 text-sm rounded bg-[#111] border border-gray-900 px-4 py-2"
+                >
+                  <span className="text-[#39ff14] font-bold text-lg">13</span>
+                  <span className="text-gray-400 font-mono">{result.game_date}</span>
+                  <span className="text-white">
+                    <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
+                    {' scored '}
+                    <span className="text-[#39ff14] font-bold">13</span>
+                    {' — '}
+                    {result.away_team} @ {result.home_team}{' '}
+                    ({result.away_score}–{result.home_score})
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── 13-Run Lore ── */}
+        {thirteenHistory && thirteenHistory.length > 0 && (
+          <ThirteenRunLore games={thirteenHistory} />
+        )}
+
         {/* Footer */}
         <footer className="border-t border-gray-900 pt-6 text-gray-600 text-xs space-y-2">
           <p>
@@ -431,7 +489,7 @@ export default async function HomePage({ searchParams }: PageProps) {
           <p className="text-gray-700">
             Live data via MLB Stats API · Probabilities are estimates, not gambling advice.
           </p>
-          <p>
+          <div className="flex flex-wrap gap-4 items-center">
             <a
               href="https://buymeacoffee.com/colbyblack"
               target="_blank"
@@ -440,7 +498,13 @@ export default async function HomePage({ searchParams }: PageProps) {
             >
               ☕ Buy me a coffee
             </a>
-          </p>
+            <span className="text-gray-800">·</span>
+            <a href="/privacy" className="hover:text-gray-400 transition-colors">Privacy Policy</a>
+            <span className="text-gray-800">·</span>
+            <a href="/terms" className="hover:text-gray-400 transition-colors">Terms of Use</a>
+            <span className="text-gray-800">·</span>
+            <span className="text-gray-700">Built by Red Crow Labs · South Brooklyn</span>
+          </div>
         </footer>
       </div>
     </main>
