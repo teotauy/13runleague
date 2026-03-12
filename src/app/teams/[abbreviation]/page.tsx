@@ -2,6 +2,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { TEAM_COLORS, getTeamColor } from '@/lib/teamColors'
 import YearChart from '@/components/YearChart'
 import MiniBar from '@/components/MiniBar'
+import SiteFooter from '@/components/SiteFooter'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -286,32 +287,13 @@ export default async function TeamPage({ params }: Props) {
         )}
 
         {/* Footer */}
-        <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs space-y-2">
-          <p>
-            The information used here was obtained free of charge from and is copyrighted by{' '}
-            <a
-              href="https://www.retrosheet.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-gray-500"
-            >
-              Retrosheet
-            </a>
-            . Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
-          </p>
-          <p className="text-gray-800">
-            Historical records may be incomplete for pre-1920 seasons.
-          </p>
-          <div className="flex flex-wrap gap-4 items-center">
-            <Link href="/history" className="hover:text-gray-500 transition-colors">
-              ← All Teams
-            </Link>
-            <span className="text-gray-800">·</span>
-            <Link href="/" className="hover:text-gray-500 transition-colors">
-              Live Dashboard
-            </Link>
-          </div>
-        </footer>
+        <SiteFooter
+          showHistoricalNote
+          extraLinks={[
+            { label: '← All Teams', href: '/history' },
+            { label: 'Live Dashboard', href: '/' },
+          ]}
+        />
       </div>
     </main>
   )

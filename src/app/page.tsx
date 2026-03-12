@@ -6,6 +6,7 @@ import LiveScoreboard from '@/components/LiveScoreboard'
 import ScorigramiGrid from '@/components/ScorigramiGrid'
 import LeagueExplainer from '@/components/LeagueExplainer'
 import ThirteenRunLore from '@/components/ThirteenRunLore'
+import SiteFooter from '@/components/SiteFooter'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { MLBGame, MLBLiveGame } from '@/lib/mlb'
 import type { LiveGameState } from '@/lib/probability'
@@ -215,14 +216,13 @@ export default async function HomePage({ searchParams }: PageProps) {
           </div>
 
           <div className="flex flex-col sm:items-end gap-2">
-            {process.env.NEXT_PUBLIC_LEAGUE_SLUG && (
-              <a
-                href={`/league/${process.env.NEXT_PUBLIC_LEAGUE_SLUG}`}
-                className="self-start sm:self-auto px-4 py-2 bg-[#39ff14] text-black text-sm font-bold rounded hover:bg-[#2de010] transition-colors"
-              >
-                League Login →
-              </a>
-            )}
+            {/* 5.1 — League login always visible */}
+            <a
+              href={process.env.NEXT_PUBLIC_LEAGUE_SLUG ? `/league/${process.env.NEXT_PUBLIC_LEAGUE_SLUG}` : '/league'}
+              className="self-start sm:self-auto px-4 py-2 bg-[#39ff14] text-black text-sm font-bold rounded hover:bg-[#2de010] transition-colors"
+            >
+              My League →
+            </a>
 
           {/* Rolling window selector */}
           <div className="flex items-center gap-1 bg-[#111] border border-gray-800 rounded p-1">
@@ -473,39 +473,7 @@ export default async function HomePage({ searchParams }: PageProps) {
         )}
 
         {/* Footer */}
-        <footer className="border-t border-gray-900 pt-6 text-gray-600 text-xs space-y-2">
-          <p>
-            The information used here was obtained free of charge from and is copyrighted by{' '}
-            <a
-              href="https://www.retrosheet.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-gray-400"
-            >
-              Retrosheet
-            </a>
-            . Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
-          </p>
-          <p className="text-gray-700">
-            Live data via MLB Stats API · Probabilities are estimates, not gambling advice.
-          </p>
-          <div className="flex flex-wrap gap-4 items-center">
-            <a
-              href="https://buymeacoffee.com/colbyblack"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-yellow-500 hover:text-yellow-400 transition-colors"
-            >
-              ☕ Buy me a coffee
-            </a>
-            <span className="text-gray-800">·</span>
-            <a href="/privacy" className="hover:text-gray-400 transition-colors">Privacy Policy</a>
-            <span className="text-gray-800">·</span>
-            <a href="/terms" className="hover:text-gray-400 transition-colors">Terms of Use</a>
-            <span className="text-gray-800">·</span>
-            <span className="text-gray-700">Built by Red Crow Labs · South Brooklyn</span>
-          </div>
-        </footer>
+        <SiteFooter />
       </div>
     </main>
   )
