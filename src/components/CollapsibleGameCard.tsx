@@ -96,6 +96,17 @@ export default function CollapsibleGameCard(props: CollapsibleGameCardProps) {
   // Use live conditional prob for alert tier when available
   const displayProb = liveProb ?? combinedProbability
 
+  // ── 4.6: On Deck Alert — 10+ runs after the 7th ──────────────────────────
+  const awayOnDeck = isLive && inning !== undefined && inning >= 8 &&
+    (awayScore ?? 0) >= 10 && (awayScore ?? 0) < 13
+  const homeOnDeck = isLive && inning !== undefined && inning >= 8 &&
+    (homeScore ?? 0) >= 10 && (homeScore ?? 0) < 13
+  const isOnDeck = (awayOnDeck || homeOnDeck) && !hit13
+  const onDeckLabel = [
+    awayOnDeck ? `${awayTeam} ${awayScore}` : null,
+    homeOnDeck ? `${homeTeam} ${homeScore}` : null,
+  ].filter(Boolean).join(' & ')
+
   // ── 4.7: Threshold alert tier ─────────────────────────────────────────────
   const alertTier: AlertTier = !isFinal && !hit13 ? getAlertTier(displayProb) : null
   const aEmoji = alertEmoji(alertTier)
@@ -107,6 +118,7 @@ export default function CollapsibleGameCard(props: CollapsibleGameCardProps) {
 
   const borderColor = hit13
     ? '#39ff14'
+    : isOnDeck ? 'rgba(217,119,6,0.7)'    // amber for on-deck
     : alertTier ? alertBorderColor(alertTier)
     : isFinal ? '#4b5563' : '#374151'
   const bgColor = hit13 ? '#071007' : '#1a1a1a'
@@ -144,11 +156,13 @@ export default function CollapsibleGameCard(props: CollapsibleGameCardProps) {
           </span>
         )}
 
-        {/* 13 flash or alert emoji */}
+        {/* 13 flash or alert emoji or on-deck bell */}
         {hit13 ? (
           <span className="text-[#39ff14] text-sm shrink-0">⚡</span>
         ) : aEmoji ? (
           <span className="text-sm shrink-0">{aEmoji}</span>
+        ) : isOnDeck ? (
+          <span className="text-sm shrink-0">🔔</span>
         ) : null}
 
         {/* Matchup */}
