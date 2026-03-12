@@ -1,5 +1,6 @@
 import { getProbabilityTier, getProbabilityColor, type LambdaBreakdown } from '@/lib/probability'
 import { parkFactors } from '@/lib/probability'
+import Tooltip from './Tooltip'
 
 interface GameCardProps {
   gamePk: number
@@ -13,6 +14,10 @@ interface GameCardProps {
   homeLambda: LambdaBreakdown
   combinedProbability: number
   isBlended: boolean
+  // Score / status props (optional — not available for Preview games)
+  gameStatus?: string  // 'Preview' | 'Live' | 'Final'
+  awayScore?: number
+  homeScore?: number
 }
 
 const COORS_VENUE_ID = '19'
@@ -29,32 +34,74 @@ export default function GameCard({
   homeLambda,
   combinedProbability,
   isBlended,
+  gameStatus,
+  awayScore,
+  homeScore,
 }: GameCardProps) {
   const tier = getProbabilityTier(combinedProbability)
   const color = getProbabilityColor(tier)
   const pct = (combinedProbability * 100).toFixed(2)
   const parkFactor = parkFactors[venueId]
 
+  const isFinal = gameStatus === 'Final'
+  const isLive = gameStatus === 'Live'
+  const hasScore = (isLive || isFinal) && awayScore !== undefined && homeScore !== undefined
+
+  // Highlight if either team scored exactly 13
+  const awayHit13 = hasScore && awayScore === 13
+  const homeHit13 = hasScore && homeScore === 13
+
   return (
     <div
-      className="rounded-lg border bg-[#111] p-4 flex flex-col gap-3 transition-all"
-      style={{ borderColor: tier === 'high' ? color : '#1f2937' }}
+      className={`rounded-lg border bg-[#111] p-4 flex flex-col gap-3 transition-all ${isFinal ? 'opacity-60' : ''}`}
+      style={{ borderColor: tier === 'high' && !isFinal ? color : isFinal ? '#374151' : '#1f2937' }}
     >
-      {/* Header: matchup */}
-      <div className="flex items-center justify-between">
+      {/* Header: matchup + score/probability */}
+      <div className="flex items-center justify-between gap-2">
         <div className="text-lg font-bold text-white font-mono">
           {awayTeam} <span className="text-gray-500">@</span> {homeTeam}
         </div>
-        <div
-          className="text-xl font-bold font-mono"
-          style={{ color }}
-        >
-          {pct}%
-        </div>
+
+        {hasScore ? (
+          /* Score badge for Live/Final games */
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isLive && (
+              <span className="text-green-500 animate-pulse text-xs">●</span>
+            )}
+            <span
+              className={`text-xl font-bold font-mono ${
+                awayHit13 ? 'text-[#39ff14]' : 'text-white'
+              }`}
+            >
+              {awayScore}
+            </span>
+            <span className="text-gray-600 font-mono">–</span>
+            <span
+              className={`text-xl font-bold font-mono ${
+                homeHit13 ? 'text-[#39ff14]' : 'text-white'
+              }`}
+            >
+              {homeScore}
+            </span>
+            {isFinal && (
+              <span className="text-xs text-gray-600 font-mono ml-1">FINAL</span>
+            )}
+          </div>
+        ) : (
+          /* Probability estimate for Preview games */
+          <div className="text-xl font-bold font-mono shrink-0" style={{ color }}>
+            <Tooltip
+              label="P(13)"
+              explanation="Probability exactly 13 runs are scored today. Pre-game Poisson model using season run averages, park factors & starting pitcher."
+            >
+              {pct}%
+            </Tooltip>
+          </div>
+        )}
       </div>
 
       {/* Venue + park factor */}
-      <div className="flex items-center gap-2 text-sm text-gray-400">
+      <div className="flex items-center gap-2 text-sm text-gray-400 flex-wrap">
         <span>{venueName}</span>
         {parkFactor && (
           <span className="px-1.5 py-0.5 rounded text-xs font-mono bg-amber-950 text-amber-400">
@@ -80,22 +127,50 @@ export default function GameCard({
         </div>
       </div>
 
-      {/* Lambda breakdown */}
-      <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-        <LambdaCol label={awayTeam} lambda={awayLambda} />
-        <LambdaCol label={homeTeam} lambda={homeLambda} />
-      </div>
+      {/* Lambda breakdown — still shown for context, but de-emphasized for Final games */}
+      {!isFinal && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2 text-[10px] font-mono text-gray-600 uppercase tracking-wider px-1">
+            <div>Base</div>
+            <div>⚾ Park</div>
+            <div>🏠 Pitcher</div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+            <LambdaCol label={awayTeam} lambda={awayLambda} />
+            <LambdaCol label={homeTeam} lambda={homeLambda} />
+          </div>
+        </div>
+      )}
 
-      {/* Probability bar */}
-      <div className="h-1.5 rounded-full bg-gray-900 overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{
-            width: `${Math.min(combinedProbability * 1000, 100)}%`,
-            backgroundColor: color,
-          }}
-        />
-      </div>
+      {/* For Final games: show the estimated probability in small text for context */}
+      {isFinal && (
+        <div className="text-xs text-gray-600 font-mono">
+          Pre-game{' '}
+          <Tooltip
+            label="P(13)"
+            explanation="Probability exactly 13 runs are scored today. Pre-game Poisson model using season run averages, park factors & starting pitcher."
+          >
+            P(13)
+          </Tooltip>
+          : {pct}%
+          {(awayHit13 || homeHit13) && (
+            <span className="text-[#39ff14] ml-2 font-bold">✓ HIT 13!</span>
+          )}
+        </div>
+      )}
+
+      {/* Probability bar — hide for Final games */}
+      {!isFinal && (
+        <div className="h-1.5 rounded-full bg-gray-900 overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all"
+            style={{
+              width: `${Math.min(combinedProbability * 1000, 100)}%`,
+              backgroundColor: color,
+            }}
+          />
+        </div>
+      )}
 
       <a
         href={`https://www.mlb.com/gameday/${gamePk}`}
@@ -113,14 +188,14 @@ function LambdaCol({ label, lambda }: { label: string; lambda: LambdaBreakdown }
   return (
     <div className="space-y-1">
       <div className="text-gray-500 uppercase tracking-wider text-[10px]">{label}</div>
-      <div className="flex items-center gap-1 text-gray-400">
-        <span className="text-gray-600">base</span> {lambda.base.toFixed(2)}
-      </div>
-      <div className="flex items-center gap-1 text-gray-400">
-        <span className="text-gray-600">park</span> {lambda.parkAdjusted.toFixed(2)}
-      </div>
-      <div className="flex items-center gap-1 text-white font-semibold">
-        <span className="text-gray-600">adj</span> {lambda.pitcherAdjusted.toFixed(2)}
+      <div className="grid grid-cols-3 gap-2 text-gray-400">
+        <div className="text-right">{lambda.base.toFixed(2)}</div>
+        <div className="text-right text-gray-500">
+          {lambda.parkAdjusted.toFixed(2)}
+        </div>
+        <div className="text-right text-white font-semibold">
+          {lambda.pitcherAdjusted.toFixed(2)}
+        </div>
       </div>
     </div>
   )

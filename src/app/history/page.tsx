@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import PastChampionsBanner, { type YearlyChampions } from '@/components/PastChampionsBanner'
 
 export const revalidate = 3600
 
@@ -12,6 +13,12 @@ export default async function HistoryPage() {
     .order('game_date', { ascending: false })
     .limit(200)
 
+  // Fetch historical results for champions banner
+  const { data: historicalData } = await supabase
+    .from('historical_results')
+    .select('member_name, team, year, total_won, shares')
+    .order('year', { ascending: false })
+
   // Group by team
   const byTeam: Record<string, typeof games> = {}
   for (const game of games ?? []) {
@@ -21,6 +28,37 @@ export default async function HistoryPage() {
   }
 
   const teamsSorted = Object.entries(byTeam).sort((a, b) => b[1]!.length - a[1]!.length)
+
+  // Organize historical data into yearly champions
+  const yearlyChampionsMap = new Map<number, Array<{ memberName: string; team: string; totalWon: number; shares: number }>>()
+  for (const record of historicalData ?? []) {
+    if (!yearlyChampionsMap.has(record.year)) {
+      yearlyChampionsMap.set(record.year, [])
+    }
+    yearlyChampionsMap.get(record.year)!.push({
+      memberName: record.member_name,
+      team: record.team,
+      totalWon: record.total_won ?? 0,
+      shares: record.shares ?? 0,
+    })
+  }
+
+  // Convert to YearlyChampions format (all winners, ranked by total_won)
+  const yearlyChampions: YearlyChampions[] = Array.from(yearlyChampionsMap.entries())
+    .map(([year, members]) => {
+      const sorted = members.sort((a, b) => b.totalWon - a.totalWon)
+      return {
+        year,
+        champions: sorted.map((member, idx) => ({
+          rank: (idx + 1) as 1 | 2 | 3,
+          memberName: member.memberName,
+          team: member.team,
+          totalWon: member.totalWon,
+          year,
+        })),
+      }
+    })
+    .sort((a, b) => b.year - a.year)
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-white">
@@ -32,6 +70,9 @@ export default async function HistoryPage() {
           </h1>
           <p className="text-gray-500 mt-1">All recorded 13-run games by team</p>
         </header>
+
+        {/* Past Champions Banner */}
+        <PastChampionsBanner yearlyChampions={yearlyChampions} />
 
         {/* Summary grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
@@ -85,10 +126,20 @@ export default async function HistoryPage() {
           </div>
         </section>
 
-        <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs">
+        <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs space-y-2">
           <p>
             The information used here was obtained free of charge from and is copyrighted by Retrosheet.
             Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
+          </p>
+          <p>
+            <a
+              href="https://buymeacoffee.com/colbyblack"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-yellow-500 hover:text-yellow-400 transition-colors"
+            >
+              ☕ Buy me a coffee
+            </a>
           </p>
         </footer>
       </div>

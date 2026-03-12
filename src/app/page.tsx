@@ -1,7 +1,8 @@
-import { fetchTodaySchedule, fetchTeamSeasonStats, fetchPitcherEra, fetchLiveFeed, fetchTeamGameLog, currentSeason, fetchLastSeasonRunsPerGame } from '@/lib/mlb'
+import { fetchTodaySchedule, fetchTeamSeasonStats, fetchPitcherEra, fetchLiveFeed, fetchTeamGameLog, currentSeason, fetchLastSeasonRunsPerGame, baseballToday } from '@/lib/mlb'
 import { buildLambda, gameThirteenProbability, getConditionalProbability } from '@/lib/probability'
 import GameCard from '@/components/GameCard'
 import LiveWatchCard from '@/components/LiveWatchCard'
+import LiveScoreboard from '@/components/LiveScoreboard'
 import ScorigramiGrid from '@/components/ScorigramiGrid'
 import type { MLBGame, MLBLiveGame } from '@/lib/mlb'
 import type { LiveGameState } from '@/lib/probability'
@@ -127,9 +128,38 @@ export default async function HomePage({ searchParams }: PageProps) {
     liveGames.map((g) => fetchLiveFeed(g.gamePk).catch(() => null))
   )
   const activeLiveFeeds = liveFeeds.filter(Boolean) as MLBLiveGame[]
+
+  // Scoreboard data for ALL live games
+  const scoreboardGames = activeLiveFeeds.flatMap((feed) => {
+    try {
+      return [{
+        gamePk: feed.gamePk,
+        away: {
+          team: feed.gameData.teams.away.team.abbreviation,
+          runs: feed.liveData.linescore.teams.away.runs ?? 0,
+        },
+        home: {
+          team: feed.gameData.teams.home.team.abbreviation,
+          runs: feed.liveData.linescore.teams.home.runs ?? 0,
+        },
+        inning: feed.liveData.linescore.currentInning ?? 1,
+        isTopInning: feed.liveData.linescore.isTopInning ?? true,
+        outs: feed.liveData.linescore.outs ?? 0,
+        runners: {
+          first: !!feed.liveData.linescore.runners?.first,
+          second: !!feed.liveData.linescore.runners?.second,
+          third: !!feed.liveData.linescore.runners?.third,
+        },
+      }]
+    } catch {
+      return []
+    }
+  })
+
+  // Watch games: 9+ runs (high probability of exactly 13)
   const watchGames = activeLiveFeeds.filter((feed) => {
     const { away, home } = feed.liveData.linescore.teams
-    return away.runs >= 9 || home.runs >= 9
+    return (away?.runs ?? 0) >= 9 || (home?.runs ?? 0) >= 9
   })
 
   // Scorigami: top teams from today's highest-probability games
@@ -164,13 +194,24 @@ export default async function HomePage({ searchParams }: PageProps) {
             </h1>
             <p className="text-gray-500 mt-1 text-sm">
               Live probability dashboard —{' '}
-              {new Date().toLocaleDateString('en-US', {
+              {new Date(baseballToday() + 'T12:00:00-04:00').toLocaleDateString('en-US', {
+                timeZone: 'America/New_York',
                 weekday: 'long',
                 month: 'long',
                 day: 'numeric',
               })}
             </p>
           </div>
+
+          <div className="flex flex-col sm:items-end gap-2">
+            {process.env.NEXT_PUBLIC_LEAGUE_SLUG && (
+              <a
+                href={`/league/${process.env.NEXT_PUBLIC_LEAGUE_SLUG}`}
+                className="self-start sm:self-auto px-4 py-2 bg-[#39ff14] text-black text-sm font-bold rounded hover:bg-[#2de010] transition-colors"
+              >
+                League Login →
+              </a>
+            )}
 
           {/* Rolling window selector */}
           <div className="flex items-center gap-1 bg-[#111] border border-gray-800 rounded p-1">
@@ -189,21 +230,25 @@ export default async function HomePage({ searchParams }: PageProps) {
               </a>
             ))}
           </div>
+          </div>
         </header>
 
         {/* Offseason countdown banner — shown Oct 5 through Mar 24 */}
         {(() => {
-          const now = new Date()
-          const month = now.getMonth()
-          const day = now.getDate()
+          // Use baseball today (6 AM ET cutoff) so late-night games don't flip the date
+          const todayStr = baseballToday() // YYYY-MM-DD
+          const [y, mo, dy] = todayStr.split('-').map(Number)
+          const month = mo - 1 // 0-indexed for consistency with Date methods
+          const day = dy
           // Offseason: Oct 5 - Mar 24
           const isOffseason = (month > 9) || (month === 9 && day >= 5) || (month < 2) || (month === 2 && day < 25)
 
           if (!isOffseason) return null
 
           // Calculate days to next Opening Day (Mar 25)
-          const nextYear = month < 2 ? now.getFullYear() : now.getFullYear() + 1
+          const nextYear = (month > 2 || (month === 2 && day >= 25)) ? y + 1 : y
           const openingDay = new Date(`${nextYear}-03-25T00:00:00-04:00`)
+          const now = new Date(`${todayStr}T12:00:00-04:00`) // noon on baseball today
           const msDiff = openingDay.getTime() - now.getTime()
           const daysLeft = Math.ceil(msDiff / (1000 * 60 * 60 * 24))
 
@@ -221,7 +266,7 @@ export default async function HomePage({ searchParams }: PageProps) {
         })()}
 
         {/* Spring Training banner — shown until Opening Day */}
-        {new Date() < new Date('2026-03-25T00:00:00-04:00') && (
+        {new Date(baseballToday() + 'T12:00:00-04:00') < new Date('2026-03-25T00:00:00-04:00') && (
           <div className="rounded border border-blue-900 bg-blue-950/30 px-4 py-3 text-blue-300 text-sm flex items-start gap-3">
             <span className="text-lg leading-none mt-0.5">⚾</span>
             <div>
@@ -238,6 +283,9 @@ export default async function HomePage({ searchParams }: PageProps) {
             ⚠ MLB Stats API unavailable: {fetchError}. Showing fallback Poisson estimates.
           </div>
         )}
+
+        {/* Live Scoreboard - Shows all in-progress games */}
+        <LiveScoreboard games={scoreboardGames} />
 
         {/* Live 13-Watch */}
         {watchGames.length > 0 && (
@@ -280,16 +328,16 @@ export default async function HomePage({ searchParams }: PageProps) {
 
                 const innings = linescore.innings.map((inn) => ({
                   num: inn.num,
-                  away: inn.away.runs,
-                  home: inn.home.runs,
+                  away: inn.away?.runs,
+                  home: inn.home?.runs,
                 }))
 
                 return (
                   <LiveWatchCard
                     key={feed.gamePk}
                     gamePk={feed.gamePk}
-                    awayTeam={feed.gameData.teams.away.team.abbreviation}
-                    homeTeam={feed.gameData.teams.home.team.abbreviation}
+                    awayTeam={feed.gameData.teams.away.team?.abbreviation ?? '???'}
+                    homeTeam={feed.gameData.teams.home.team?.abbreviation ?? '???' }
                     awayRuns={awayRuns}
                     homeRuns={homeRuns}
                     inning={inning}
@@ -300,6 +348,8 @@ export default async function HomePage({ searchParams }: PageProps) {
                     awaySource={awayResult.source}
                     homeSource={homeResult.source}
                     innings={innings}
+                    awayLambda={awayLambdaVal}
+                    homeLambda={homeLambdaVal}
                   />
                 )
               })}
@@ -339,6 +389,9 @@ export default async function HomePage({ searchParams }: PageProps) {
                     homeLambda={homeLambda}
                     combinedProbability={combinedProb}
                     isBlended={isBlended}
+                    gameStatus={game.status.abstractGameState}
+                    awayScore={game.teams.away.score}
+                    homeScore={game.teams.home.score}
                   />
                 )
               )}
@@ -377,6 +430,16 @@ export default async function HomePage({ searchParams }: PageProps) {
           </p>
           <p className="text-gray-700">
             Live data via MLB Stats API · Probabilities are estimates, not gambling advice.
+          </p>
+          <p>
+            <a
+              href="https://buymeacoffee.com/colbyblack"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-yellow-500 hover:text-yellow-400 transition-colors"
+            >
+              ☕ Buy me a coffee
+            </a>
           </p>
         </footer>
       </div>

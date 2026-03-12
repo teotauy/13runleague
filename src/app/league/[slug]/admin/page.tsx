@@ -1,11 +1,18 @@
-import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
+import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { getWeekNumber, getSeasonYear } from '@/lib/pot'
 import MemberRoster from '@/components/admin/MemberRoster'
 import PaymentBoard from '@/components/admin/PaymentBoard'
 import TeamAssignment from '@/components/admin/TeamAssignment'
+import PreSeasonStatus from '@/components/admin/PreSeasonStatus'
+import MemberPasswordForm from '@/components/admin/MemberPasswordForm'
 
 export const dynamic = 'force-dynamic'
+
+function isAdmin(value: string | undefined) {
+  return value === 'admin' || value === 'authenticated'
+}
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -13,7 +20,15 @@ interface Props {
 
 export default async function AdminDashboard({ params }: Props) {
   const { slug } = await params
-  const supabase = await createClient()
+
+  // Auth check - admin only (middleware also enforces this)
+  const cookieStore = await cookies()
+  const authCookie = cookieStore.get(`league_auth_${slug}`)
+  if (!isAdmin(authCookie?.value)) {
+    notFound()
+  }
+
+  const supabase = createServiceClient()
 
   const { data: league, error } = await supabase
     .from('leagues')
@@ -23,9 +38,18 @@ export default async function AdminDashboard({ params }: Props) {
 
   if (error || !league) notFound()
 
+  // Optional query — member_password_hash column added in migration 20260305010000
+  // Gracefully handles the case where the migration hasn't run yet
+  const { data: leagueAuth } = await supabase
+    .from('leagues')
+    .select('member_password_hash')
+    .eq('id', league.id)
+    .single()
+  const hasMemberPassword = !!(leagueAuth as { member_password_hash?: string | null } | null)?.member_password_hash
+
   const { data: members } = await supabase
     .from('members')
-    .select('id, name, assigned_team, phone, email')
+    .select('id, name, assigned_team, phone, email, pre_season_returning, pre_season_paid')
     .eq('league_id', league.id)
     .order('name')
 
@@ -77,6 +101,24 @@ export default async function AdminDashboard({ params }: Props) {
           </div>
         </header>
 
+        {/* Pre-Season Status */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">Pre-Season Status</h2>
+            <span className="text-xs text-gray-600 font-mono">2026 draft prep</span>
+          </div>
+          <PreSeasonStatus
+            leagueSlug={slug}
+            members={(members ?? []).map((m) => ({
+              id: m.id,
+              name: m.name,
+              assigned_team: m.assigned_team,
+              pre_season_returning: (m.pre_season_returning as 'yes' | 'no' | 'maybe' | null) ?? null,
+              pre_season_paid: m.pre_season_paid ?? false,
+            }))}
+          />
+        </section>
+
         {/* Member Roster Management */}
         <section>
           <h2 className="text-xl font-bold mb-4">Roster</h2>
@@ -106,6 +148,17 @@ export default async function AdminDashboard({ params }: Props) {
             payouts={payoutInfo}
             year={seasonYear}
           />
+        </section>
+
+        {/* League Settings */}
+        <section>
+          <h2 className="text-xl font-bold mb-4">League Settings</h2>
+          <div className="space-y-4">
+            <MemberPasswordForm
+              leagueSlug={slug}
+              hasMemberPassword={hasMemberPassword}
+            />
+          </div>
         </section>
       </div>
     </main>

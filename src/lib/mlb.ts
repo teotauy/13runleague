@@ -73,6 +73,12 @@ export interface MLBLiveGame {
       currentInning: number
       currentInningOrdinal: string
       isTopInning: boolean
+      outs: number // 0, 1, 2, or 3
+      runners?: {
+        first?: { playerId: number }
+        second?: { playerId: number }
+        third?: { playerId: number }
+      }
       teams: {
         away: { runs: number; hits: number; errors: number }
         home: { runs: number; hits: number; errors: number }
@@ -103,8 +109,50 @@ export interface TeamSeason {
 // Schedule
 // ---------------------------------------------------------------------------
 
+/**
+ * Formats a Date to a YYYY-MM-DD string in Eastern Time.
+ */
+function etDateString(date: Date): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date)
+  const y = parts.find((p) => p.type === 'year')!.value
+  const m = parts.find((p) => p.type === 'month')!.value
+  const d = parts.find((p) => p.type === 'day')!.value
+  return `${y}-${m}-${d}`
+}
+
+/**
+ * Returns the current "baseball date" (YYYY-MM-DD) in Eastern Time.
+ *
+ * Baseball day doesn't turn over until 6 AM ET — a game that starts on
+ * March 3rd and runs until 2 AM due to rain delays or extra innings is
+ * still a March 3rd game as far as the schedule is concerned.
+ */
+export function baseballToday(): string {
+  const now = new Date()
+
+  // Get the current hour in ET
+  const etHourParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    hour: '2-digit',
+    hour12: false,
+  }).formatToParts(now)
+  const etHour = parseInt(etHourParts.find((p) => p.type === 'hour')!.value, 10)
+
+  // Before 6 AM ET → still the previous baseball day
+  if (etHour < 6) {
+    return etDateString(new Date(now.getTime() - 24 * 60 * 60 * 1000))
+  }
+
+  return etDateString(now)
+}
+
 function todayDate(): string {
-  return new Date().toISOString().split('T')[0]
+  return baseballToday()
 }
 
 export async function fetchTodaySchedule(): Promise<MLBGame[]> {
@@ -182,6 +230,19 @@ export async function fetchLiveFeed(gamePk: number): Promise<MLBLiveGame> {
   const url = `${MLB_API}/api/v1.1/game/${gamePk}/feed/live`
 
   const res = await fetch(url, { next: { revalidate: 15 } })
+  if (!res.ok) throw new Error(`MLB live feed fetch failed: ${res.status}`)
+
+  return res.json()
+}
+
+/**
+ * Client-side live feed fetch without Next.js revalidation
+ * Use this in React components for real-time polling (e.g., LiveWatchCard)
+ */
+export async function fetchLiveFeedClient(gamePk: number): Promise<MLBLiveGame> {
+  const url = `${MLB_API}/api/v1.1/game/${gamePk}/feed/live`
+
+  const res = await fetch(url)
   if (!res.ok) throw new Error(`MLB live feed fetch failed: ${res.status}`)
 
   return res.json()

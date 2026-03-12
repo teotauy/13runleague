@@ -7,7 +7,7 @@
  * Newark, DE 19711.
  */
 
-import rawLookup from '../../public/data/thirteen_lookup.json'
+import rawLookup from '../data/thirteen_lookup.json'
 
 interface LookupEntry {
   total: number
