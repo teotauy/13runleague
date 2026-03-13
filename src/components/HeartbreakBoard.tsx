@@ -1,3 +1,5 @@
+import { normalizeTeamAbbr } from '@/lib/teamColors'
+
 export interface HeartbreakGame {
   game_date: string
   home_team: string
@@ -23,8 +25,8 @@ export default function HeartbreakBoard({ games }: { games: HeartbreakGame[] }) 
 
   for (const g of games) {
     const heartbreakers: string[] = []
-    if (g.home_score === 12) heartbreakers.push(g.home_team)
-    if (g.away_score === 12) heartbreakers.push(g.away_team)
+    if (g.home_score === 12) heartbreakers.push(normalizeTeamAbbr(g.home_team))
+    if (g.away_score === 12) heartbreakers.push(normalizeTeamAbbr(g.away_team))
 
     for (const team of heartbreakers) {
       const existing = franchiseMap.get(team)

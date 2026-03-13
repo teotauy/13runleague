@@ -1,5 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/server'
-import { TEAM_COLORS, getTeamColor } from '@/lib/teamColors'
+import { TEAM_COLORS, getTeamColor, franchiseAbbrs } from '@/lib/teamColors'
 import YearChart from '@/components/YearChart'
 import MiniBar from '@/components/MiniBar'
 import SiteFooter from '@/components/SiteFooter'
@@ -32,12 +32,13 @@ export default async function TeamPage({ params }: Props) {
   const teamInfo = getTeamColor(abbr)
   const supabase = createServiceClient()
 
-  // All games where this team scored exactly 13 runs
+  // All games where this franchise scored exactly 13 runs (includes legacy abbrs e.g. OAK for ATH)
+  const abbrs = franchiseAbbrs(abbr)
   const { data: games } = await supabase
     .from('game_results')
     .select('game_date, home_team, away_team, winning_team, home_score, away_score')
     .eq('was_thirteen', true)
-    .eq('winning_team', abbr)
+    .in('winning_team', abbrs)
     .order('game_date', { ascending: false })
 
   const allGames = games ?? []
@@ -51,7 +52,7 @@ export default async function TeamPage({ params }: Props) {
   const monthMap = new Map<string, number>()
 
   for (const g of allGames) {
-    if (g.home_team === abbr) homeCount++
+    if (abbrs.includes(g.home_team)) homeCount++
     else awayCount++
 
     const yr = parseInt(g.game_date.slice(0, 4), 10)

@@ -231,6 +231,28 @@ export const TEAM_COLORS: Record<string, TeamColor> = {
 }
 
 /**
+ * Maps legacy/renamed team abbreviations to their current equivalent.
+ * Use normalizeTeamAbbr() when reading from the database (Retrosheet data
+ * uses old abbreviations) and franchiseAbbrs() when querying.
+ */
+export const TEAM_ABBR_ALIASES: Record<string, string> = {
+  OAK: 'ATH', // Oakland Athletics → Athletics (2025+)
+}
+
+/** Normalize a stored abbreviation to its current equivalent. */
+export function normalizeTeamAbbr(abbr: string): string {
+  return TEAM_ABBR_ALIASES[abbr] ?? abbr
+}
+
+/** Return all abbreviations (current + historical) for a given current abbr. */
+export function franchiseAbbrs(abbr: string): string[] {
+  const aliases = Object.entries(TEAM_ABBR_ALIASES)
+    .filter(([, v]) => v === abbr)
+    .map(([k]) => k)
+  return [abbr, ...aliases]
+}
+
+/**
  * Get team color by abbreviation
  * Falls back to neutral gray if team not found
  */
