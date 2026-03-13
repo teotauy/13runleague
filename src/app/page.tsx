@@ -139,11 +139,11 @@ export default async function HomePage({ searchParams }: PageProps) {
       return [{
         gamePk: feed.gamePk,
         away: {
-          team: feed.gameData.teams.away.team.abbreviation,
+          team: feed.gameData.teams.away.abbreviation,
           runs: feed.liveData.linescore.teams.away.runs ?? 0,
         },
         home: {
-          team: feed.gameData.teams.home.team.abbreviation,
+          team: feed.gameData.teams.home.abbreviation,
           runs: feed.liveData.linescore.teams.home.runs ?? 0,
         },
         inning: feed.liveData.linescore.currentInning ?? 1,
@@ -347,8 +347,8 @@ export default async function HomePage({ searchParams }: PageProps) {
                   <LiveWatchCard
                     key={feed.gamePk}
                     gamePk={feed.gamePk}
-                    awayTeam={feed.gameData.teams.away.team?.abbreviation ?? '???'}
-                    homeTeam={feed.gameData.teams.home.team?.abbreviation ?? '???' }
+                    awayTeam={feed.gameData.teams.away.abbreviation ?? '???'}
+                    homeTeam={feed.gameData.teams.home.abbreviation ?? '???'}
                     awayRuns={awayRuns}
                     homeRuns={homeRuns}
                     inning={inning}

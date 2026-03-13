@@ -59,8 +59,8 @@ export interface MLBLiveGame {
   gameData: {
     status: { abstractGameState: string; detailedState: string }
     teams: {
-      away: { team: MLBTeam }
-      home: { team: MLBTeam }
+      away: MLBTeam
+      home: MLBTeam
     }
     venue: MLBVenue
     probablePitchers?: {
