@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/mlb'
 import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
 import { getWeekNumber, getSeasonYear, getWinnersForWeek } from '@/lib/pot'
@@ -220,6 +221,12 @@ export default async function LeagueDashboard({ params }: Props) {
     })
     .slice(0, 5)
 
+  // Season Archive years derived from historicalRaw (already fetched above)
+  const archiveYears = [...new Set((historicalRaw ?? []).map((r) => r.year))].sort(
+    (a, b) => a - b
+  )
+  const mostRecentArchiveYear = archiveYears.length > 0 ? archiveYears[archiveYears.length - 1] : null
+
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-white">
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
@@ -350,6 +357,26 @@ export default async function LeagueDashboard({ params }: Props) {
             </div>
           </footer>
         </LeagueTabs>
+
+        {/* Season Archive */}
+        {archiveYears.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 pt-2">
+            <span className="text-gray-500 text-sm">📅 Season Archive:</span>
+            {archiveYears.map((y) => (
+              <Link
+                key={y}
+                href={`/league/${slug}/history/${y}`}
+                className={
+                  y === mostRecentArchiveYear
+                    ? 'px-3 py-1 rounded-full text-sm font-bold bg-[#39ff14] text-black'
+                    : 'px-3 py-1 rounded-full text-sm bg-[#1a1a1a] text-gray-400 border border-[#333] hover:text-white'
+                }
+              >
+                {y}
+              </Link>
+            ))}
+          </div>
+        )}
 
       </div>
     </main>
