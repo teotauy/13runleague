@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import DraftRankingsBoard from './DraftRankingsBoard'
+import type { TeamStat } from './DraftRankingsBoard'
 
 interface Member {
   id: string
@@ -28,12 +30,13 @@ interface Props {
   members: Member[]
   activeDraft: DraftSession | null
   draftPicks: DraftPick[]
+  teamStats: TeamStat[]
 }
 
 const MLB_TEAMS = [
-  'ARI', 'ATL', 'BAL', 'BOS', 'CHC', 'CWS', 'CLE', 'COL', 'DET', 'HOU',
-  'KC', 'LAA', 'LAD', 'MIA', 'MIL', 'MIN', 'NYM', 'NYY', 'ATH', 'PHI',
-  'PIT', 'SD', 'SEA', 'SF', 'STL', 'TB', 'TEX', 'TOR', 'WSH'
+  'ARI', 'ATL', 'BAL', 'BOS', 'CHC', 'CIN', 'CWS', 'CLE', 'COL', 'DET',
+  'HOU', 'KC', 'LAA', 'LAD', 'MIA', 'MIL', 'MIN', 'NYM', 'NYY', 'ATH',
+  'PHI', 'PIT', 'SD', 'SEA', 'SF', 'STL', 'TB', 'TEX', 'TOR', 'WSH'
 ]
 
 export default function DraftRoom({
@@ -42,6 +45,7 @@ export default function DraftRoom({
   members,
   activeDraft,
   draftPicks,
+  teamStats,
 }: Props) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
@@ -171,6 +175,8 @@ export default function DraftRoom({
             </button>
           </div>
         </div>
+
+        <DraftRankingsBoard teamStats={teamStats} pickedTeams={pickedTeams} />
       </div>
     )
   }
@@ -237,6 +243,8 @@ export default function DraftRoom({
             </table>
           </div>
         </div>
+
+        <DraftRankingsBoard teamStats={teamStats} pickedTeams={pickedTeams} />
       </div>
     )
   }
@@ -330,6 +338,12 @@ export default function DraftRoom({
           </label>
         </div>
       </div>
+
+      <DraftRankingsBoard
+        teamStats={teamStats}
+        pickedTeams={pickedTeams}
+        onSelectTeam={(abbr) => setSelectedTeam(abbr)}
+      />
     </div>
   )
 }
