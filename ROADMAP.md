@@ -164,7 +164,7 @@ The reason people check their phones during games.
 - [ ] 4.9 Alert deduplication - alert_log table prevents repeat messages per game per event type
 - [ ] 4.10 SMS opt-in flow - phone number, team preference, threshold setting, consent checkbox with timestamp, STOP handler
 - [x] 4.11 Live game indicators - visual "LIVE" badge with pulsing indicator on game cards in the heatmap; show inning and current score for games in progress; make it immediately obvious which games are happening right now ✓ claude/magical-mclean
-- [ ] 4.12 Browser push notifications — league-wide (no per-member login needed); "🔔 Get notified" opt-in button on league page; push_subscriptions table (league_id, subscription_json); service worker (public/sw.js); Vercel Cron every 5 min during game hours checks live MLB scores, fires once per game_pk via web-push + VAPID keys; dedup via push_notifications_sent table; requires VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY + VAPID_EMAIL in env vars (generate with `npx web-push generate-vapid-keys`)
+- [ ] 4.12 Browser push notifications — global, no league or login context needed; "🔔 Get notified" opt-in button on homepage; push_subscriptions table (id, subscription_json, created_at); service worker (public/sw.js); Vercel Cron every 5 min during game hours checks live MLB scores, sends "⚡ The White Sox just scored 13!" to ALL subscribers when any team hits exactly 13; dedup via push_notifications_sent(game_pk, team) so each team/game fires once; web-push npm package + VAPID keys; FIRST STEP: run `npx web-push generate-vapid-keys` and add VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY + VAPID_EMAIL to Vercel env vars
 
 ---
 
