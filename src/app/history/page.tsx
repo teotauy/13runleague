@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import PastChampionsBanner, { type YearlyChampions } from '@/components/PastChampionsBanner'
 import HeartbreakBoard from '@/components/HeartbreakBoard'
+import DynastyTracker from '@/components/DynastyTracker'
 import SiteFooter from '@/components/SiteFooter'
 
 export const revalidate = 3600
@@ -83,6 +84,11 @@ export default async function HistoryPage() {
 
         {/* Past Champions Banner */}
         <PastChampionsBanner yearlyChampions={yearlyChampions} />
+
+        {/* Dynasty Tracker */}
+        {historicalData && historicalData.length > 0 && (
+          <DynastyTracker data={historicalData} />
+        )}
 
         {/* Summary grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
