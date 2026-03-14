@@ -63,6 +63,13 @@ export const TEAM_COLORS: Record<string, TeamColor> = {
     textColor: '#ffffff',
     darkVariant: '#001F35',
   },
+  CIN: {
+    abbreviation: 'CIN',
+    name: 'Reds',
+    primaryColor: '#C6011F',
+    textColor: '#ffffff',
+    darkVariant: '#7A0012',
+  },
   COL: {
     abbreviation: 'COL',
     name: 'Rockies',
@@ -144,8 +151,8 @@ export const TEAM_COLORS: Record<string, TeamColor> = {
   },
 
   // AL West
-  OAK: {
-    abbreviation: 'OAK',
+  ATH: {
+    abbreviation: 'ATH',
     name: 'Athletics',
     primaryColor: '#003831',
     textColor: '#ffffff',
@@ -263,4 +270,19 @@ export const RANK_COLORS = {
     background: '#9CA3AF',
     text: '#111111',
   },
+}
+
+
+// OAK → ATH franchise alias (Athletics relocated to Sacramento 2025)
+export const TEAM_ABBR_ALIASES: Record<string, string> = { OAK: 'ATH' }
+
+export function normalizeTeamAbbr(abbr: string): string {
+  return TEAM_ABBR_ALIASES[abbr] ?? abbr
+}
+
+export function franchiseAbbrs(abbr: string): string[] {
+  const aliases = Object.entries(TEAM_ABBR_ALIASES)
+    .filter(([, v]) => v === abbr)
+    .map(([k]) => k)
+  return [abbr, ...aliases]
 }
