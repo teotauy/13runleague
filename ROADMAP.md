@@ -107,6 +107,8 @@ Small UX fixes that came up during 2026 Spring Training setup.
 - [x] 2.22 All-time rankings badge system — 5 emoji badges computed from data: 🏆 Ironman (every season), 👑 Career Wins Leader, 💰 Career Money Leader, 🔥 Single-Season Wins Record, 💸 Single-Season Money Record; legend shows only badge types present ✓
 - [x] 2.23 Cliff Lungaretti 2020 data fix — migration 20260306010000_fix_cliff_2020.sql corrects shares=0/total_won=0 to shares=1/total_won=1050 for Week 1 2020 ✓
 - [x] 2.24 Team rankings cleanup — removed "Years Won" column (misleading in context); table now shows 13-Run Weeks + Total Paid Out only ✓
+- [x] 2.25 OAK→ATH franchise alias — TEAM_ABBR_ALIASES + normalizeTeamAbbr() + franchiseAbbrs() in teamColors.ts; ThirteenRunLore, HeartbreakBoard, and /teams/[abbr] page all merge OAK history under ATH ✓ claude/magical-mclean
+- [x] 2.26 Losing streak (Drought) pipeline — recalculateStreaks() in lib/streaks.ts; recalculate-streaks API endpoint; admin "Recalculate Streaks" button; streaks auto-update on payout settlement ✓ claude/magical-mclean
 
 ---
 
@@ -122,7 +124,7 @@ What makes this feel like a real league, not a spreadsheet.
 - [ ] 3.4 Dynasty Tracker - surfaces multi-win seasons and dominant stretches (e.g. Brad Brown 3 wins in 2018, Matt Pariseau 19 shares all-time)
 - [ ] 3.5 Historical season browser - year-by-year results, week-by-week breakdown, rollover chains visualized
 - [x] 3.6 Player profile page - /league/[slug]/player/[id]; career stats, teams held by year, win history, earnings timeline; clicking player name in leaderboard and rankings navigates here ✓ (BBRef-style layout: achievement badges 💰🏆⚡🏟️, season circles timeline, career stats, active streak, by-season table with leader highlights)
-- [ ] 3.7 Heartbreak Board - teams that reached 12 runs and stopped; running all-time tally; The Cubs have broken hearts 7 times
+- [x] 3.7 Heartbreak Board - teams that reached 12 runs and stopped; running all-time tally; The Cubs have broken hearts 7 times ✓ claude/magical-mclean (HeartbreakBoard component on /history page, bar chart ranked by franchise, most recent near-miss footer)
 - [ ] 3.8 Cursed Team Badge - algorithmically determined weekly from probability model
 - [ ] 3.9 Random facts widget - first 13-run game in league history, team with most 13-run weeks, team with most 12-run heartbreaks, days since last 13-run game
 - [ ] 3.10 Sweat Factor indicator - your team hits 13; real-time probability you end the week as solo winner vs. splitting based on remaining games and Poisson model. Shows something like: Sweat Factor: 34% chance you are sharing this pot
@@ -148,18 +150,18 @@ The reason people check their phones during games.
 - [x] 4.2 Live game tracker - real-time score updates via MLB Stats API; poll every 30s during game hours ✓ claude-code (30-second polling in LiveWatchCard, real-time probability recalculation, UI indicators for last update time and loading state)
 - [x] 4.3 13-run game card celebration — full-width "⚡ 13-Run Game" banner, dark green glow border + background, score number bumped to text-2xl, FINAL badge turns green, card no longer dimmed ✓
 - [x] 4.4 Today in the League strip — compact per-member scoreboard at top of league dashboard; sorted by 13-run games → Live → Preview (prob desc) → Final → Off day; shows LIVE pulse, game time ET, or FINAL per row; green tint on 13-run rows; links to MLB Gameday ✓
-- [ ] 4.5 Historical probability lookup - use public/data/thirteen_lookup.json for in-game probability (inning + current score); fall back to Poisson if sample under 25
-- [ ] 4.6 On Deck Alert - team has 10+ runs after 7th inning, early heads-up: Get ready - Cubs have 11 after 7
-- [ ] 4.7 In-app threshold alerts - over 40% show indicator, over 65% highlight card, over 80% banner
-- [ ] 4.6 SMS alerts via Twilio - 5 event types:
+- [x] 4.5 Historical probability lookup - use public/data/thirteen_lookup.json for in-game probability (inning + current score); fall back to Poisson if sample under 25 ✓ claude/magical-mclean (CollapsibleGameCard wired to live inning data; Retrosheet conditional P(13) shown in expanded card)
+- [x] 4.6 On Deck Alert - team has 10+ runs after 7th inning, early heads-up: Get ready - Cubs have 11 after 7 ✓ claude/magical-mclean (🔔 amber alert in CollapsibleGameCard, LiveWatchCard, LiveScoreboard; isPulsing triggers on isOnDeck)
+- [x] 4.7 In-app threshold alerts - over 40% show indicator, over 65% highlight card, over 80% banner ✓ claude/magical-mclean (getAlertTier() drives border color + glow + emoji tiers on CollapsibleGameCard)
+- [ ] 4.8 SMS alerts via Twilio - 5 event types:
     - Threshold alert (over 80%): Red Sox have 9 runs in the 6th. P(final=13): 71%
     - Live 13 alert: Red Sox have 13 runs! Game still going...
     - Heartbreak alert: Red Sox just scored run 14.
     - Winner alert: Red Sox did it! Final: Red Sox 13, Yankees 4.
     - Final score: Final - Red Sox 11, Yankees 4.
-- [ ] 4.7 Alert deduplication - alert_log table prevents repeat messages per game per event type
-- [ ] 4.8 SMS opt-in flow - phone number, team preference, threshold setting, consent checkbox with timestamp, STOP handler
-- [ ] 4.9 Live game indicators - visual "LIVE" badge with pulsing indicator on game cards in the heatmap; show inning and current score for games in progress; make it immediately obvious which games are happening right now
+- [ ] 4.9 Alert deduplication - alert_log table prevents repeat messages per game per event type
+- [ ] 4.10 SMS opt-in flow - phone number, team preference, threshold setting, consent checkbox with timestamp, STOP handler
+- [ ] 4.11 Live game indicators - visual "LIVE" badge with pulsing indicator on game cards in the heatmap; show inning and current score for games in progress; make it immediately obvious which games are happening right now
 
 ---
 
@@ -167,7 +169,7 @@ The reason people check their phones during games.
 
 Discovery and shareability.
 
-- [ ] 5.1 Add login button/link to homepage that routes to league access/login
+- [x] 5.1 Add login button/link to homepage that routes to league access/login ✓ claude/magical-mclean (always-visible "My League →" button; falls back to /league if slug env not set)
 - [x] 5.1 Public dashboard (/) - today's games + probability cards; no login required ✓
 - [x] 5.2 What is a 13 Run League? explainer section on homepage — LeagueExplainer component with How a Week Works, What Makes It Fun, Origin Story, Why This Site Exists; also shown on league page ✓
 - [ ] 5.3 /history - all-time 13-run game tracker; searchable by team, year, score
@@ -220,9 +222,9 @@ Required before Twilio SMS goes live.
 - [ ] 9.1 Connect 13runleague.com domain in Vercel dashboard
 - [ ] 9.2 Set all production environment variables in Vercel
 - [ ] 9.3 End-to-end test - create league, add members, assign teams, simulate a winning week
-- [ ] 9.4 Retrosheet attribution in footer - Historical data from Retrosheet. 20 Sunset Rd., Newark, DE 19711
+- [x] 9.4 Retrosheet attribution in footer - Historical data from Retrosheet. 20 Sunset Rd., Newark, DE 19711 ✓ claude/magical-mclean (SiteFooter component on all public pages)
 - [ ] 9.5 Invite first league members for 2026 season
-- [ ] 9.6 Legal footer - Not affiliated with MLB or any MLB team. Use team names only, no logos. Built by Red Crow Labs (redcrowlabs.com). As always, no wagering, please.
+- [x] 9.6 Legal footer - Not affiliated with MLB or any MLB team. Use team names only, no logos. Built by Red Crow Labs (redcrowlabs.com). As always, no wagering, please. ✓ claude/magical-mclean (SiteFooter component with MLB disclaimer, tagline, Red Crow Labs link)
 - [ ] 9.7 Tagline appears in: site footer, SMS terms page, recap text generator output, Instagram posts, Discord bot - As always, no wagering, please.
 
 Built by Red Crow Labs - redcrowlabs.com
