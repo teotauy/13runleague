@@ -55,6 +55,10 @@ export default function DraftRoom({
   // Double-blind draw state
   const [drawnMember, setDrawnMember] = useState<Member | null>(null)
   const [drawnTeam, setDrawnTeam]     = useState<string | null>(null)
+  const [scoutReport, setScoutReport] = useState<string | null>(null)
+  const [scoutLoading, setScoutLoading] = useState(false)
+  // Cache reports by team abbr so we don't re-fetch on re-draws
+  const [reportCache, setReportCache] = useState<Map<string, string>>(new Map())
 
   // Auto-refresh every 2 seconds when draft is in progress
   useEffect(() => {
@@ -240,12 +244,42 @@ export default function DraftRoom({
     const idx = Math.floor(Math.random() * unpickedMembers.length)
     setDrawnMember(unpickedMembers[idx])
     setDrawnTeam(null)
+    setScoutReport(null)
+  }
+
+  const fetchScoutReport = async (teamAbbr: string) => {
+    // Return cached report immediately
+    if (reportCache.has(teamAbbr)) {
+      setScoutReport(reportCache.get(teamAbbr)!)
+      return
+    }
+    setScoutLoading(true)
+    setScoutReport(null)
+    try {
+      const res = await fetch(`/api/league/${leagueSlug}/draft/scout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ team_abbr: teamAbbr }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const report = data.report as string
+        setReportCache(prev => new Map(prev).set(teamAbbr, report))
+        setScoutReport(report)
+      }
+    } catch (err) {
+      console.error('Scout fetch error:', err)
+    } finally {
+      setScoutLoading(false)
+    }
   }
 
   const handleDrawTeam = () => {
     if (availableTeams.length === 0) return
     const idx = Math.floor(Math.random() * availableTeams.length)
-    setDrawnTeam(availableTeams[idx])
+    const team = availableTeams[idx]
+    setDrawnTeam(team)
+    fetchScoutReport(team)
   }
 
   const handleConfirmPick = async () => {
@@ -260,6 +294,7 @@ export default function DraftRoom({
       if (!res.ok) throw new Error('Failed to confirm pick')
       setDrawnMember(null)
       setDrawnTeam(null)
+      setScoutReport(null)
       router.refresh()
     } catch (err) {
       console.error(err)
@@ -339,6 +374,22 @@ export default function DraftRoom({
                   {drawnTeam ? '↩ Re-draw Team' : '🎲 Draw Team'}
                 </button>
               </div>
+              {/* Scout report */}
+              {drawnTeam && (
+                <div className="mt-3 pt-3 border-t border-yellow-900/40">
+                  {scoutLoading ? (
+                    <div className="flex items-center gap-2 text-xs text-yellow-600">
+                      <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                      </svg>
+                      Scouting report generating…
+                    </div>
+                  ) : scoutReport ? (
+                    <p className="text-xs text-yellow-200/80 italic leading-relaxed">{scoutReport}</p>
+                  ) : null}
+                </div>
+              )}
             </div>
 
             {/* Step 3: Confirm */}
@@ -359,6 +410,12 @@ export default function DraftRoom({
                     ✓ Confirm
                   </button>
                 </div>
+                {/* Scout report echo */}
+                {scoutReport && (
+                  <p className="mt-3 pt-3 border-t border-green-900/40 text-xs text-[#39ff14]/70 italic leading-relaxed">
+                    {scoutReport}
+                  </p>
+                )}
               </div>
             )}
           </div>
