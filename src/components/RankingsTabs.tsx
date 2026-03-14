@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import SeasonLog from './SeasonLog'
 
 export interface AllTimeEntry {
   name: string
@@ -353,7 +354,7 @@ export default function RankingsTabs({
   historicalRaw?: HistoricalRow[]
   year?: number
 }) {
-  const [tab, setTab] = useState<'alltime' | 'teams'>('alltime')
+  const [tab, setTab] = useState<'alltime' | 'teams' | 'log'>('alltime')
 
   const playerLabel = year ? `${year} Season Rankings` : 'All-Time Rankings'
 
@@ -381,12 +382,28 @@ export default function RankingsTabs({
         >
           Team Rankings
         </button>
+        {year && (
+          <button
+            onClick={() => setTab('log')}
+            className={`px-4 py-2 text-sm font-semibold transition-colors ${
+              tab === 'log'
+                ? 'text-[#39ff14] border-b-2 border-[#39ff14] -mb-px'
+                : 'text-gray-500 hover:text-gray-300'
+            }`}
+          >
+            Season Log
+          </button>
+        )}
       </div>
 
-      {tab === 'alltime' ? (
+      {tab === 'alltime' && (
         <AllTimeTable data={allTime} slug={slug} historicalRaw={historicalRaw} year={year} />
-      ) : (
+      )}
+      {tab === 'teams' && (
         <TeamTable data={teams} />
+      )}
+      {tab === 'log' && year && slug && (
+        <SeasonLog slug={slug} year={year} />
       )}
     </div>
   )
