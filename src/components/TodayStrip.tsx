@@ -60,7 +60,13 @@ export default function TodayStrip({
   ]
 
   const liveCount    = playing.filter(e => e.gameStatus === 'Live').length
-  const thirteenToday = playing.filter(e => e.awayScore === 13 || e.homeScore === 13).length
+  // Count unique games (by gamePk) that had a 13-run score — not member entries,
+  // so a game where two league members both have teams doesn't inflate the count.
+  const thirteenToday = new Set(
+    playing
+      .filter(e => (e.awayScore === 13 || e.homeScore === 13) && e.gamePk !== null)
+      .map(e => e.gamePk)
+  ).size
 
   return (
     <section>
@@ -98,6 +104,10 @@ export default function TodayStrip({
           const oppScore  = entry.isHome ? entry.awayScore : entry.homeScore
           const myHit13   = myScore === 13
           const oppHit13  = oppScore === 13
+          // Other league members in the same game
+          const teammates = entry.gamePk
+            ? sorted.filter(e => e.gamePk === entry.gamePk && e.memberName !== entry.memberName)
+            : []
 
           const nameEl = slug && entry.memberId ? (
             <Link
@@ -184,6 +194,11 @@ export default function TodayStrip({
               {/* Member name — links to player page if slug+memberId available */}
               <div className="text-xs shrink-0 w-24 text-right truncate font-mono">
                 {nameEl}
+                {teammates.length > 0 && (
+                  <div className="text-gray-700 text-[10px] truncate">
+                    also: {teammates.map(t => t.memberName.split(' ')[0]).join(', ')}
+                  </div>
+                )}
               </div>
             </div>
           )
