@@ -11,13 +11,36 @@ interface StreakUpsert {
 }
 
 /**
+ * Global week counter — monotonically increasing across seasons.
+ *
+ * Each "year slot" is 52 weeks so that offseason weeks (week 27–52) are
+ * counted but don't overlap with the next season.  A relative base year
+ * keeps the numbers human-readable in the DB.
+ *
+ * Examples (base 2018):
+ *   Goldfarb wins week 26 of 2025 → globalWeek(2025, 26) = 7×52 + 26 = 390
+ *   March 2026 preseason             → globalWeek(2025, 50) ≈ 414
+ *   Drought                          → 414 − 390 = 24 weeks
+ */
+const BASE_YEAR = 2018
+const WEEKS_PER_SLOT = 52
+
+function globalWeek(year: number, week: number): number {
+  return (year - BASE_YEAR) * WEEKS_PER_SLOT + week
+}
+
+/**
  * Recalculate streak data for all members of a league and write to the streaks table.
  *
- * current_streak = consecutive weeks WITHOUT a win from the current week backwards
- *                  (the "drought" — how long since the team last scored 13)
- * longest_streak = longest consecutive winless run recorded this season
- * closest_miss   = season game where the member's team came closest to 13 without hitting it
- *                  (sourced from game_results rows where was_thirteen = true but their team lost)
+ * current_streak = weeks since the member's team last scored 13 — spans seasons.
+ *                  A member who won the final week of last season will have a small
+ *                  drought (just the offseason weeks), not a reset to zero.
+ * longest_streak = longest consecutive winless run within the given season year.
+ * closest_miss   = the game (in the given season year) where the member's team
+ *                  came closest to 13 without hitting it.
+ *
+ * The `year` parameter is used only for the closest-miss window and the
+ * longest-drought-within-season calc.  The cross-season drought uses all years.
  */
 export async function recalculateStreaks(
   leagueId: string,
@@ -32,86 +55,84 @@ export async function recalculateStreaks(
 
   if (!members || members.length === 0) return
 
-  // 2. All payouts for this league + year → win-week sets per member
+  // 2. ALL payouts across ALL years (for cross-season drought)
   const { data: allPayouts } = await supabase
     .from('payouts')
-    .select('member_id, week_number')
+    .select('member_id, week_number, year')
     .eq('league_id', leagueId)
-    .eq('year', year)
 
-  const winWeeksByMember = new Map<string, Set<number>>()
+  // Build per-member win list
+  const winsByMember = new Map<string, Array<{ year: number; week: number }>>()
   for (const p of allPayouts ?? []) {
-    if (!winWeeksByMember.has(p.member_id)) {
-      winWeeksByMember.set(p.member_id, new Set())
-    }
-    winWeeksByMember.get(p.member_id)!.add(p.week_number)
+    if (!winsByMember.has(p.member_id)) winsByMember.set(p.member_id, [])
+    winsByMember.get(p.member_id)!.push({ year: p.year, week: p.week_number })
   }
 
-  // 3. Determine how many weeks of the season have elapsed
-  const today = new Date()
+  // 3. Current position in time (handles preseason correctly)
+  const today          = new Date()
+  const currentYear    = getSeasonYear(today)   // e.g. 2025 in March 2026
+  const currentWeek    = getWeekNumber(today)    // e.g. ~50 in March 2026
+  const currentGlobal  = globalWeek(currentYear, currentWeek)
+
+  // For "never won" case, drought measured from first week of BASE_YEAR
+  const neverWonDrought = currentGlobal  // = weeks since the very beginning
+
+  // Determine elapsed weeks in the given season year (for longest-drought-this-season)
+  const seasonStart      = new Date(year, 3, 1)  // April 1
   const currentSeasonYear = getSeasonYear(today)
-  const seasonStart = new Date(year, 3, 1) // April 1
-
-  // Season hasn't started yet — zero everything out and return
-  if (today < seasonStart) {
-    const resets: StreakUpsert[] = members.map((m) => ({
-      member_id: m.id,
-      current_streak: 0,
-      longest_streak: 0,
-      closest_miss_score: null,
-      closest_miss_date: null,
-      updated_at: new Date().toISOString(),
-    }))
-    await _writeStreaks(members.map((m) => m.id), resets, supabase)
-    return
-  }
-
-  // For past seasons treat the whole season as played (≈26 weeks Apr–Sep)
-  const currentWeek =
-    year === currentSeasonYear ? getWeekNumber(today) : 26
+  const weeksInYear = year === currentSeasonYear ? getWeekNumber(today) : 26
+  const isPreseason = today < seasonStart
 
   // Season date window for closest-miss query
   const seasonStartStr = `${year}-04-01`
   const seasonEndStr   = `${year}-10-15`
 
-  // 4. Compute per-member streak data (closest-miss queries are independent → Promise.all)
+  // 4. Compute per-member data
   const upserts: StreakUpsert[] = await Promise.all(
     members.map(async (member) => {
-      const winWeeks = winWeeksByMember.get(member.id) ?? new Set<number>()
+      const wins = winsByMember.get(member.id) ?? []
 
-      // ── Current drought ──────────────────────────────────────────────────
-      // Count backwards from currentWeek until we hit a win or reach week 0.
-      let drought = 0
-      for (let w = currentWeek; w >= 1; w--) {
-        if (winWeeks.has(w)) break
-        drought++
+      // ── Cross-season drought ───────────────────────────────────────────────
+      let drought: number
+      if (wins.length === 0) {
+        drought = neverWonDrought
+      } else {
+        const lastWin = wins.reduce((best, w) =>
+          globalWeek(w.year, w.week) > globalWeek(best.year, best.week) ? w : best
+        )
+        drought = currentGlobal - globalWeek(lastWin.year, lastWin.week)
       }
 
-      // ── Longest drought ──────────────────────────────────────────────────
+      // ── Longest winless run within the given season year ──────────────────
       let longestDrought = 0
-      let running = 0
-      for (let w = 1; w <= currentWeek; w++) {
-        if (winWeeks.has(w)) {
-          running = 0
-        } else {
-          running++
-          if (running > longestDrought) longestDrought = running
+      if (!isPreseason) {
+        const winWeeksThisYear = new Set(
+          wins.filter((w) => w.year === year).map((w) => w.week)
+        )
+        let running = 0
+        for (let w = 1; w <= weeksInYear; w++) {
+          if (winWeeksThisYear.has(w)) {
+            running = 0
+          } else {
+            running++
+            if (running > longestDrought) longestDrought = running
+          }
         }
       }
 
-      // ── Closest miss ─────────────────────────────────────────────────────
-      // Look at 13-run games this season where the member's team played but
-      // DIDN'T score 13.  Among those, find the score closest to 13.
-      const teamAbbr = member.assigned_team.toUpperCase()
+      // ── Closest miss (current season) ─────────────────────────────────────
+      const teamAbbr = member.assigned_team?.toUpperCase() ?? ''
 
-      const { data: teamGames } = await supabase
-        .from('game_results')
-        .select('game_date, home_team, away_team, home_score, away_score, winning_team')
-        .eq('was_thirteen', true)
-        .gte('game_date', seasonStartStr)
-        .lte('game_date', seasonEndStr)
-        .or(`home_team.eq.${teamAbbr},away_team.eq.${teamAbbr}`)
-        .neq('winning_team', teamAbbr)   // team did NOT score 13
+      const { data: teamGames } = teamAbbr
+        ? await supabase
+            .from('game_results')
+            .select('game_date, home_team, away_team, home_score, away_score, winning_team')
+            .eq('was_thirteen', true)
+            .gte('game_date', seasonStartStr)
+            .lte('game_date', seasonEndStr)
+            .or(`home_team.eq.${teamAbbr},away_team.eq.${teamAbbr}`)
+            .neq('winning_team', teamAbbr)
+        : { data: [] }
 
       let closestMissScore: number | null = null
       let closestMissDate: string | null  = null
@@ -125,14 +146,13 @@ export async function recalculateStreaks(
         if (myScore === null || myScore === undefined) continue
 
         const dist = Math.abs(myScore - 13)
-        // Prefer smaller distance; break ties with most-recent date
         if (
           dist < minDist ||
           (dist === minDist && game.game_date > (closestMissDate ?? ''))
         ) {
-          minDist            = dist
-          closestMissScore   = myScore
-          closestMissDate    = game.game_date
+          minDist          = dist
+          closestMissScore = myScore
+          closestMissDate  = game.game_date
         }
       }
 
@@ -161,7 +181,6 @@ async function _writeStreaks(
 ): Promise<void> {
   if (upserts.length === 0) return
 
-  // Wipe existing rows for these members
   const { error: delErr } = await supabase
     .from('streaks')
     .delete()
@@ -169,7 +188,6 @@ async function _writeStreaks(
 
   if (delErr) throw new Error(`Failed to clear streaks: ${delErr.message}`)
 
-  // Insert fresh rows
   const { error: insErr } = await supabase
     .from('streaks')
     .insert(upserts)
