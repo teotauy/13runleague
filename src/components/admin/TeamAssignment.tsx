@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { normalizeTeamAbbr } from '@/lib/teamColors'
 
 const MLB_TEAMS = [
   { abbr: 'ARI', name: 'Arizona Diamondbacks' },
   { abbr: 'ATL', name: 'Atlanta Braves' },
+  { abbr: 'ATH', name: 'Athletics' },
   { abbr: 'BAL', name: 'Baltimore Orioles' },
   { abbr: 'BOS', name: 'Boston Red Sox' },
   { abbr: 'CHC', name: 'Chicago Cubs' },
@@ -22,7 +24,6 @@ const MLB_TEAMS = [
   { abbr: 'MIN', name: 'Minnesota Twins' },
   { abbr: 'NYM', name: 'New York Mets' },
   { abbr: 'NYY', name: 'New York Yankees' },
-  { abbr: 'OAK', name: 'Oakland Athletics' },
   { abbr: 'PHI', name: 'Philadelphia Phillies' },
   { abbr: 'PIT', name: 'Pittsburgh Pirates' },
   { abbr: 'SD', name: 'San Diego Padres' },
@@ -57,7 +58,10 @@ export default function TeamAssignment({ members, leagueSlug }: Props) {
   )
   const [isLoading, setIsLoading] = useState(false)
 
-  const assignedTeams = new Set(Object.values(assignments).filter(Boolean))
+  // Normalize OAK → ATH so a legacy OAK assignment marks ATH as taken
+  const assignedTeams = new Set(
+    Object.values(assignments).filter(Boolean).map((a) => normalizeTeamAbbr(a.toUpperCase()))
+  )
   const availableTeams = MLB_TEAMS.filter((t) => !assignedTeams.has(t.abbr))
 
   const handleAssignTeam = (memberId: string, teamAbbr: string) => {
@@ -156,7 +160,7 @@ export default function TeamAssignment({ members, leagueSlug }: Props) {
                 {assignments[member.id] ? (
                   <div className="flex items-center justify-between">
                     <span className="px-2 py-1 rounded bg-[#39ff14] text-black font-mono font-bold text-sm">
-                      {assignments[member.id]}
+                      {normalizeTeamAbbr(assignments[member.id].toUpperCase())}
                     </span>
                     <button
                       onClick={() => handleAssignTeam(member.id, '')}
