@@ -13,20 +13,21 @@ interface StreakUpsert {
 /**
  * Global week counter — monotonically increasing across seasons.
  *
- * Each "year slot" is 52 weeks so that offseason weeks (week 27–52) are
- * counted but don't overlap with the next season.  A relative base year
- * keeps the numbers human-readable in the DB.
+ * Each "year slot" is exactly SEASON_WEEKS (28) playing weeks.  Offseason
+ * weeks are NOT counted — the drought clock freezes at end-of-season and
+ * resumes at the start of the next season.
  *
- * Examples (base 2018):
- *   Goldfarb wins week 26 of 2025 → globalWeek(2025, 26) = 7×52 + 26 = 390
- *   March 2026 preseason             → globalWeek(2025, 50) ≈ 414
- *   Drought                          → 414 − 390 = 24 weeks
+ * Examples (base 2018, 28 weeks/slot):
+ *   Goldfarb wins week 26 of 2025 → globalWeek(2025, 26) = 7×28 + 26 = 222
+ *   Preseason March 2026           → globalWeek(2025, 28) = 7×28 + 28 = 224 (capped at 28)
+ *   Drought                        → 224 − 222 = 2 weeks
  */
 const BASE_YEAR = 2018
-const WEEKS_PER_SLOT = 52
+const WEEKS_PER_SLOT = 28  // One slot per season (28 playing weeks); offseason weeks don't count
+const SEASON_WEEKS    = 28  // Season runs ~April–October, capped at 28 weeks
 
 function globalWeek(year: number, week: number): number {
-  return (year - BASE_YEAR) * WEEKS_PER_SLOT + week
+  return (year - BASE_YEAR) * WEEKS_PER_SLOT + Math.min(week, SEASON_WEEKS)
 }
 
 /**
@@ -69,19 +70,26 @@ export async function recalculateStreaks(
   }
 
   // 3. Current position in time (handles preseason correctly)
-  const today          = new Date()
-  const currentYear    = getSeasonYear(today)   // e.g. 2025 in March 2026
-  const currentWeek    = getWeekNumber(today)    // e.g. ~50 in March 2026
-  const currentGlobal  = globalWeek(currentYear, currentWeek)
+  const today             = new Date()
+  const currentYear       = getSeasonYear(today)   // e.g. 2025 in March 2026
+  const rawWeek           = getWeekNumber(today)
+  // Cap at SEASON_WEEKS so offseason weeks (Nov–Mar) don't inflate the drought counter
+  const currentWeek       = Math.min(rawWeek, SEASON_WEEKS)
+  const currentGlobal     = globalWeek(currentYear, currentWeek)
 
   // For "never won" case, drought measured from first week of BASE_YEAR
   const neverWonDrought = currentGlobal  // = weeks since the very beginning
 
   // Determine elapsed weeks in the given season year (for longest-drought-this-season)
-  const seasonStart      = new Date(year, 3, 1)  // April 1
+  const seasonStart       = new Date(year, 3, 1)  // April 1
   const currentSeasonYear = getSeasonYear(today)
-  const weeksInYear = year === currentSeasonYear ? getWeekNumber(today) : 26
-  const isPreseason = today < seasonStart
+  // If we're viewing a completed season (year < currentSeasonYear, or year === currentSeasonYear
+  // but we're already in the offseason), treat it as a full 28-week season.
+  const isPreseason       = today < seasonStart
+  const calYear           = today.getFullYear()
+  const isOffseason       = today < new Date(calYear, 3, 1)  // before April 1 of this calendar year
+  const seasonIsComplete  = year < currentSeasonYear || (year === currentSeasonYear && isOffseason)
+  const weeksInYear       = seasonIsComplete ? SEASON_WEEKS : Math.min(getWeekNumber(today), SEASON_WEEKS)
 
   // Season date window for closest-miss query
   const seasonStartStr = `${year}-04-01`
