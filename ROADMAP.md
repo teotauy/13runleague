@@ -137,6 +137,8 @@ What makes this feel like a real league, not a spreadsheet.
     - Consistency: seasons with at least one win divided by total seasons
     - Clutch: win rate in rollover weeks specifically (higher stakes)
     - Best Season: single year peak earnings
+- [ ] 3.13 Rookie of the Year — detect first-year players dynamically (no historical_results rows for ANY prior year = rookie; returning players after a hiatus are NOT rookies; no mid-season joins so all rookies start week 1); 🐣 Rookie badge in leaderboard next to name; "Rookie Race" card on league home page showing rookies ranked by $$ earned; ROTY = rookie with most $$ earned that season (tie: most wins); ROTY badge displayed in season log + rankings for that year; skip 2018 (inaugural season, everyone was a rookie); computed dynamically from historical_results — no DB migration needed
+
 - [x] 3.12 AI draft scouting reports - one Claude-generated scouting line per team based on their historical stats. Cached at draft time. Examples:
     - The Padres are the most reliable team in league history. 15 wins, strong Dollar Rate, produced in 6 of 8 seasons. High floor, proven ceiling.
     - The Rockies hit 13 often but almost always in splits. Great Win Rate, terrible WAR. You will celebrate a lot and take home less than you think.
