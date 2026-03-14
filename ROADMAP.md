@@ -108,7 +108,9 @@ Small UX fixes that came up during 2026 Spring Training setup.
 - [x] 2.23 Cliff Lungaretti 2020 data fix — migration 20260306010000_fix_cliff_2020.sql corrects shares=0/total_won=0 to shares=1/total_won=1050 for Week 1 2020 ✓
 - [x] 2.24 Team rankings cleanup — removed "Years Won" column (misleading in context); table now shows 13-Run Weeks + Total Paid Out only ✓
 - [x] 2.25 OAK→ATH franchise alias — TEAM_ABBR_ALIASES + normalizeTeamAbbr() + franchiseAbbrs() in teamColors.ts; ThirteenRunLore, HeartbreakBoard, and /teams/[abbr] page all merge OAK history under ATH ✓ claude/magical-mclean
-- [x] 2.26 Losing streak (Drought) pipeline — recalculateStreaks() in lib/streaks.ts; recalculate-streaks API endpoint; admin "Recalculate Streaks" button; streaks auto-update on payout settlement ✓ claude/magical-mclean
+- [x] 2.26 Losing streak (Drought) pipeline — recalculateStreaks() in lib/streaks.ts; recalculate-streaks API endpoint; admin "Recalculate Streaks" button; streaks auto-update on payout settlement ✓ claude/magical-mclean; cross-season drought (globalWeek counter spanning all 8 seasons) ✓ claude/magical-mclean
+- [ ] 2.27 Draft draw animation (nice to have) — brief suspense animation when 🎲 Draw Name or 🎲 Draw Team is clicked; e.g. cycling through random names/teams for ~1.5s before landing on the result; makes the moment feel like a real draw
+- [ ] 2.28 Draft wish list (nice to have) — before or during double-blind draw, record each member's most-wanted and least-wanted team; shown in the picks log alongside their actual result; commissioner can enter via a simple pre-draft form or inline during the draw
 
 ---
 
@@ -121,7 +123,7 @@ What makes this feel like a real league, not a spreadsheet.
 - [x] 3.9 MLB historical lore zone — ThirteenRunLore component with 4 stat panels (By Franchise, By Day of Week, Home vs Visitor, By Month) + interactive year chart (1877–2025); mouse scrubbing crosshair with year/count tooltip; MLB milestone markers (schedule changes, expansions, strikes, COVID); green South Brooklyn era overlay ✓
 - [x] 3.10 Retrosheet historical seed — seed_retrosheet_games.ts seeded 2,973 thirteen-run games from 1877–2025 into game_results; ~100 Retrosheet team code mappings; game_pk idempotent with retro- prefix ✓
 - [x] 3.3 Past Champions Banner - scrolling hall of fame across top of history page; each champion color-coded to their MLB team that year ✓ claude-code (teamColors.ts, PastChampionsBanner component, auto-scroll + swipe, all yearly winners)
-- [ ] 3.4 Dynasty Tracker - surfaces multi-win seasons and dominant stretches (e.g. Brad Brown 3 wins in 2018, Matt Pariseau 19 shares all-time)
+- [x] 3.4 Dynasty Tracker - surfaces multi-win seasons and dominant stretches (e.g. Brad Brown 3 wins in 2018, Matt Pariseau 19 shares all-time) ✓ claude/magical-mclean
 - [ ] 3.5 Historical season browser - year-by-year results, week-by-week breakdown, rollover chains visualized
 - [x] 3.6 Player profile page - /league/[slug]/player/[id]; career stats, teams held by year, win history, earnings timeline; clicking player name in leaderboard and rankings navigates here ✓ (BBRef-style layout: achievement badges 💰🏆⚡🏟️, season circles timeline, career stats, active streak, by-season table with leader highlights)
 - [x] 3.7 Heartbreak Board - teams that reached 12 runs and stopped; running all-time tally; The Cubs have broken hearts 7 times ✓ claude/magical-mclean (HeartbreakBoard component on /history page, bar chart ranked by franchise, most recent near-miss footer)
@@ -135,7 +137,7 @@ What makes this feel like a real league, not a spreadsheet.
     - Consistency: seasons with at least one win divided by total seasons
     - Clutch: win rate in rollover weeks specifically (higher stakes)
     - Best Season: single year peak earnings
-- [ ] 3.12 AI draft scouting reports - one Claude-generated scouting line per team based on their historical stats. Cached at draft time. Examples:
+- [x] 3.12 AI draft scouting reports - one Claude-generated scouting line per team based on their historical stats. Cached at draft time. Examples:
     - The Padres are the most reliable team in league history. 15 wins, strong Dollar Rate, produced in 6 of 8 seasons. High floor, proven ceiling.
     - The Rockies hit 13 often but almost always in splits. Great Win Rate, terrible WAR. You will celebrate a lot and take home less than you think.
     - The Yankees have the highest Dollar Rate in league history but streaky. Four dead years then two monster seasons. High variance pick.
@@ -161,7 +163,8 @@ The reason people check their phones during games.
     - Final score: Final - Red Sox 11, Yankees 4.
 - [ ] 4.9 Alert deduplication - alert_log table prevents repeat messages per game per event type
 - [ ] 4.10 SMS opt-in flow - phone number, team preference, threshold setting, consent checkbox with timestamp, STOP handler
-- [ ] 4.11 Live game indicators - visual "LIVE" badge with pulsing indicator on game cards in the heatmap; show inning and current score for games in progress; make it immediately obvious which games are happening right now
+- [x] 4.11 Live game indicators - visual "LIVE" badge with pulsing indicator on game cards in the heatmap; show inning and current score for games in progress; make it immediately obvious which games are happening right now ✓ claude/magical-mclean
+- [ ] 4.12 Browser push notifications — league-wide (no per-member login needed); "🔔 Get notified" opt-in button on league page; push_subscriptions table (league_id, subscription_json); service worker (public/sw.js); Vercel Cron every 5 min during game hours checks live MLB scores, fires once per game_pk via web-push + VAPID keys; dedup via push_notifications_sent table; requires VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY + VAPID_EMAIL in env vars (generate with `npx web-push generate-vapid-keys`)
 
 ---
 
