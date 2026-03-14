@@ -6,6 +6,7 @@ import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/m
 import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
 import { getWeekNumber, getSeasonYear, getWinnersForWeek } from '@/lib/pot'
 import { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
+import { computeRookies } from '@/lib/rookies'
 import PotBreakdown from '@/components/PotBreakdown'
 import LeaderboardTable, { type LeaderboardRow } from '@/components/LeaderboardTable'
 import LeagueDashboardHeader from '@/components/LeagueDashboardHeader'
@@ -132,13 +133,7 @@ export default async function LeagueDashboard({ params }: Props) {
     seasonStatsMap.set(p.member_id, existing)
   }
 
-  // Combine enriched member data with season stats for the leaderboard
-  const leaderboardRows: LeaderboardRow[] = enrichedMembers.map(
-    ({ member, streak, todayGame, todayProb }) => {
-      const ss = seasonStatsMap.get(member.id) ?? { wins: 0, totalWon: 0 }
-      return { member, streak, todayGame, todayProb, seasonWins: ss.wins, seasonWon: ss.totalWon }
-    }
-  )
+  // leaderboardRows built below after historicalRaw is fetched (needed for rookie detection)
 
   // Today in the League strip — one row per member
   const todayEntries: TodayEntry[] = enrichedMembers.map(({ member, todayGame, todayProb }) => {
@@ -210,6 +205,32 @@ export default async function LeagueDashboard({ params }: Props) {
   const teamRankings: TeamEntry[] = Array.from(teamMap.values())
     .sort((a, b) => b.thirteenRunWeeks - a.thirteenRunWeeks)
 
+  // Compute rookies for the current season (needs historicalRaw)
+  const rookies = computeRookies(
+    (historicalRaw ?? []) as { member_name: string; year: number; total_won: number; shares: number }[],
+    (members ?? []) as { name: string }[],
+    seasonYear
+  )
+  const rookieNames = new Set(rookies.map((r) => r.name))
+  const rotyName = rookies.find((r) => r.isROTY)?.name ?? null
+
+  // Combine enriched member data with season stats for the leaderboard
+  const leaderboardRows: LeaderboardRow[] = enrichedMembers.map(
+    ({ member, streak, todayGame, todayProb }) => {
+      const ss = seasonStatsMap.get(member.id) ?? { wins: 0, totalWon: 0 }
+      return {
+        member,
+        streak,
+        todayGame,
+        todayProb,
+        seasonWins: ss.wins,
+        seasonWon: ss.totalWon,
+        isRookie: rookieNames.has(member.name),
+        isROTY: member.name === rotyName,
+      }
+    }
+  )
+
   // Closest misses — primary: distance to 13; tie-break: most recent date first
   const closestMisses = streaks
     ?.filter((s) => s.closest_miss_score !== null)
@@ -264,6 +285,25 @@ export default async function LeagueDashboard({ params }: Props) {
               payout_amount: p.payout_amount,
             })) ?? []}
           />
+
+          {/* Rookie Race */}
+          {rookies.length > 0 && (
+            <section>
+              <h2 className="text-lg font-bold mb-3">🐣 Rookie Race</h2>
+              <div className="space-y-1.5">
+                {rookies.map((r, i) => (
+                  <div key={r.name} className="flex items-center gap-3 bg-[#111] rounded px-3 py-2 border border-[#1e1e1e]">
+                    <span className="text-gray-600 font-mono text-xs w-4">{i + 1}</span>
+                    <span className="text-white font-semibold text-sm flex-1">{r.name}</span>
+                    {r.isROTY && <span title="Rookie of the Year leader" className="text-xs">🏅</span>}
+                    <span className="text-[#39ff14] font-mono text-xs font-bold">
+                      {r.shares > 0 ? `${r.shares}W · $${r.totalWon.toLocaleString()}` : '—'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Leaderboard */}
           <section>

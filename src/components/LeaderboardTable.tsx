@@ -34,6 +34,8 @@ export interface LeaderboardRow {
   todayProb: number | null
   seasonWins: number
   seasonWon: number
+  isRookie: boolean
+  isROTY: boolean
 }
 
 /** "2025-04-05" → "4/5" */
@@ -129,7 +131,7 @@ export default function LeaderboardTable({
           </tr>
         </thead>
         <tbody>
-          {sorted.map(({ member, streak, todayGame, todayProb, seasonWins, seasonWon }) => (
+          {sorted.map(({ member, streak, todayGame, todayProb, seasonWins, seasonWon, isRookie, isROTY }) => (
             <tr key={member.id} className="border-b border-gray-900 hover:bg-[#111]">
               <td className="py-3 pr-4">
                 <Link
@@ -138,6 +140,11 @@ export default function LeaderboardTable({
                 >
                   {member.name}
                 </Link>
+                {isRookie && (
+                  <span title={isROTY ? 'Rookie of the Year leader' : 'Rookie'} className="ml-1 text-xs">
+                    {isROTY ? '🏅' : '🐣'}
+                  </span>
+                )}
               </td>
               <td className="py-3 pr-4">
                 <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-200">

@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import { computeRookies } from '@/lib/rookies'
 
 interface Props {
   params: Promise<{ slug: string; memberId: string }>
@@ -140,7 +141,28 @@ export default async function PlayerPage({ params }: Props) {
   const isIronman =
     allLeagueYears.length > 0 && allLeagueYears.every((y) => yearsPlayed.includes(y))
 
-  const hasAchievements = ledInMoney.length > 0 || ledInWins.length > 0 || ledInWar.length > 0 || isIronman
+  // ── ROTY years ──────────────────────────────────────────────────────────────
+  const leagueStartYear = allLeagueYears.length > 0 ? Math.min(...allLeagueYears) : 0
+
+  const rotyYears: number[] = []
+  for (const yr of yearsPlayed) {
+    if (yr === leagueStartYear) continue
+    // Members who played that year
+    const membersThisYear = (allLeagueHistorical ?? [])
+      .filter((r) => r.year === yr)
+      .map((r) => ({ name: r.member_name }))
+    const rookiesThisYear = computeRookies(
+      allLeagueHistorical ?? [],
+      membersThisYear,
+      yr
+    )
+    const roty = rookiesThisYear.find((r) => r.isROTY)
+    if (roty?.name === member.name) rotyYears.push(yr)
+  }
+  rotyYears.sort((a, b) => a - b)
+  const isROTY = rotyYears.length > 0
+
+  const hasAchievements = ledInMoney.length > 0 || ledInWins.length > 0 || ledInWar.length > 0 || isIronman || isROTY
 
   // Season circles (chronological)
   const seasonCircles = [...deduped]
@@ -234,9 +256,21 @@ export default async function PlayerPage({ params }: Props) {
                     🏟️ Ironman
                   </span>
                 )}
+                {rotyYears.map((yr) => (
+                  <span key={`roty-${yr}`} className="px-2 py-1 rounded text-xs font-semibold bg-[#1a1a1a] border border-yellow-700/40 text-yellow-400" title={`Rookie of the Year ${yr}`}>
+                    🏅 Rookie of the Year {yr}
+                  </span>
+                ))}
               </div>
             )}
           </div>
+
+          {/* ROTY banner */}
+          {isROTY && (
+            <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-900/20 border border-yellow-700/40 text-yellow-400 text-xs font-semibold">
+              🏅 Rookie of the Year — {rotyYears.join(', ')}
+            </div>
+          )}
 
           {/* Season circles — like BBRef jersey-number badges */}
           {seasonCircles.length > 0 && (
