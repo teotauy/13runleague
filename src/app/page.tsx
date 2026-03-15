@@ -8,7 +8,8 @@ import LeagueExplainer from '@/components/LeagueExplainer'
 import ThirteenRunLore from '@/components/ThirteenRunLore'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { MLBGame, MLBLiveGame } from '@/lib/mlb'
-import type { LiveGameState } from '@/lib/probability'
+import type { LiveGameState } from "@/lib/probability"
+import { InstallAppLink } from "@/components/AddToHomeScreenBanner"
 
 export const revalidate = 60
 
@@ -495,6 +496,8 @@ export default async function HomePage({ searchParams }: PageProps) {
             <a href="/terms" className="hover:text-gray-400 transition-colors">Terms of Use</a>
             <span className="text-gray-800">·</span>
             <span className="text-gray-700">Built by Red Crow Labs · South Brooklyn</span>
+            <span className="text-gray-800">·</span>
+            <InstallAppLink />
           </div>
         </footer>
       </div>
