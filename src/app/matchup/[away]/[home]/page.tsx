@@ -26,6 +26,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // Baseball months only
 const BASEBALL_MONTHS = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'] as const
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] as const
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
+
+function dayOfWeek(dateStr: string): number {
+  // Parse YYYY-MM-DD at noon to avoid any UTC-offset day shift
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d, 12).getDay()
+}
 
 export default async function MatchupPage({ params }: Props) {
   const { away, home } = await params
@@ -90,6 +97,17 @@ export default async function MatchupPage({ params }: Props) {
   )
   const maxMonthCount = Math.max(...monthOrdered.map(([, v]) => v), 1)
   const peakMonth = monthOrdered.reduce((a, b) => (b[1] > a[1] ? b : a))[0]
+
+  // ── Day of week ─────────────────────────────────────────────────────────────
+
+  const dowMap = new Map<number, number>()
+  for (const g of thirteenGames) {
+    const dow = dayOfWeek(g.game_date)
+    dowMap.set(dow, (dowMap.get(dow) ?? 0) + 1)
+  }
+  const dowOrdered = DAY_NAMES.map((name, i) => [name, dowMap.get(i) ?? 0] as [string, number])
+  const maxDowCount = Math.max(...dowOrdered.map(([, v]) => v), 1)
+  const peakDay = dowOrdered.reduce((a, b) => (b[1] > a[1] ? b : a))[0]
 
   const total13s = thirteenGames.length
 
@@ -182,24 +200,59 @@ export default async function MatchupPage({ params }: Props) {
           </div>
         )}
 
-        {/* By Month */}
+        {/* By Month + By Day of Week */}
         {total13s > 0 && (
-          <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
-            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
-              By Month
-            </h2>
-            <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-              {monthOrdered.map(([month, count]) => (
-                <div key={month} className="text-center">
-                  <div className={`text-lg font-black tabular-nums ${count > 0 ? 'text-[#39ff14]' : 'text-gray-800'}`}>
-                    {count || '—'}
+          <div className="grid sm:grid-cols-2 gap-4">
+
+            {/* By Month */}
+            <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
+                By Month
+              </h2>
+              <div className="grid grid-cols-4 gap-2">
+                {monthOrdered.map(([month, count]) => (
+                  <div key={month} className="text-center">
+                    <div className={`text-lg font-black tabular-nums ${count > 0 ? 'text-[#39ff14]' : 'text-gray-800'}`}>
+                      {count || '—'}
+                    </div>
+                    <div className={`text-[10px] font-mono mt-0.5 ${month === peakMonth && count > 0 ? 'text-[#39ff14]' : 'text-gray-600'}`}>
+                      {month}
+                    </div>
                   </div>
-                  <div className={`text-[10px] font-mono mt-0.5 ${month === peakMonth && count > 0 ? 'text-[#39ff14]' : 'text-gray-600'}`}>
-                    {month}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
+
+            {/* By Day of Week */}
+            <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
+                By Day of Week
+              </h2>
+              <div className="space-y-2">
+                {dowOrdered.map(([day, count]) => (
+                  <div key={day} className="flex items-center gap-2">
+                    <span className={`text-xs font-mono w-7 shrink-0 ${day === peakDay && count > 0 ? 'text-[#39ff14]' : 'text-gray-500'}`}>
+                      {day}
+                    </span>
+                    <div className="flex-1 bg-gray-900 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className={`h-1.5 rounded-full transition-all ${day === peakDay && count > 0 ? 'bg-[#39ff14]' : 'bg-gray-700'}`}
+                        style={{ width: maxDowCount > 0 ? `${(count / maxDowCount) * 100}%` : '0%' }}
+                      />
+                    </div>
+                    <span className="text-xs font-mono text-gray-400 w-5 text-right shrink-0">
+                      {count > 0 ? count : '—'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {peakDay && dowMap.size > 0 && (
+                <p className="text-xs text-gray-700 mt-3">
+                  {peakDay} is the most dangerous day for 13s in this matchup
+                </p>
+              )}
+            </div>
+
           </div>
         )}
 
