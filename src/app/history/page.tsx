@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import type { Metadata } from 'next'
+import { createServiceClient } from '@/lib/supabase/server'
 import PastChampionsBanner, { type YearlyChampions } from '@/components/PastChampionsBanner'
 import HeartbreakBoard from '@/components/HeartbreakBoard'
 import DynastyTracker from '@/components/DynastyTracker'
@@ -6,8 +7,23 @@ import SiteFooter from '@/components/SiteFooter'
 
 export const revalidate = 3600
 
+export const metadata: Metadata = {
+  title: '13-Run History — All-time MLB Records',
+  description: 'Every time an MLB team has scored exactly 13 runs, from 1877 to today. Franchise rankings, heartbreak board, dynasty tracker.',
+  openGraph: {
+    title: '13-Run History — All-time MLB Records',
+    description: 'Every time an MLB team has scored exactly 13 runs, from 1877 to today.',
+    images: [{ url: '/api/og?title=13-Run+History&subtitle=Every+13-run+game+since+1877', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '13-Run History — All-time MLB Records',
+    images: ['/api/og?title=13-Run+History&subtitle=Every+13-run+game+since+1877'],
+  },
+}
+
 export default async function HistoryPage() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   const { data: games } = await supabase
     .from('game_results')

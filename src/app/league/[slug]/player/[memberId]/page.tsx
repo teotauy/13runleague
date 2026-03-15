@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
@@ -8,6 +9,51 @@ interface Props {
 
 export const dynamic = 'force-dynamic'
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug, memberId } = await params
+  const supabase = createServiceClient()
+
+  const { data: league } = await supabase
+    .from('leagues')
+    .select('id')
+    .eq('slug', slug)
+    .single()
+
+  const { data: member } = await supabase
+    .from('members')
+    .select('name, assigned_team')
+    .eq('id', memberId)
+    .single()
+
+  if (!member) return { title: 'Player — 13 Run League' }
+
+  const { data: history } = await supabase
+    .from('historical_results')
+    .select('total_won, shares')
+    .eq('member_name', member.name)
+    .eq('league_id', league?.id ?? '')
+
+  const totalWon = (history ?? []).reduce((s, r) => s + (r.total_won ?? 0), 0)
+  const totalWins = (history ?? []).reduce((s, r) => s + (r.shares ?? 0), 0)
+
+  const title = `${member.name} — 13 Run League`
+  const subtitle = totalWins > 0
+    ? `${totalWins} career win${totalWins !== 1 ? 's' : ''} · $${totalWon.toLocaleString()} earned`
+    : `${member.assigned_team} · No wins yet`
+
+  const ogUrl = `/api/og?title=${encodeURIComponent(member.name)}&subtitle=${encodeURIComponent(subtitle)}`
+
+  return {
+    title,
+    description: subtitle,
+    openGraph: {
+      title,
+      description: subtitle,
+      images: [{ url: ogUrl, width: 1200, height: 630 }],
+    },
+    twitter: { card: 'summary_large_image', title, description: subtitle, images: [ogUrl] },
+  }
+}
 
 export default async function PlayerPage({ params }: Props) {
   const { slug, memberId } = await params

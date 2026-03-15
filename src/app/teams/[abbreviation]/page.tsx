@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { createServiceClient } from '@/lib/supabase/server'
 import { TEAM_COLORS, getTeamColor, franchiseAbbrs } from '@/lib/teamColors'
 import YearChart from '@/components/YearChart'
@@ -17,6 +18,21 @@ export async function generateStaticParams() {
 
 interface Props {
   params: Promise<{ abbreviation: string }>
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ abbreviation: string }> }): Promise<Metadata> {
+  const { abbreviation } = await params
+  const abbr = abbreviation.toUpperCase()
+
+  const title = `${abbr} — 13 Run League History`
+  const subtitle = `All-time 13-run game history for the ${abbr}`
+  const ogUrl = `/api/og?title=${encodeURIComponent(abbr + ' · 13-Run History')}&subtitle=${encodeURIComponent('Retrosheet franchise history since 1877')}`
+
+  return {
+    title,
+    openGraph: { title, images: [{ url: ogUrl, width: 1200, height: 630 }] },
+    twitter: { card: 'summary_large_image', title, images: [ogUrl] },
+  }
 }
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const

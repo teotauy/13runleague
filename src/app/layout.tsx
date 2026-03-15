@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist_Mono } from 'next/font/google'
 import './globals.css'
+import AddToHomeScreenBanner from '@/components/AddToHomeScreenBanner'
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
@@ -13,10 +14,6 @@ export const metadata: Metadata = {
   description:
     'Live probability engine for the 13 Run League. Track which MLB teams are most likely to score exactly 13 runs today.',
   robots: { index: true, follow: true },
-  icons: {
-    icon: '/favicon.svg',
-    apple: '/apple-touch-icon.svg',
-  },
   openGraph: {
     title: '13 Run League — MLB Probability Dashboard',
     description:
@@ -25,11 +22,10 @@ export const metadata: Metadata = {
     siteName: '13 Run League',
     images: [
       {
-        url: '/og-image.svg',
+        url: '/api/og',
         width: 1200,
         height: 630,
         alt: '13 Run League - MLB Probability Dashboard',
-        type: 'image/svg+xml',
       },
     ],
     type: 'website',
@@ -40,7 +36,7 @@ export const metadata: Metadata = {
     title: '13 Run League — MLB Probability Dashboard',
     description:
       'Track which MLB teams are most likely to score exactly 13 runs today.',
-    images: ['/og-image.svg'],
+    images: ['/api/og'],
   },
 }
 
@@ -59,6 +55,7 @@ export default function RootLayout({
       </head>
       <body className={`${geistMono.variable} antialiased bg-[#0a0a0a] text-white`}>
         {children}
+        <AddToHomeScreenBanner />
       </body>
     </html>
   )
