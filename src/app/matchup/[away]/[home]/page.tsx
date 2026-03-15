@@ -59,30 +59,7 @@ export default async function MatchupPage({ params }: Props) {
     (g) => g.away_team === awayAbbr && g.home_team === homeAbbr && g.home_score === 13
   )
 
-  // ── Run distributions ───────────────────────────────────────────────────────
-
-  const awayCounts: Record<number, number> = {}
-  const homeCounts: Record<number, number> = {}
-  let gameCount = 0
-  let awayTotal = 0
-  let homeTotal = 0
-
-  for (const g of games) {
-    const awayRuns = g.away_team === awayAbbr ? g.away_score : g.home_score
-    const homeRuns = g.home_team === homeAbbr ? g.home_score : g.away_score
-    if (awayRuns !== null && awayRuns !== undefined) {
-      awayCounts[awayRuns] = (awayCounts[awayRuns] ?? 0) + 1
-      awayTotal += awayRuns
-      gameCount++
-    }
-    if (homeRuns !== null && homeRuns !== undefined) {
-      homeCounts[homeRuns] = (homeCounts[homeRuns] ?? 0) + 1
-      homeTotal += homeRuns
-    }
-  }
-
-  const awayAvg = gameCount > 0 ? (awayTotal / gameCount).toFixed(2) : '—'
-  const homeAvg = gameCount > 0 ? (homeTotal / gameCount).toFixed(2) : '—'
+  const gameCount = games.length
 
   // ── Year chart (all 13-run games between these two teams) ───────────────────
 
@@ -144,12 +121,6 @@ export default async function MatchupPage({ params }: Props) {
           </span>
           <span className="px-3 py-1.5 rounded-full bg-[#111] border border-gray-800 text-xs font-mono">
             ⚡ <span className="text-[#39ff14] font-bold">{total13s}</span> 13-run games
-          </span>
-          <span className="px-3 py-1.5 rounded-full bg-[#111] border border-gray-800 text-xs font-mono">
-            {awayAbbr} avg <span className="text-white font-bold">{awayAvg}</span> runs
-          </span>
-          <span className="px-3 py-1.5 rounded-full bg-[#111] border border-gray-800 text-xs font-mono">
-            {homeAbbr} avg <span className="text-white font-bold">{homeAvg}</span> runs
           </span>
         </div>
 
@@ -232,18 +203,6 @@ export default async function MatchupPage({ params }: Props) {
           </div>
         )}
 
-        {/* Run distribution histograms */}
-        {gameCount > 0 && (
-          <section>
-            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">
-              Run Distribution (all matchups)
-            </h2>
-            <div className="grid sm:grid-cols-2 gap-6">
-              <Histogram label={`${awayAbbr} runs scored`} counts={awayCounts} total={gameCount} color={awayInfo.primaryColor} />
-              <Histogram label={`${homeAbbr} runs scored`} counts={homeCounts} total={gameCount} color={homeInfo.primaryColor} />
-            </div>
-          </section>
-        )}
 
         {/* Full 13-run game log */}
         {total13s > 0 && (
@@ -329,46 +288,3 @@ export default async function MatchupPage({ params }: Props) {
   )
 }
 
-// ── Run distribution histogram ───────────────────────────────────────────────
-
-function Histogram({
-  label,
-  counts,
-  total,
-  color,
-}: {
-  label: string
-  counts: Record<number, number>
-  total: number
-  color: string
-}) {
-  const maxCount = Math.max(...Object.values(counts), 1)
-
-  return (
-    <div>
-      <div className="text-xs text-gray-400 mb-3 font-mono">{label}</div>
-      <div className="space-y-1">
-        {Array.from({ length: 17 }, (_, i) => {
-          const count = counts[i] ?? 0
-          const pct = (count / maxCount) * 100
-          const is13 = i === 13
-          return (
-            <div key={i} className="flex items-center gap-2 text-xs font-mono">
-              <span className={`w-5 text-right ${is13 ? 'text-[#39ff14] font-bold' : 'text-gray-600'}`}>
-                {i}
-              </span>
-              <div className="flex-1 bg-gray-900 rounded-sm h-3.5 overflow-hidden">
-                <div
-                  className="h-full rounded-sm transition-all"
-                  style={{ width: `${pct}%`, backgroundColor: is13 ? '#39ff14' : color + '66' }}
-                />
-              </div>
-              <span className="w-6 text-gray-600 text-right">{count || ''}</span>
-            </div>
-          )
-        })}
-      </div>
-      <div className="text-xs text-gray-700 mt-2">{total} game{total !== 1 ? 's' : ''} in database</div>
-    </div>
-  )
-}
