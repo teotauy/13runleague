@@ -209,18 +209,29 @@ export default async function MatchupPage({ params }: Props) {
               <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
                 By Month
               </h2>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="space-y-2">
                 {monthOrdered.map(([month, count]) => (
-                  <div key={month} className="text-center">
-                    <div className={`text-lg font-black tabular-nums ${count > 0 ? 'text-[#39ff14]' : 'text-gray-800'}`}>
-                      {count || '—'}
-                    </div>
-                    <div className={`text-[10px] font-mono mt-0.5 ${month === peakMonth && count > 0 ? 'text-[#39ff14]' : 'text-gray-600'}`}>
+                  <div key={month} className="flex items-center gap-2">
+                    <span className={`text-xs font-mono w-7 shrink-0 ${month === peakMonth && count > 0 ? 'text-[#39ff14]' : 'text-gray-500'}`}>
                       {month}
+                    </span>
+                    <div className="flex-1 bg-gray-900 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className={`h-1.5 rounded-full transition-all ${month === peakMonth && count > 0 ? 'bg-[#39ff14]' : 'bg-gray-700'}`}
+                        style={{ width: maxMonthCount > 0 ? `${(count / maxMonthCount) * 100}%` : '0%' }}
+                      />
                     </div>
+                    <span className="text-xs font-mono text-gray-400 w-5 text-right shrink-0">
+                      {count > 0 ? count : '—'}
+                    </span>
                   </div>
                 ))}
               </div>
+              {peakMonth && monthMap.size > 0 && (
+                <p className="text-xs text-gray-700 mt-3">
+                  {peakMonth} is the hottest month for 13s in this matchup
+                </p>
+              )}
             </div>
 
             {/* By Day of Week */}
