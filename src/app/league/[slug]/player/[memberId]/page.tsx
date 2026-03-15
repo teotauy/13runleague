@@ -265,12 +265,6 @@ export default async function PlayerPage({ params }: Props) {
             )}
           </div>
 
-          {/* ROTY banner */}
-          {isROTY && (
-            <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-900/20 border border-yellow-700/40 text-yellow-400 text-xs font-semibold">
-              🏅 Rookie of the Year — {rotyYears.join(', ')}
-            </div>
-          )}
 
           {/* Season circles — like BBRef jersey-number badges */}
           {seasonCircles.length > 0 && (
@@ -321,18 +315,26 @@ export default async function PlayerPage({ params }: Props) {
           </div>
         </section>
 
-        {/* ── Active Streak (2026) ───────────────────────────────────────────── */}
+        {/* ── Drought Tracker ────────────────────────────────────────────────── */}
         {activeStreak && (
           <section className="rounded-lg border border-gray-800 bg-[#111] p-6 mb-8">
-            <h2 className="text-lg font-bold mb-4">Current Season (2026)</h2>
+            <h2 className="text-lg font-bold mb-4">Drought Tracker</h2>
             <div className="grid grid-cols-3 gap-6">
-              <StatBlock label="Current Streak" value={String(activeStreak.current_streak ?? 0)} />
-              <StatBlock label="Longest Streak" value={String(activeStreak.longest_streak ?? 0)} />
+              <StatBlock
+                label="Current Drought"
+                value={`${activeStreak.current_streak ?? 0}W`}
+                subtitle="weeks since last win"
+              />
+              <StatBlock
+                label="Longest Drought"
+                value={`${activeStreak.longest_streak ?? 0}W`}
+                subtitle="worst run in a season"
+              />
               {activeStreak.closest_miss_score !== null && (
                 <StatBlock
-                  label="Closest Miss"
+                  label="Best Score vs. 13"
                   value={`${activeStreak.closest_miss_score} runs`}
-                  subtitle={activeStreak.closest_miss_date ? `(${activeStreak.closest_miss_date})` : undefined}
+                  subtitle={activeStreak.closest_miss_date ? `in a 13-run game (${activeStreak.closest_miss_date})` : 'in a 13-run game'}
                 />
               )}
             </div>
