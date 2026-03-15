@@ -179,7 +179,7 @@ Discovery and shareability.
 - [x] 5.1 Public dashboard (/) - today's games + probability cards; no login required ✓
 - [x] 5.2 What is a 13 Run League? explainer section on homepage — LeagueExplainer component with How a Week Works, What Makes It Fun, Origin Story, Why This Site Exists; also shown on league page ✓
 - [ ] 5.3 /history - all-time 13-run game tracker; searchable by team, year, score
-- [ ] 5.4 /matchup/[away]/[home] - head-to-head analysis; historical 13-run rates for each team at that ballpark
+- [x] 5.4 /matchup/[away]/[home] - head-to-head analysis; both teams colored in franchise colors; who-scored-13 split cards; YearChart; by-month grid; run distribution histograms (0–16) with team-colored bars; full 13-run game log; footer links to both franchise pages; fixes all Season Log matchup 404s ✓
 - [ ] 5.5 Win Celebration Page - auto-generate shareable image via @vercel/og when a team scores 13; winner name, team, pot amount
 - [ ] 5.6 Season Countdown - offseason widget; days until opening day; historical callback from same week last year
 - [x] 5.7 OG meta tags - every public page gets proper share previews for iMessage, Twitter, Discord; PNG via next/og ImageResponse at /api/og?title=&subtitle=; generateMetadata on league + player pages; /icon.tsx + /apple-icon.tsx PNG conventions ✓
