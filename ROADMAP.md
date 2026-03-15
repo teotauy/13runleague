@@ -167,7 +167,7 @@ The reason people check their phones during games.
 - [ ] 4.10 SMS opt-in flow - phone number, team preference, threshold setting, consent checkbox with timestamp, STOP handler
 - [x] 4.11 Live game indicators - visual "LIVE" badge with pulsing indicator on game cards in the heatmap; show inning and current score for games in progress; make it immediately obvious which games are happening right now ✓ claude/magical-mclean
 - [ ] 4.12 Browser push notifications — global, no league or login context needed; "🔔 Get notified" opt-in button on homepage; push_subscriptions table (id, subscription_json, created_at); service worker (public/sw.js); Vercel Cron every 5 min during game hours checks live MLB scores, sends "⚡ The White Sox just scored 13!" to ALL subscribers when any team hits exactly 13; dedup via push_notifications_sent(game_pk, team) so each team/game fires once; web-push npm package + VAPID keys; FIRST STEP: run `npx web-push generate-vapid-keys` and add VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY + VAPID_EMAIL to Vercel env vars
-- [ ] 4.13 PWA / Add to Home Screen — required for push notifications on iPhone (iOS only delivers Web Push to PWA home screen installs, not regular Safari tabs); add manifest.json (name, icons, theme_color, display: standalone); "Add to Home Screen" prompt banner shown once to mobile users; do this alongside 4.12 so iPhone users aren't left out
+- [x] 4.13 PWA / Add to Home Screen — manifest.json with PNG icons; AddToHomeScreenBanner with progressive snooze (7d→14d→30d→never), snooze label on ✕; InstallAppLink in footer (iOS only, opens step-by-step modal); banner iOS-only (Android Chrome handles install natively) ✓
 
 ---
 
@@ -182,7 +182,7 @@ Discovery and shareability.
 - [ ] 5.4 /matchup/[away]/[home] - head-to-head analysis; historical 13-run rates for each team at that ballpark
 - [ ] 5.5 Win Celebration Page - auto-generate shareable image via @vercel/og when a team scores 13; winner name, team, pot amount
 - [ ] 5.6 Season Countdown - offseason widget; days until opening day; historical callback from same week last year
-- [ ] 5.7 OG meta tags - every public page gets proper share previews for iMessage, Twitter, Discord
+- [x] 5.7 OG meta tags - every public page gets proper share previews for iMessage, Twitter, Discord; PNG via next/og ImageResponse at /api/og?title=&subtitle=; generateMetadata on league + player pages; /icon.tsx + /apple-icon.tsx PNG conventions ✓
 - [ ] 5.8 Instagram auto-post - connect central @13runleague account via Meta Graph API; auto-post win celebration image every time any MLB team scores 13; requires instagram_content_publish permission (Meta review 1-2 weeks)
 - [ ] 5.9 Instagram growth posts - generic 13 Run League content for league acquisition; Think you could have called that? Start a 13 Run League at 13runleague.com
 
