@@ -319,7 +319,7 @@ export default async function PlayerPage({ params }: Props) {
         {activeStreak && (
           <section className="rounded-lg border border-gray-800 bg-[#111] p-6 mb-8">
             <h2 className="text-lg font-bold mb-4">Drought Tracker</h2>
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 gap-6">
               <StatBlock
                 label="Current Drought"
                 value={`${activeStreak.current_streak ?? 0}W`}
@@ -330,13 +330,6 @@ export default async function PlayerPage({ params }: Props) {
                 value={`${activeStreak.longest_streak ?? 0}W`}
                 subtitle="worst run in a season"
               />
-              {activeStreak.closest_miss_score !== null && (
-                <StatBlock
-                  label="Best Score vs. 13"
-                  value={`${activeStreak.closest_miss_score} runs`}
-                  subtitle={activeStreak.closest_miss_date ? `in a 13-run game (${activeStreak.closest_miss_date})` : 'in a 13-run game'}
-                />
-              )}
             </div>
           </section>
         )}

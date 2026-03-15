@@ -127,7 +127,6 @@ export default function LeaderboardTable({
             <SortTh label="Drought" col="streak" title="Current consecutive winning weeks this season" />
             <SortTh label="Wins" col="wins" title="Winning weeks this season" />
             <SortTh label="$$$" col="won" title="Money won this season" />
-            <th className="pb-2">Closest Miss</th>
           </tr>
         </thead>
         <tbody>
@@ -188,14 +187,6 @@ export default function LeaderboardTable({
                   <span className="text-[#39ff14] font-bold">${seasonWon.toLocaleString()}</span>
                 ) : (
                   <span className="text-gray-600">—</span>
-                )}
-              </td>
-              <td className="py-3 text-gray-400">
-                {streak?.closest_miss_score !== null &&
-                streak?.closest_miss_score !== undefined ? (
-                  `${streak.closest_miss_date ? fmtMD(streak.closest_miss_date) + ' — ' : ''}${streak.closest_miss_score} runs`
-                ) : (
-                  '—'
                 )}
               </td>
             </tr>
