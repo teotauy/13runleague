@@ -32,6 +32,28 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error
 
+    // Send email notification via Resend
+    if (process.env.RESEND_API_KEY) {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'onboarding@resend.dev',
+          to: 'colby@redcrowlabs.com',
+          subject: '💬 New feedback on 13runleague',
+          html: `
+            <h2>New feedback submitted</h2>
+            <p><strong>Message:</strong><br>${message.trim()}</p>
+            <p><strong>From:</strong> ${member_name?.trim() || 'Anonymous'}</p>
+            <p><strong>Page:</strong> <a href="${page_url}">${page_url}</a></p>
+          `,
+        }),
+      }).catch(err => console.error('Resend error:', err))
+    }
+
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('Feedback insert error:', err)
