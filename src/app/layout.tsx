@@ -3,6 +3,7 @@ import { Geist_Mono } from 'next/font/google'
 import './globals.css'
 import AddToHomeScreenBanner from '@/components/AddToHomeScreenBanner'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
+import SentryInit from '@/components/SentryInit'
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
@@ -56,6 +57,7 @@ export default function RootLayout({
       </head>
       <body className={`${geistMono.variable} antialiased bg-[#0a0a0a] text-white`}>
         {children}
+        <SentryInit />
         <AddToHomeScreenBanner />
         <ServiceWorkerRegistration />
       </body>
