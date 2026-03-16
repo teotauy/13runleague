@@ -17,5 +17,4 @@ Sentry.init({
   ],
 
   // Don't send errors from localhost
-  enabled: process.env.NODE_ENV === 'production',
 })
