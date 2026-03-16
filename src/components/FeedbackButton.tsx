@@ -61,7 +61,7 @@ export default function FeedbackButton() {
       <button
         onClick={openModal}
         aria-label="Report a bug or share feedback"
-        className="fixed bottom-20 right-4 z-40 flex items-center justify-center w-12 h-12 rounded-full bg-gray-900 border border-gray-700 text-white shadow-lg hover:border-[#39ff14] transition-colors"
+        className="fixed bottom-20 right-4 z-[60] flex items-center justify-center w-12 h-12 rounded-full bg-gray-900 border border-gray-700 text-white shadow-lg hover:border-[#39ff14] transition-colors"
       >
         💬
       </button>
