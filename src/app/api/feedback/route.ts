@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify({
           from: 'onboarding@resend.dev',
-          to: 'colby@redcrowlabs.com',
+          to: 'colby@colbyangusblack.com',
           subject: '💬 New feedback on 13runleague',
           html: `
             <h2>New feedback submitted</h2>
