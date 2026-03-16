@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist_Mono } from 'next/font/google'
 import './globals.css'
 import AddToHomeScreenBanner from '@/components/AddToHomeScreenBanner'
+import FeedbackButton from '@/components/FeedbackButton'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 import SentryInit from '@/components/SentryInit'
 
@@ -59,6 +60,7 @@ export default function RootLayout({
         {children}
         <SentryInit />
         <AddToHomeScreenBanner />
+        <FeedbackButton />
         <ServiceWorkerRegistration />
       </body>
     </html>

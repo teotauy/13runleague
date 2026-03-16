@@ -8,6 +8,7 @@ import TeamAssignment from '@/components/admin/TeamAssignment'
 import PreSeasonStatus from '@/components/admin/PreSeasonStatus'
 import MemberPasswordForm from '@/components/admin/MemberPasswordForm'
 import RecalculateStreaksButton from '@/components/admin/RecalculateStreaksButton'
+import FeedbackTab from '@/components/admin/FeedbackTab'
 
 export const dynamic = 'force-dynamic'
 
@@ -188,6 +189,12 @@ export default async function AdminDashboard({ params }: Props) {
               hasMemberPassword={hasMemberPassword}
             />
           </div>
+        </section>
+
+        {/* Feedback */}
+        <section>
+          <h2 className="text-xl font-bold mb-4">Feedback</h2>
+          <FeedbackTab leagueSlug={slug} />
         </section>
       </div>
     </main>
