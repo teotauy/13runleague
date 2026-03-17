@@ -32,7 +32,9 @@ interface Props {
 
 export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, peakCount }: Props) {
   const [hovered, setHovered] = useState<{ yr: number; svgX: number } | null>(null)
+  const [tooltipX, setTooltipX] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const outerRef = useRef<HTMLDivElement>(null)
 
   const scrollBy = (dir: 'left' | 'right') => {
     scrollRef.current?.scrollBy({ left: dir === 'right' ? 200 : -200, behavior: 'smooth' })
@@ -97,6 +99,9 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
       const yr = Math.round(minYr + fraction * yrSpan)
       const clamped = Math.max(minYr, Math.min(maxYr, yr))
       setHovered({ yr: clamped, svgX: xOf(clamped) })
+      // Track x relative to outer wrapper for tooltip positioning (outside overflow container)
+      const outerRect = outerRef.current?.getBoundingClientRect()
+      if (outerRect) setTooltipX(e.clientX - outerRect.left)
     },
     [minYr, yrSpan, xOf]
   )
@@ -131,8 +136,11 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
   // Make chart wide enough to see all years clearly — ~7px per year
   const chartPxWidth = Math.max(SVG_W, Math.round(yrSpan * 7))
 
+  const outerWidth = outerRef.current?.offsetWidth ?? 800
+  const tooltipTranslateX = tooltipX > outerWidth * 0.65 ? 'translateX(-100%)' : tooltipX < outerWidth * 0.25 ? 'translateX(0%)' : 'translateX(-50%)'
+
   return (
-    <div>
+    <div ref={outerRef} className="relative">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
           By Year
@@ -155,6 +163,34 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
           </div>
         </div>
       </div>
+
+      {/* Tooltip — rendered outside overflow container so it's never clipped */}
+      {hovered && (
+        <div
+          className="absolute z-30 pointer-events-none"
+          style={{ bottom: '115px', left: tooltipX, transform: tooltipTranslateX }}
+        >
+          <div className="bg-[#0a0a0a] border border-gray-700 rounded px-3 py-2 text-xs min-w-[160px] max-w-[240px] shadow-lg">
+            <div className="flex items-center justify-between gap-4 mb-0.5">
+              <span className="font-bold text-white font-mono">{hovered.yr}</span>
+              {isLeagueEra && <span className="text-[10px] text-[#39ff14] font-mono">SBK era</span>}
+            </div>
+            <div className={`font-mono ${isLeagueEra ? 'text-[#39ff14]' : 'text-gray-300'}`}>
+              {hoveredCount > 0
+                ? `${hoveredCount} thirteen-run game${hoveredCount !== 1 ? 's' : ''}`
+                : <span className="text-gray-600">no data</span>}
+            </div>
+            {nearestMilestoneYr !== null && MILESTONES[nearestMilestoneYr] && (
+              <div className="mt-1.5 pt-1.5 border-t border-gray-800 text-gray-500 leading-snug">
+                {nearestMilestoneYr !== hovered.yr && (
+                  <span className="text-gray-600 mr-1">{nearestMilestoneYr}:</span>
+                )}
+                {MILESTONES[nearestMilestoneYr]}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Chart area — horizontally scrollable */}
       <div ref={scrollRef} className="overflow-x-auto pb-1">
@@ -251,36 +287,6 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
           />
         </svg>
 
-        {/* Hover tooltip */}
-        {hovered && (
-          <div
-            className="absolute bottom-full mb-1.5 pointer-events-none z-20"
-            style={{ left: tooltipLeft, transform: tooltipTranslate }}
-          >
-            <div className="bg-[#0a0a0a] border border-gray-700 rounded px-3 py-2 text-xs min-w-[160px] max-w-[240px]">
-              <div className="flex items-center justify-between gap-4 mb-0.5">
-                <span className="font-bold text-white font-mono">{hovered.yr}</span>
-                {isLeagueEra && (
-                  <span className="text-[10px] text-[#39ff14] font-mono">SBK era</span>
-                )}
-              </div>
-              <div className={`font-mono ${isLeagueEra ? 'text-[#39ff14]' : 'text-gray-300'}`}>
-                {hoveredCount > 0
-                  ? `${hoveredCount} thirteen-run game${hoveredCount !== 1 ? 's' : ''}`
-                  : <span className="text-gray-600">no data</span>
-                }
-              </div>
-              {nearestMilestoneYr !== null && MILESTONES[nearestMilestoneYr] && (
-                <div className="mt-1.5 pt-1.5 border-t border-gray-800 text-gray-500 leading-snug">
-                  {nearestMilestoneYr !== hovered.yr && (
-                    <span className="text-gray-600 mr-1">{nearestMilestoneYr}:</span>
-                  )}
-                  {MILESTONES[nearestMilestoneYr]}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Axis labels — scrolls with chart */}
