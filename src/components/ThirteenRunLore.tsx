@@ -160,8 +160,8 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
           {(() => {
             const R = 80, r = 52, cx = 100, cy = 100
             const homeFrac = hvTotal > 0 ? homeWins / hvTotal : 0.5
-            const startAngle = Math.PI // 9 o'clock — home sweeps clockwise through the bottom
-            const angle = (startAngle + homeFrac * 2 * Math.PI) % (2 * Math.PI)
+            const startAngle = Math.PI // 9 o'clock — home sweeps counter-clockwise through the bottom
+            const angle = startAngle - homeFrac * 2 * Math.PI
             const homeX1 = cx + R * Math.cos(startAngle), homeY1 = cy + R * Math.sin(startAngle)
             const homeX2 = cx + R * Math.cos(angle),      homeY2 = cy + R * Math.sin(angle)
             const iX1  = cx + r * Math.cos(startAngle),   iY1  = cy + r * Math.sin(startAngle)
@@ -174,7 +174,7 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
                   <circle cx={cx} cy={cy} r={R} fill="#92400e" />
                   <circle cx={cx} cy={cy} r={r} fill="#111" />
                   <path
-                    d={`M ${homeX1.toFixed(2)} ${homeY1.toFixed(2)} A ${R} ${R} 0 ${large} 1 ${homeX2.toFixed(2)} ${homeY2.toFixed(2)} L ${iX2.toFixed(2)} ${iY2.toFixed(2)} A ${r} ${r} 0 ${large} 0 ${iX1.toFixed(2)} ${iY1.toFixed(2)} Z`}
+                    d={`M ${homeX1.toFixed(2)} ${homeY1.toFixed(2)} A ${R} ${R} 0 ${large} 0 ${homeX2.toFixed(2)} ${homeY2.toFixed(2)} L ${iX2.toFixed(2)} ${iY2.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${iX1.toFixed(2)} ${iY1.toFixed(2)} Z`}
                     fill="#39ff14"
                   />
                   <text x={cx} y={cy - 8} textAnchor="middle" fill="white" fontSize="18" fontWeight="900" fontFamily="monospace">{homePct}%</text>
