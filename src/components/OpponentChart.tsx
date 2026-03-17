@@ -55,11 +55,17 @@ export default function OpponentChart({ entries }: { entries: OppEntry[] }) {
         </div>
       </div>
 
-      <p className="text-xs text-gray-600 mb-3">
+      <p className="text-xs text-gray-600 mb-1">
         {mode === 'count'
           ? 'opponents scored on most'
           : 'share of opponent\'s all-time 13-run allowed'}
       </p>
+      {mode === 'share' && displayed[0] && (
+        <p className="text-[11px] text-gray-600 italic mb-3 leading-snug">
+          e.g. {displayed[0].opp} has given up 13 runs {displayed[0].oppAllowed} times
+          in history — this team scored {displayed[0].count} of them ({displayed[0].share.toFixed(1)}%)
+        </p>
+      )}
 
       {displayed.length === 0 ? (
         <p className="text-gray-600 text-xs">No data</p>
