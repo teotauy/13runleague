@@ -193,6 +193,12 @@ export default async function LeagueDashboard({ params }: Props) {
     .select('member_name, team, year, total_won, shares')
     .eq('league_id', league.id)
 
+  // Build a case-insensitive name → member map for robust matching
+  const memberByName = new Map<string, { id: string; name: string }>()
+  for (const m of members ?? []) {
+    memberByName.set(m.name.trim().toLowerCase(), { id: m.id, name: m.name })
+  }
+
   // Aggregate all-time rankings by member
   const allTimeMap = new Map<string, AllTimeEntry>()
   for (const row of historicalRaw ?? []) {
@@ -202,13 +208,14 @@ export default async function LeagueDashboard({ params }: Props) {
       existing.totalShares += row.shares ?? 0
       existing.yearsPlayed.push(row.year)
     } else {
+      const matched = memberByName.get(row.member_name.trim().toLowerCase())
       allTimeMap.set(row.member_name, {
         name: row.member_name,
         totalWon: row.total_won ?? 0,
         totalShares: row.shares ?? 0,
         yearsPlayed: [row.year],
-        isActive: !!(members ?? []).find((m) => m.name === row.member_name),
-        id: (members ?? []).find((m) => m.name === row.member_name)?.id,
+        isActive: !!matched,
+        id: matched?.id,
       })
     }
   }
