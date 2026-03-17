@@ -61,6 +61,10 @@ export default async function TeamPage({ params }: Props) {
   const { data: opponentCounts } = await supabase
     .rpc('get_opponent_game_counts', { team_abbr: abbr })
 
+  // How many times each team has ever given up 13 (league-wide allowed counts)
+  const { data: allowedCounts } = await supabase
+    .rpc('get_all_allowed_counts')
+
   const allGames = games ?? []
   const total = allGames.length
 
@@ -96,18 +100,23 @@ export default async function TeamPage({ params }: Props) {
   const yearOrdered = [...yearMap.entries()].sort((a, b) => a[0] - b[0])
   const monthOrdered = BASEBALL_MONTHS.map((m) => [m, monthMap.get(m) ?? 0] as [string, number])
   const dayOrdered = DAY_NAMES.map((d) => [d, dayMap.get(d) ?? 0] as [string, number])
-  // Build total-games-by-opponent map from RPC result
-  const totalGamesMap = new Map<string, number>()
-  for (const row of opponentCounts ?? []) {
-    totalGamesMap.set(row.opponent, Number(row.total_games))
+  // Build allowed-count map: how many times each opponent has ever given up 13 to anyone
+  const allowedMap = new Map<string, number>()
+  for (const row of allowedCounts ?? []) {
+    allowedMap.set(row.team, Number(row.times_allowed))
   }
 
   const oppRanked = [...oppMap.entries()].sort((a, b) => b[1] - a[1])
 
-  // Build OppEntry array with count + total + rate for OpponentChart
+  // Build OppEntry array: count + share (% of opponent's all-time 13-run allowed games)
   const oppEntries: OppEntry[] = oppRanked.map(([opp, count]) => {
-    const total = totalGamesMap.get(opp) ?? 0
-    return { opp, count, total, rate: total > 0 ? (count / total) * 100 : 0 }
+    const oppAllowed = allowedMap.get(opp) ?? 0
+    return {
+      opp,
+      count,
+      oppAllowed,
+      share: oppAllowed > 0 ? (count / oppAllowed) * 100 : 0,
+    }
   })
 
   const firstYear = yearOrdered[0]?.[0]
