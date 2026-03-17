@@ -43,6 +43,13 @@ export default function LeagueTabs({
     return String(t)
   }
 
+  // Build name → id map from allTimeRankings (already resolved server-side)
+  const allTimeIdByName = new Map(
+    allTimeRankings
+      .filter((e) => e.id)
+      .map((e) => [e.name.trim().toLowerCase(), e.id!])
+  )
+
   function getYearData(year: number) {
     const yearRows = historicalRaw.filter((r) => r.year === year)
 
@@ -53,12 +60,14 @@ export default function LeagueTabs({
         existing.totalWon += row.total_won ?? 0
         existing.totalShares += row.shares ?? 0
       } else {
+        const memberId = allTimeIdByName.get(row.member_name.trim().toLowerCase())
         playerMap.set(row.member_name, {
           name: row.member_name,
           totalWon: row.total_won ?? 0,
           totalShares: row.shares ?? 0,
           yearsPlayed: [year],
-          isActive: false,
+          isActive: !!memberId,
+          id: memberId,
         })
       }
     }
