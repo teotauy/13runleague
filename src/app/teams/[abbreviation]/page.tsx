@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { TEAM_COLORS, getTeamColor } from '@/lib/teamColors'
 import YearChart from '@/components/YearChart'
 import MiniBar from '@/components/MiniBar'
+import OpponentChart, { type OppEntry } from '@/components/OpponentChart'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -48,13 +49,20 @@ export default async function TeamPage({ params }: Props) {
   const teamInfo = getTeamColor(abbr)
   const supabase = createServiceClient()
 
-  // All games where this team scored exactly 13 runs
+  // All 13-run games for this team
   const { data: games } = await supabase
     .from('game_results')
     .select('game_date, home_team, away_team, winning_team, home_score, away_score')
     .eq('was_thirteen', true)
     .eq('winning_team', abbr)
     .order('game_date', { ascending: false })
+
+  // All games involving this team (for per-capita rate)
+  const { data: allMatchups } = await supabase
+    .from('game_results')
+    .select('home_team, away_team')
+    .or(`home_team.eq.${abbr},away_team.eq.${abbr}`)
+    .limit(50000)
 
   const allGames = games ?? []
   const total = allGames.length
@@ -91,14 +99,26 @@ export default async function TeamPage({ params }: Props) {
   const yearOrdered = [...yearMap.entries()].sort((a, b) => a[0] - b[0])
   const monthOrdered = BASEBALL_MONTHS.map((m) => [m, monthMap.get(m) ?? 0] as [string, number])
   const dayOrdered = DAY_NAMES.map((d) => [d, dayMap.get(d) ?? 0] as [string, number])
+  // Build total-games-by-opponent map for rate calculation
+  const totalGamesMap = new Map<string, number>()
+  for (const g of allMatchups ?? []) {
+    const opp = g.home_team === abbr ? g.away_team : g.home_team
+    totalGamesMap.set(opp, (totalGamesMap.get(opp) ?? 0) + 1)
+  }
+
   const oppRanked = [...oppMap.entries()].sort((a, b) => b[1] - a[1])
+
+  // Build OppEntry array with count + total + rate for OpponentChart
+  const oppEntries: OppEntry[] = oppRanked.map(([opp, count]) => {
+    const total = totalGamesMap.get(opp) ?? 0
+    return { opp, count, total, rate: total > 0 ? (count / total) * 100 : 0 }
+  })
 
   const firstYear = yearOrdered[0]?.[0]
   const lastYear = yearOrdered[yearOrdered.length - 1]?.[0]
   const maxYearCount = Math.max(...yearOrdered.map(([, v]) => v), 1)
   const maxMonthCount = Math.max(...monthOrdered.map(([, v]) => v), 1)
   const maxDay = Math.max(...dayOrdered.map(([, v]) => v), 1)
-  const maxOpp = oppRanked[0]?.[1] ?? 1
   const peakYearEntry = yearOrdered.reduce((a, b) => (b[1] > a[1] ? b : a), [0, 0] as [number, number])
   const peakMonth = monthOrdered.reduce((a, b) => (b[1] > a[1] ? b : a))[0]
   const peakDay = dayOrdered.reduce((a, b) => (b[1] > a[1] ? b : a))[0]
@@ -291,43 +311,8 @@ export default async function TeamPage({ params }: Props) {
                 </div>
               </div>
 
-              {/* By Opponent */}
-              <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                  By Opponent
-                </h3>
-                <p className="text-xs text-gray-600 mb-3">
-                  who they feast on most
-                </p>
-                {oppRanked.length === 0 ? (
-                  <p className="text-gray-600 text-xs">No data</p>
-                ) : (
-                  <div className="space-y-2.5">
-                    {oppRanked.slice(0, 10).map(([opp, count], i) => (
-                      <div key={opp} className="flex items-center gap-2">
-                        <span className={`text-xs font-mono w-3 ${i === 0 ? 'text-[#39ff14]' : 'text-gray-700'}`}>
-                          {i === 0 ? '▸' : ''}
-                        </span>
-                        <Link
-                          href={`/teams/${opp.toLowerCase()}`}
-                          className="text-xs font-mono text-white w-8 shrink-0 hover:text-[#39ff14] transition-colors underline decoration-dotted"
-                        >
-                          {opp}
-                        </Link>
-                        <MiniBar value={count} max={maxOpp} />
-                        <span className="text-xs font-mono text-gray-400 w-8 text-right shrink-0">
-                          {count}
-                        </span>
-                      </div>
-                    ))}
-                    {oppRanked.length > 10 && (
-                      <p className="text-xs text-gray-700 mt-1 pl-5">
-                        +{oppRanked.length - 10} other opponents
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
+              {/* By Opponent — COUNT / RATE toggle */}
+              <OpponentChart entries={oppEntries} />
 
             </div>
 
