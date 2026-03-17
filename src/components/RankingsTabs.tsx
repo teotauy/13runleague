@@ -223,7 +223,7 @@ function AllTimeTable({
             <tr className="text-gray-500 border-b border-gray-800">
               <th className="pb-2 pr-4 text-left">#</th>
               <th className="pb-2 pr-4 text-left">Player</th>
-              <SortTh label="Years" col="yearsPlayed" current={sortCol} dir={dir} onClick={handleSort} />
+              {!year && <SortTh label="Years" col="yearsPlayed" current={sortCol} dir={dir} onClick={handleSort} />}
               <SortTh label="Wins" col="totalShares" current={sortCol} dir={dir} onClick={handleSort} />
               <SortTh label="Total Won" col="totalWon" current={sortCol} dir={dir} onClick={handleSort} />
               <th className="pb-2 text-left">Badges</th>
@@ -250,9 +250,11 @@ function AllTimeTable({
                       entry.name
                     )}
                   </td>
-                  <td className="py-2 pr-4 text-gray-400">
-                    {yearRange(entry.yearsPlayed)}
-                  </td>
+                  {!year && (
+                    <td className="py-2 pr-4 text-gray-400">
+                      {yearRange(entry.yearsPlayed)}
+                    </td>
+                  )}
                   <td className="py-2 pr-4 text-gray-300">{entry.totalShares}</td>
                   <td className="py-2 pr-4 font-bold text-[#39ff14]">
                     ${entry.totalWon.toLocaleString()}
