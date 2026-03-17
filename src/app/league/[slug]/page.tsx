@@ -208,6 +208,7 @@ export default async function LeagueDashboard({ params }: Props) {
         totalShares: row.shares ?? 0,
         yearsPlayed: [row.year],
         isActive: !!(members ?? []).find((m) => m.name === row.member_name),
+        id: (members ?? []).find((m) => m.name === row.member_name)?.id,
       })
     }
   }

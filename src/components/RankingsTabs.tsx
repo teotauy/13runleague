@@ -328,7 +328,14 @@ function TeamTable({ data }: { data: TeamEntry[] }) {
           {sorted.map((entry, i) => (
             <tr key={entry.team} className="border-b border-gray-900 hover:bg-[#111]">
               <td className="py-2 pr-4 text-gray-600">{i + 1}</td>
-              <td className="py-2 pr-4 text-white font-semibold">{entry.team}</td>
+              <td className="py-2 pr-4 text-white font-semibold">
+                <Link
+                  href={`/teams/${entry.team.toLowerCase()}`}
+                  className="hover:text-[#39ff14] transition-colors underline decoration-dotted"
+                >
+                  {entry.team}
+                </Link>
+              </td>
               <td className="py-2 pr-4 text-[#39ff14] font-bold">{entry.thirteenRunWeeks}</td>
               <td className="py-2 text-gray-300">${entry.totalPaidOut.toLocaleString()}</td>
             </tr>
