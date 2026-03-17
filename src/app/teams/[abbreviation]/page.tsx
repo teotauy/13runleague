@@ -57,12 +57,9 @@ export default async function TeamPage({ params }: Props) {
     .eq('winning_team', abbr)
     .order('game_date', { ascending: false })
 
-  // All games involving this team (for per-capita rate)
-  const { data: allMatchups } = await supabase
-    .from('game_results')
-    .select('home_team, away_team')
-    .or(`home_team.eq.${abbr},away_team.eq.${abbr}`)
-    .limit(50000)
+  // Aggregated opponent game counts via RPC (bypasses row limits)
+  const { data: opponentCounts } = await supabase
+    .rpc('get_opponent_game_counts', { team_abbr: abbr })
 
   const allGames = games ?? []
   const total = allGames.length
@@ -99,11 +96,10 @@ export default async function TeamPage({ params }: Props) {
   const yearOrdered = [...yearMap.entries()].sort((a, b) => a[0] - b[0])
   const monthOrdered = BASEBALL_MONTHS.map((m) => [m, monthMap.get(m) ?? 0] as [string, number])
   const dayOrdered = DAY_NAMES.map((d) => [d, dayMap.get(d) ?? 0] as [string, number])
-  // Build total-games-by-opponent map for rate calculation
+  // Build total-games-by-opponent map from RPC result
   const totalGamesMap = new Map<string, number>()
-  for (const g of allMatchups ?? []) {
-    const opp = g.home_team === abbr ? g.away_team : g.home_team
-    totalGamesMap.set(opp, (totalGamesMap.get(opp) ?? 0) + 1)
+  for (const row of opponentCounts ?? []) {
+    totalGamesMap.set(row.opponent, Number(row.total_games))
   }
 
   const oppRanked = [...oppMap.entries()].sort((a, b) => b[1] - a[1])
