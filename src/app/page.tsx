@@ -194,6 +194,7 @@ export default async function HomePage({ searchParams }: PageProps) {
     .select('game_date, home_team, away_team, winning_team, home_score, away_score')
     .eq('was_thirteen', true)
     .order('game_date', { ascending: false })
+    .limit(10000)
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-white">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 
 // Key MLB structural milestones — shown in hover tooltip
 const MILESTONES: Record<number, string> = {
@@ -32,6 +32,11 @@ interface Props {
 
 export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, peakCount }: Props) {
   const [hovered, setHovered] = useState<{ yr: number; svgX: number } | null>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  const scrollBy = (dir: 'left' | 'right') => {
+    scrollRef.current?.scrollBy({ left: dir === 'right' ? 200 : -200, behavior: 'smooth' })
+  }
 
   const yrSpan = maxYr - minYr
   const xOf = useCallback(
@@ -132,13 +137,27 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
         <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
           By Year
         </h3>
-        <span className="text-xs text-gray-700 font-mono">
-          {minYr}–{maxYr} · peak {peakYear} ({peakCount.toLocaleString()} games)
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-700 font-mono">
+            {minYr}–{maxYr} · peak {peakYear} ({peakCount.toLocaleString()} games)
+          </span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => scrollBy('left')}
+              className="w-6 h-6 flex items-center justify-center rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors text-xs"
+              aria-label="Scroll left"
+            >←</button>
+            <button
+              onClick={() => scrollBy('right')}
+              className="w-6 h-6 flex items-center justify-center rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors text-xs"
+              aria-label="Scroll right"
+            >→</button>
+          </div>
+        </div>
       </div>
 
       {/* Chart area — horizontally scrollable */}
-      <div className="overflow-x-auto pb-1">
+      <div ref={scrollRef} className="overflow-x-auto pb-1">
       <div className="relative" style={{ minWidth: `${chartPxWidth}px` }}>
         <svg
           viewBox={`0 0 ${SVG_W} ${SVG_H}`}
