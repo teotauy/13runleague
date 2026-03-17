@@ -18,10 +18,35 @@ export async function PATCH(
   const body = await req.json()
 
   try {
+    // Fetch current member to detect name changes
+    const { data: current, error: fetchError } = await supabase
+      .from('members')
+      .select('name, league_id')
+      .eq('id', memberId)
+      .single()
+
+    if (fetchError || !current) {
+      return NextResponse.json({ error: 'Member not found' }, { status: 404 })
+    }
+
+    const nameChanged = body.name && body.name.trim() !== current.name
+
+    if (nameChanged) {
+      // Atomic rename — updates members + historical_results in one transaction
+      const { error: renameError } = await supabase.rpc('rename_member', {
+        p_member_id: memberId,
+        p_old_name: current.name,
+        p_new_name: body.name.trim(),
+        p_league_id: current.league_id,
+      })
+      if (renameError) throw renameError
+    }
+
+    // Update non-name fields (team, phone, email) separately
     const { data, error } = await supabase
       .from('members')
       .update({
-        name: body.name,
+        ...(nameChanged ? {} : { name: body.name }),
         assigned_team: body.assigned_team ?? '',
         phone: body.phone,
         email: body.email,

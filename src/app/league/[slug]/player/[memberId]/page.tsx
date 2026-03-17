@@ -324,7 +324,7 @@ export default async function PlayerPage({ params }: Props) {
                           ? `${year} ${team}: ${wins}W — $${won.toLocaleString()}${ledMoney ? ' 💰 Led league in $$$' : ledWins ? ' 🏆 Led league in wins' : ''}`
                           : `${year} ${team}: no wins`
                       }
-                      className={`w-14 h-14 rounded-full flex items-center justify-center text-[11px] font-bold font-mono border-2 transition-colors ${
+                      className={`w-14 h-14 rounded-full flex items-center justify-center text-center text-[11px] font-bold font-mono border-2 transition-colors ${
                         ledMoney
                           ? 'border-[#39ff14] text-[#39ff14] bg-[#39ff14]/10'
                           : ledWins
