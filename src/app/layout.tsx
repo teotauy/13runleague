@@ -5,6 +5,7 @@ import AddToHomeScreenBanner from '@/components/AddToHomeScreenBanner'
 import FeedbackButton from '@/components/FeedbackButton'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 import SentryInit from '@/components/SentryInit'
+import TVBug from '@/components/TVBug'
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
@@ -59,6 +60,7 @@ export default function RootLayout({
       <body className={`${geistMono.variable} antialiased bg-[#0a0a0a] text-white`}>
         {children}
         <SentryInit />
+        <TVBug />
         <AddToHomeScreenBanner />
         <FeedbackButton />
         <ServiceWorkerRegistration />
