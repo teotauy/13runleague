@@ -157,36 +157,55 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">
             Home vs. Visitor
           </h3>
-          <div className="flex items-end gap-6 mb-4">
-            <div className="text-center flex-1">
-              <div className="text-4xl font-black text-[#39ff14] tabular-nums">
-                {homeWins.toLocaleString()}
+          {(() => {
+            const R = 60, r = 38, cx = 80, cy = 70
+            const homeFrac = hvTotal > 0 ? homeWins / hvTotal : 0.5
+            const angle = homeFrac * 2 * Math.PI - Math.PI / 2
+            const startAngle = -Math.PI / 2
+            const homeX1 = cx + R * Math.cos(startAngle), homeY1 = cy + R * Math.sin(startAngle)
+            const homeX2 = cx + R * Math.cos(angle),     homeY2 = cy + R * Math.sin(angle)
+            const iX1 = cx + r * Math.cos(startAngle),   iY1 = cy + r * Math.sin(startAngle)
+            const iX2 = cx + r * Math.cos(angle),        iY2 = cy + r * Math.sin(angle)
+            const large = homeFrac > 0.5 ? 1 : 0
+            return (
+              <div className="flex items-center gap-6">
+                <svg width="160" height="140" viewBox="0 0 160 140" className="shrink-0">
+                  {/* Away slice (full circle background) */}
+                  <circle cx={cx} cy={cy} r={R} fill="#92400e" />
+                  <circle cx={cx} cy={cy} r={r} fill="#111" />
+                  {/* Home slice */}
+                  <path
+                    d={`M ${homeX1} ${homeY1} A ${R} ${R} 0 ${large} 1 ${homeX2} ${homeY2} L ${iX2} ${iY2} A ${r} ${r} 0 ${large} 0 ${iX1} ${iY1} Z`}
+                    fill="#39ff14"
+                  />
+                  {/* Center label */}
+                  <text x={cx} y={cy - 6} textAnchor="middle" fill="white" fontSize="13" fontWeight="900" fontFamily="monospace">
+                    {homePct}%
+                  </text>
+                  <text x={cx} y={cy + 9} textAnchor="middle" fill="#6b7280" fontSize="9" fontFamily="monospace">
+                    HOME
+                  </text>
+                  {/* Legend dots */}
+                  <circle cx="10" cy="128" r="5" fill="#39ff14" />
+                  <text x="20" y="132" fill="#9ca3af" fontSize="9" fontFamily="monospace">Home {homeWins.toLocaleString()}</text>
+                  <circle cx="10" cy="140" r="5" fill="#92400e" />
+                  <text x="20" y="144" fill="#9ca3af" fontSize="9" fontFamily="monospace">Away {awayWins.toLocaleString()}</text>
+                </svg>
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    {homeWins > awayWins
+                      ? 'Home teams score 13 more often — home field advantage is real.'
+                      : homeWins < awayWins
+                      ? 'Visitors score 13 more often — road rage is real.'
+                      : 'Dead even split between home and away.'}
+                  </p>
+                  <p className="text-xs text-gray-700">
+                    {hvTotal.toLocaleString()} games tracked
+                  </p>
+                </div>
               </div>
-              <div className="text-xs text-gray-500 mt-1">Home</div>
-            </div>
-            <div className="text-gray-700 text-base font-mono pb-3">vs</div>
-            <div className="text-center flex-1">
-              <div className="text-4xl font-black text-amber-400 tabular-nums">
-                {awayWins.toLocaleString()}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">Visitor</div>
-            </div>
-          </div>
-          <div className="w-full h-2 rounded-full overflow-hidden flex">
-            <div className="bg-[#39ff14] h-full transition-all" style={{ width: `${homePct}%` }} />
-            <div className="bg-amber-900 h-full flex-1" />
-          </div>
-          <div className="flex justify-between text-xs text-gray-600 mt-1.5">
-            <span>{homePct}% home</span>
-            <span>{100 - homePct}% away</span>
-          </div>
-          {homeWins !== awayWins && (
-            <p className="text-xs text-gray-700 mt-3">
-              {homeWins > awayWins
-                ? 'Home teams score 13 more — home field is real'
-                : 'Visitors score 13 more — road rage is real'}
-            </p>
-          )}
+            )
+          })()}
         </div>
 
         {/* ── By Month ── */}
