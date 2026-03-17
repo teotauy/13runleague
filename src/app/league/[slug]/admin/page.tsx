@@ -43,9 +43,22 @@ export default async function AdminDashboard({ params }: Props) {
   // Previous player names for autocomplete in the Add Member form
   const { data: historicalNames } = await supabase
     .from('historical_results')
-    .select('member_name')
+    .select('member_name, year')
     .eq('league_id', league.id)
   const previousNames = [...new Set((historicalNames ?? []).map((r) => r.member_name))].sort()
+
+  // Build a map of member_name → sorted array of years played (for the roster Years column)
+  const yearsPlayedByName: Record<string, number[]> = {}
+  for (const row of historicalNames ?? []) {
+    const key = row.member_name.trim().toLowerCase()
+    if (!yearsPlayedByName[key]) yearsPlayedByName[key] = []
+    if (!yearsPlayedByName[key].includes(row.year)) {
+      yearsPlayedByName[key].push(row.year)
+    }
+  }
+  for (const key of Object.keys(yearsPlayedByName)) {
+    yearsPlayedByName[key].sort((a, b) => a - b)
+  }
 
   // Optional query — member_password_hash column added in migration 20260305010000
   // Gracefully handles the case where the migration hasn't run yet
@@ -59,7 +72,7 @@ export default async function AdminDashboard({ params }: Props) {
   // Base member fetch — always safe (uses original schema columns only)
   const { data: members } = await supabase
     .from('members')
-    .select('id, name, assigned_team, phone, email')
+    .select('id, name, assigned_team, phone, email, is_active')
     .eq('league_id', league.id)
     .order('name')
 
@@ -148,6 +161,7 @@ export default async function AdminDashboard({ params }: Props) {
             leagueSlug={slug}
             members={members ?? []}
             previousNames={previousNames}
+            yearsPlayedByName={yearsPlayedByName}
           />
         </section>
 

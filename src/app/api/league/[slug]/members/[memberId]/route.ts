@@ -42,14 +42,15 @@ export async function PATCH(
       if (renameError) throw renameError
     }
 
-    // Update non-name fields (team, phone, email) separately
+    // Update non-name fields (team, phone, email, is_active) separately
     const { data, error } = await supabase
       .from('members')
       .update({
-        ...(nameChanged ? {} : { name: body.name }),
-        assigned_team: body.assigned_team ?? '',
-        phone: body.phone,
-        email: body.email,
+        ...(nameChanged ? {} : body.name !== undefined ? { name: body.name } : {}),
+        ...(body.assigned_team !== undefined ? { assigned_team: body.assigned_team } : {}),
+        ...(body.phone !== undefined ? { phone: body.phone } : {}),
+        ...(body.email !== undefined ? { email: body.email } : {}),
+        ...(typeof body.is_active === 'boolean' ? { is_active: body.is_active } : {}),
       })
       .eq('id', memberId)
       .select()
