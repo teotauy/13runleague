@@ -25,6 +25,7 @@ export default async function TeamsIndexPage() {
     .from('game_results')
     .select('winning_team')
     .eq('was_thirteen', true)
+    .limit(10000)
 
   // Tally counts
   const counts: Record<string, number> = {}
