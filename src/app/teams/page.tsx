@@ -20,17 +20,16 @@ interface TeamStat {
 export default async function TeamsIndexPage() {
   const supabase = await createServiceClient()
 
-  // Count 13-run games per team (as either home or away scorer)
+  // Count 13-run games per team using winning_team (franchise-normalized)
   const { data: rows } = await supabase
     .from('game_results')
-    .select('home_team, away_team, home_score, away_score')
+    .select('winning_team')
     .eq('was_thirteen', true)
 
   // Tally counts
   const counts: Record<string, number> = {}
   for (const row of rows ?? []) {
-    if (row.home_score === 13) counts[row.home_team] = (counts[row.home_team] ?? 0) + 1
-    if (row.away_score === 13) counts[row.away_team] = (counts[row.away_team] ?? 0) + 1
+    if (row.winning_team) counts[row.winning_team] = (counts[row.winning_team] ?? 0) + 1
   }
 
   const teams: TeamStat[] = Object.entries(TEAM_COLORS)
