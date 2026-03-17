@@ -8,6 +8,7 @@ import RankingsTabs, { type AllTimeEntry, type TeamEntry } from '@/components/Ra
 import PotBreakdown from '@/components/PotBreakdown'
 import LeaderboardTable, { type LeaderboardRow } from '@/components/LeaderboardTable'
 import LeagueDashboardHeader from '@/components/LeagueDashboardHeader'
+import WinCelebration, { type WinCelebrationPayout } from '@/components/WinCelebration'
 
 export const dynamic = 'force-dynamic'
 
@@ -113,6 +114,35 @@ export default async function LeagueDashboard({ params }: Props) {
     supabase
   )
 
+  // Most recent payout — for win celebration banner (show within 72 hours)
+  const { data: recentPayout } = await supabase
+    .from('payouts')
+    .select('id, member_id, week_number, year, winning_team, payout_amount, game_date, created_at')
+    .eq('year', seasonYear)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  let winCelebrationPayout: WinCelebrationPayout | null = null
+  if (recentPayout?.created_at) {
+    const createdAt = new Date(recentPayout.created_at)
+    const hoursSince = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60)
+    if (hoursSince <= 72) {
+      const memberRecord = (members ?? []).find((m) => m.id === recentPayout.member_id)
+      if (memberRecord) {
+        winCelebrationPayout = {
+          id: recentPayout.id,
+          member_name: memberRecord.name,
+          week_number: recentPayout.week_number,
+          year: recentPayout.year,
+          winning_team: recentPayout.winning_team,
+          payout_amount: recentPayout.payout_amount,
+          game_date: recentPayout.game_date ?? null,
+        }
+      }
+    }
+  }
+
   // All payouts this season — for leaderboard Wins + Won columns
   const { data: seasonPayouts } = await supabase
     .from('payouts')
@@ -196,6 +226,9 @@ export default async function LeagueDashboard({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-white">
+      {winCelebrationPayout && (
+        <WinCelebration payout={winCelebrationPayout} />
+      )}
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
 
         {/* Header */}
