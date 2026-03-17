@@ -36,6 +36,7 @@ export async function generateMetadata({ params }: { params: Promise<{ abbreviat
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const
 const BASEBALL_MONTHS = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'] as const
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 
 export default async function TeamPage({ params }: Props) {
   const { abbreviation } = await params
@@ -64,9 +65,12 @@ export default async function TeamPage({ params }: Props) {
   let awayCount = 0
   const yearMap = new Map<number, number>()
   const monthMap = new Map<string, number>()
+  const dayMap = new Map<string, number>()
+  const oppMap = new Map<string, number>()
 
   for (const g of allGames) {
-    if (g.home_team === abbr) homeCount++
+    const isHome = g.home_team === abbr
+    if (isHome) homeCount++
     else awayCount++
 
     const yr = parseInt(g.game_date.slice(0, 4), 10)
@@ -75,17 +79,29 @@ export default async function TeamPage({ params }: Props) {
     const mo = parseInt(g.game_date.slice(5, 7), 10) - 1
     const moName = MONTH_NAMES[mo]
     if (moName) monthMap.set(moName, (monthMap.get(moName) ?? 0) + 1)
+
+    const d = new Date(g.game_date + 'T12:00:00Z')
+    const dayName = DAY_NAMES[d.getUTCDay()]
+    dayMap.set(dayName, (dayMap.get(dayName) ?? 0) + 1)
+
+    const opp = isHome ? g.away_team : g.home_team
+    oppMap.set(opp, (oppMap.get(opp) ?? 0) + 1)
   }
 
   const yearOrdered = [...yearMap.entries()].sort((a, b) => a[0] - b[0])
   const monthOrdered = BASEBALL_MONTHS.map((m) => [m, monthMap.get(m) ?? 0] as [string, number])
+  const dayOrdered = DAY_NAMES.map((d) => [d, dayMap.get(d) ?? 0] as [string, number])
+  const oppRanked = [...oppMap.entries()].sort((a, b) => b[1] - a[1])
 
   const firstYear = yearOrdered[0]?.[0]
   const lastYear = yearOrdered[yearOrdered.length - 1]?.[0]
   const maxYearCount = Math.max(...yearOrdered.map(([, v]) => v), 1)
   const maxMonthCount = Math.max(...monthOrdered.map(([, v]) => v), 1)
+  const maxDay = Math.max(...dayOrdered.map(([, v]) => v), 1)
+  const maxOpp = oppRanked[0]?.[1] ?? 1
   const peakYearEntry = yearOrdered.reduce((a, b) => (b[1] > a[1] ? b : a), [0, 0] as [number, number])
   const peakMonth = monthOrdered.reduce((a, b) => (b[1] > a[1] ? b : a))[0]
+  const peakDay = dayOrdered.reduce((a, b) => (b[1] > a[1] ? b : a))[0]
   const distinctSeasons = yearOrdered.length
 
   const hvTotal = homeCount + awayCount
@@ -247,6 +263,72 @@ export default async function TeamPage({ params }: Props) {
                   </p>
                 )}
               </div>
+            </div>
+
+            {/* Day of Week + By Opponent */}
+            <div className="grid sm:grid-cols-2 gap-4">
+
+              {/* By Day of Week */}
+              <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
+                  By Day of Week
+                </h3>
+                <p className="text-xs text-gray-600 mb-3">
+                  {peakDay}s are dangerous
+                </p>
+                <div className="space-y-2.5">
+                  {dayOrdered.map(([day, count]) => (
+                    <div key={day} className="flex items-center gap-2">
+                      <span className={`text-xs font-mono w-7 ${day === peakDay ? 'text-[#39ff14]' : 'text-gray-500'}`}>
+                        {day}
+                      </span>
+                      <MiniBar value={count} max={maxDay} dim={count === 0} />
+                      <span className="text-xs font-mono text-gray-400 w-8 text-right shrink-0">
+                        {count > 0 ? count : '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* By Opponent */}
+              <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
+                  By Opponent
+                </h3>
+                <p className="text-xs text-gray-600 mb-3">
+                  who they feast on most
+                </p>
+                {oppRanked.length === 0 ? (
+                  <p className="text-gray-600 text-xs">No data</p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {oppRanked.slice(0, 10).map(([opp, count], i) => (
+                      <div key={opp} className="flex items-center gap-2">
+                        <span className={`text-xs font-mono w-3 ${i === 0 ? 'text-[#39ff14]' : 'text-gray-700'}`}>
+                          {i === 0 ? '▸' : ''}
+                        </span>
+                        <Link
+                          href={`/teams/${opp.toLowerCase()}`}
+                          className="text-xs font-mono text-white w-8 shrink-0 hover:text-[#39ff14] transition-colors underline decoration-dotted"
+                        >
+                          {opp}
+                        </Link>
+                        <MiniBar value={count} max={maxOpp} />
+                        <span className="text-xs font-mono text-gray-400 w-8 text-right shrink-0">
+                          {count}
+                        </span>
+                      </div>
+                    ))}
+                    {oppRanked.length > 10 && (
+                      <p className="text-xs text-gray-700 mt-1 pl-5">
+                        +{oppRanked.length - 10} other opponents
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
             </div>
 
             {/* Full game log */}
