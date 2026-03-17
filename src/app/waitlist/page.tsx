@@ -6,12 +6,14 @@ import Link from 'next/link'
 export default function WaitlistPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [consent, setConsent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!consent) return
     setError('')
     setLoading(true)
 
@@ -34,12 +36,13 @@ export default function WaitlistPage() {
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center px-4">
-      {/* Back link */}
+      {/* X close button — top right, obvious */}
       <Link
         href="/"
-        className="absolute top-6 left-6 text-xs text-gray-600 hover:text-gray-400 transition-colors font-mono"
+        aria-label="Back to 13runleague.com"
+        className="absolute top-5 right-5 w-9 h-9 flex items-center justify-center rounded-full bg-gray-900 border border-gray-800 text-gray-400 hover:text-white hover:border-gray-600 transition-colors text-lg"
       >
-        ← 13runleague.com
+        ✕
       </Link>
 
       <div className="w-full max-w-md">
@@ -83,21 +86,47 @@ export default function WaitlistPage() {
                 className="w-full bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-[#39ff14] transition-colors"
               />
 
+              {/* Consent checkbox */}
+              <label className="flex items-start gap-3 cursor-pointer group pt-1">
+                <div className="relative mt-0.5 shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={consent}
+                    onChange={(e) => setConsent(e.target.checked)}
+                    required
+                    className="sr-only"
+                  />
+                  <div className={`w-4 h-4 rounded border transition-colors ${consent ? 'bg-[#39ff14] border-[#39ff14]' : 'bg-gray-900 border-gray-600 group-hover:border-gray-400'}`}>
+                    {consent && (
+                      <svg viewBox="0 0 12 12" className="w-4 h-4 p-0.5" fill="none">
+                        <path d="M2 6l3 3 5-5" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <span className="text-xs text-gray-500 leading-relaxed">
+                  I agree to receive email updates from 13 Run League. See our{' '}
+                  <Link href="/privacy" className="text-gray-400 hover:text-white underline" target="_blank">Privacy Policy</Link>
+                  {' '}and{' '}
+                  <Link href="/terms" className="text-gray-400 hover:text-white underline" target="_blank">Terms</Link>.
+                </span>
+              </label>
+
               {error && (
                 <p className="text-red-400 text-xs">{error}</p>
               )}
 
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full bg-[#39ff14] text-black font-black py-3 rounded-lg text-sm hover:brightness-110 transition-all disabled:opacity-50"
+                disabled={loading || !consent}
+                className="w-full bg-[#39ff14] text-black font-black py-3 rounded-lg text-sm hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {loading ? 'Joining…' : "Count me in →"}
+                {loading ? 'Joining…' : 'Count me in →'}
               </button>
             </form>
 
             <p className="text-gray-700 text-xs mt-4">
-              No spam. Monthly highlights + one email when spots open.
+              Monthly highlights + one email when spots open. Unsubscribe anytime.
             </p>
           </>
         )}
