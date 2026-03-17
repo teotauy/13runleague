@@ -160,8 +160,8 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
           {(() => {
             const R = 80, r = 52, cx = 100, cy = 100
             const homeFrac = hvTotal > 0 ? homeWins / hvTotal : 0.5
-            const angle = homeFrac * 2 * Math.PI - Math.PI / 2
-            const startAngle = Math.PI // 9 o'clock — home sweeps through the bottom like a scorecard
+            const startAngle = Math.PI // 9 o'clock — home sweeps clockwise through the bottom
+            const angle = (startAngle + homeFrac * 2 * Math.PI) % (2 * Math.PI)
             const homeX1 = cx + R * Math.cos(startAngle), homeY1 = cy + R * Math.sin(startAngle)
             const homeX2 = cx + R * Math.cos(angle),      homeY2 = cy + R * Math.sin(angle)
             const iX1  = cx + r * Math.cos(startAngle),   iY1  = cy + r * Math.sin(startAngle)
