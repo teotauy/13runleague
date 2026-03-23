@@ -50,7 +50,7 @@ export default async function AdminDashboard({ params }: Props) {
 
   const { data: members } = await supabase
     .from('members')
-    .select('id, name, assigned_team, phone, email, pre_season_returning, pre_season_paid')
+    .select('id, name, assigned_team, phone, email, pre_season_returning, pre_season_paid, is_active')
     .eq('league_id', league.id)
     .order('name')
 
@@ -134,7 +134,7 @@ export default async function AdminDashboard({ params }: Props) {
         <section>
           <h2 className="text-xl font-bold mb-4">Team Assignment</h2>
           <TeamAssignment
-            members={members ?? []}
+            members={(members ?? []).filter((m) => m.is_active !== false)}
             leagueSlug={slug}
           />
         </section>
