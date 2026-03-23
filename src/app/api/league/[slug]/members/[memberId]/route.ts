@@ -62,14 +62,16 @@ export async function PATCH(
     }
 
     // Update non-name fields (team, phone, email, is_active) separately
+    const updatePayload: Record<string, unknown> = {}
+    if (body.name !== undefined) updatePayload.name = body.name
+    if (body.assigned_team !== undefined) updatePayload.assigned_team = body.assigned_team
+    if (body.phone !== undefined) updatePayload.phone = body.phone
+    if (body.email !== undefined) updatePayload.email = body.email
+    if (body.is_active !== undefined) updatePayload.is_active = body.is_active
+
     const { data, error } = await supabase
       .from('members')
-      .update({
-        name: body.name,
-        assigned_team: body.assigned_team ?? '',
-        phone: body.phone,
-        email: body.email,
-      })
+      .update(updatePayload)
       .eq('id', memberId)
       .select()
       .single()
