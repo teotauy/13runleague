@@ -126,9 +126,10 @@ export default function LeagueTabs({
 
         {typeof tab === 'number' && tab !== currentYear && (() => {
           const { players, teams } = getYearData(tab)
+          const yearRaw = historicalRaw.filter((r) => r.year === tab)
           return (
             <div className="space-y-2">
-              <RankingsTabs allTime={players} teams={teams} slug={slug} year={tab} />
+              <RankingsTabs allTime={players} teams={teams} slug={slug} year={tab} historicalRaw={yearRaw} />
             </div>
           )
         })()}

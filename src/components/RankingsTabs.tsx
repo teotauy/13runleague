@@ -395,10 +395,37 @@ export default function RankingsTabs({
         )}
       </div>
 
-      {tab === 'alltime' ? (
+      {tab === 'alltime' && (
         <AllTimeTable data={allTime} slug={slug} historicalRaw={historicalRaw} year={year} />
-      ) : (
+      )}
+      {tab === 'teams' && (
         <TeamTable data={teams} />
+      )}
+      {tab === 'log' && historicalRaw && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm font-mono">
+            <thead>
+              <tr className="text-gray-500 border-b border-gray-800">
+                <th className="pb-2 pr-4 text-left">Player</th>
+                <th className="pb-2 pr-4 text-left">Team</th>
+                <th className="pb-2 pr-4 text-left">Wins</th>
+                <th className="pb-2 text-left">Total Won</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...historicalRaw]
+                .sort((a, b) => b.total_won - a.total_won)
+                .map((row) => (
+                  <tr key={`${row.member_name}-${row.team}`} className="border-b border-gray-900 hover:bg-[#111]">
+                    <td className="py-2 pr-4 text-white font-semibold">{row.member_name}</td>
+                    <td className="py-2 pr-4 text-gray-400">{row.team}</td>
+                    <td className="py-2 pr-4 text-[#39ff14] font-bold">{row.shares}</td>
+                    <td className="py-2 font-bold text-[#39ff14]">${row.total_won.toLocaleString()}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )
