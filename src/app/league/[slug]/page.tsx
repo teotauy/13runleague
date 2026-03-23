@@ -40,7 +40,7 @@ export default async function LeagueDashboard({ params }: Props) {
 
   const { data: members } = await supabase
     .from('members')
-    .select('id, name, assigned_team, phone')
+    .select('id, name, assigned_team, phone, is_active')
     .eq('league_id', league.id)
     .order('name')
 
@@ -258,7 +258,7 @@ export default async function LeagueDashboard({ params }: Props) {
 
         {/* Pot Breakdown */}
         <PotBreakdown
-          members={members ?? []}
+          members={(members ?? []).filter((m) => m.is_active !== false)}
           payments={currentWeekPayments ?? []}
           currentWeek={currentWeekNumber}
           weeklyBuyIn={league.weekly_buy_in ?? 10}
