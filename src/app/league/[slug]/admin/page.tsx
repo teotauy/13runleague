@@ -8,7 +8,6 @@ import TeamAssignment from '@/components/admin/TeamAssignment'
 import PreSeasonStatus from '@/components/admin/PreSeasonStatus'
 import MemberPasswordForm from '@/components/admin/MemberPasswordForm'
 import RecalculateStreaksButton from '@/components/admin/RecalculateStreaksButton'
-import FeedbackTab from '@/components/admin/FeedbackTab'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,26 +39,6 @@ export default async function AdminDashboard({ params }: Props) {
 
   if (error || !league) notFound()
 
-  // Previous player names for autocomplete in the Add Member form
-  const { data: historicalNames } = await supabase
-    .from('historical_results')
-    .select('member_name, year')
-    .eq('league_id', league.id)
-  const previousNames = [...new Set((historicalNames ?? []).map((r) => r.member_name))].sort()
-
-  // Build a map of member_name → sorted array of years played (for the roster Years column)
-  const yearsPlayedByName: Record<string, number[]> = {}
-  for (const row of historicalNames ?? []) {
-    const key = row.member_name.trim().toLowerCase()
-    if (!yearsPlayedByName[key]) yearsPlayedByName[key] = []
-    if (!yearsPlayedByName[key].includes(row.year)) {
-      yearsPlayedByName[key].push(row.year)
-    }
-  }
-  for (const key of Object.keys(yearsPlayedByName)) {
-    yearsPlayedByName[key].sort((a, b) => a - b)
-  }
-
   // Optional query — member_password_hash column added in migration 20260305010000
   // Gracefully handles the case where the migration hasn't run yet
   const { data: leagueAuth } = await supabase
@@ -69,10 +48,9 @@ export default async function AdminDashboard({ params }: Props) {
     .single()
   const hasMemberPassword = !!(leagueAuth as { member_password_hash?: string | null } | null)?.member_password_hash
 
-  // Base member fetch — always safe (uses original schema columns only)
   const { data: members } = await supabase
     .from('members')
-    .select('id, name, assigned_team, phone, email')
+    .select('id, name, assigned_team, phone, email, pre_season_returning, pre_season_paid, is_active')
     .eq('league_id', league.id)
     .order('name')
 
@@ -128,7 +106,7 @@ export default async function AdminDashboard({ params }: Props) {
   })) ?? []
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-10">
         {/* Header */}
         <header>
@@ -161,7 +139,13 @@ export default async function AdminDashboard({ params }: Props) {
           </div>
           <PreSeasonStatus
             leagueSlug={slug}
-            members={membersWithPreSeason}
+            members={(members ?? []).map((m) => ({
+              id: m.id,
+              name: m.name,
+              assigned_team: m.assigned_team,
+              pre_season_returning: (m.pre_season_returning as 'yes' | 'no' | 'maybe' | null) ?? null,
+              pre_season_paid: m.pre_season_paid ?? false,
+            }))}
           />
         </section>
 
@@ -181,7 +165,7 @@ export default async function AdminDashboard({ params }: Props) {
         <section>
           <h2 className="text-xl font-bold mb-4">Team Assignment</h2>
           <TeamAssignment
-            members={membersWithActive}
+            members={(members ?? []).filter((m) => m.is_active !== false)}
             leagueSlug={slug}
           />
         </section>
@@ -197,11 +181,11 @@ export default async function AdminDashboard({ params }: Props) {
           />
         </section>
 
-        {/* Streaks & Droughts */}
+        {/* Streaks */}
         <section>
           <h2 className="text-xl font-bold mb-1">Streaks &amp; Droughts</h2>
-          <p className="text-gray-600 text-sm mb-3">
-            Automatically recalculated when payouts are settled. Use this to backfill or repair the leaderboard&apos;s Drought column.
+          <p className="text-xs text-gray-600 mb-4">
+            Automatically recalculated whenever payouts are settled. Use this to backfill or repair the leaderboard's Drought column.
           </p>
           <RecalculateStreaksButton leagueSlug={slug} year={seasonYear} />
         </section>
@@ -215,12 +199,6 @@ export default async function AdminDashboard({ params }: Props) {
               hasMemberPassword={hasMemberPassword}
             />
           </div>
-        </section>
-
-        {/* Feedback */}
-        <section>
-          <h2 className="text-xl font-bold mb-4">Feedback</h2>
-          <FeedbackTab leagueSlug={slug} />
         </section>
       </div>
     </main>

@@ -114,7 +114,7 @@ export default async function MatchupPage({ params }: Props) {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
 
         {/* Header */}
@@ -319,7 +319,28 @@ export default async function MatchupPage({ params }: Props) {
           </section>
         )}
 
-        {/* Footer */}
+        {/* 13-run game history */}
+        {thirteenCount > 0 && (
+          <section>
+            <h2 className="text-lg font-bold mb-4">13-Run Games in this Matchup</h2>
+            <div className="space-y-2">
+              {thirteenGames!.map((g) => (
+                <div
+                  key={g.id}
+                  className="flex items-center gap-3 text-sm rounded bg-white/[0.03] border border-white/[0.05] px-4 py-2 font-mono"
+                >
+                  <span className="text-[#39ff14] font-bold">13</span>
+                  <span className="text-gray-400">{g.game_date}</span>
+                  <span className="text-white">
+                    {g.away_team} @ {g.home_team} — {g.away_score}–{g.home_score}
+                  </span>
+                  <span className="ml-auto text-amber-400">{g.winning_team} scored 13</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs space-y-2">
           <p>
             The information used here was obtained free of charge from and is copyrighted by{' '}
@@ -333,22 +354,72 @@ export default async function MatchupPage({ params }: Props) {
             </a>
             . Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
           </p>
-          <div className="flex flex-wrap gap-4 items-center">
-            <Link href={`/teams/${awayAbbr.toLowerCase()}`} className="hover:text-gray-500 transition-colors">
-              {awayAbbr} franchise →
-            </Link>
-            <span className="text-gray-800">·</span>
-            <Link href={`/teams/${homeAbbr.toLowerCase()}`} className="hover:text-gray-500 transition-colors">
-              {homeAbbr} franchise →
-            </Link>
-            <span className="text-gray-800">·</span>
-            <Link href="/" className="hover:text-gray-500 transition-colors">
-              Live Dashboard
-            </Link>
-          </div>
+          <p>
+            <a
+              href="https://buymeacoffee.com/colbyblack"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-yellow-500 hover:text-yellow-400 transition-colors"
+            >
+              ☕ Buy me a coffee
+            </a>
+          </p>
         </footer>
       </div>
     </main>
   )
 }
 
+function StatCard({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-4">
+      <div className="text-xs text-gray-500 mb-1">{label}</div>
+      <div className={`text-2xl font-black font-mono ${highlight ? 'text-[#39ff14]' : 'text-white'}`}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function Histogram({
+  label,
+  counts,
+  total,
+}: {
+  label: string
+  counts: Record<number, number>
+  total: number
+}) {
+  const maxCount = Math.max(...Object.values(counts), 1)
+
+  return (
+    <div>
+      <div className="text-sm text-gray-400 mb-3">{label}</div>
+      <div className="space-y-1">
+        {Array.from({ length: 17 }, (_, i) => {
+          const count = counts[i] ?? 0
+          const pct = (count / maxCount) * 100
+          const is13 = i === 13
+          return (
+            <div key={i} className="flex items-center gap-2 text-xs font-mono">
+              <span className={`w-5 text-right ${is13 ? 'text-[#39ff14] font-bold' : 'text-gray-600'}`}>
+                {i}
+              </span>
+              <div className="flex-1 bg-gray-900 rounded-sm h-4 overflow-hidden">
+                <div
+                  className="h-full rounded-sm transition-all"
+                  style={{
+                    width: `${pct}%`,
+                    backgroundColor: is13 ? '#39ff14' : '#374151',
+                  }}
+                />
+              </div>
+              <span className="w-6 text-gray-600">{count || ''}</span>
+            </div>
+          )
+        })}
+      </div>
+      <div className="text-xs text-gray-700 mt-2">{total} games in database</div>
+    </div>
+  )
+}

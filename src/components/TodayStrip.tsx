@@ -15,20 +15,6 @@ export interface TodayEntry {
   isHome: boolean | null      // is member's team the home team?
 }
 
-// One display row — may represent multiple members sharing the same game
-interface GameRow {
-  key: string
-  gamePk: number | null
-  gameStatus: string | null
-  awayTeam: string | null
-  homeTeam: string | null
-  awayScore: number | null
-  homeScore: number | null
-  gameDate: string | null
-  todayProb: number | null          // highest prob among members in this game
-  members: TodayEntry[]             // all league members whose team is in this game
-}
-
 function gameTime(iso: string): string {
   try {
     return new Intl.DateTimeFormat('en-US', {
@@ -41,67 +27,14 @@ function gameTime(iso: string): string {
   }
 }
 
-function sortKey(row: GameRow): number {
-  const hit13 = row.awayScore === 13 || row.homeScore === 13
+function sortKey(e: TodayEntry): number {
+  const hit13 = e.awayScore === 13 || e.homeScore === 13
   if (hit13) return 0
-  if (row.gameStatus === 'Live') return 1
-  if (row.gameStatus === 'Preview') return 2 - (row.todayProb ?? 0)
-  if (row.gameStatus === 'Final') return 3
-  return 4
-}
-
-/** Collapse TodayEntry[] into one GameRow per unique game */
-function buildGameRows(entries: TodayEntry[]): { playing: GameRow[]; offDay: GameRow[] } {
-  const byGame = new Map<number | 'off', GameRow>()
-
-  for (const entry of entries) {
-    if (entry.gamePk === null || entry.gameStatus === null) {
-      // Off-day — one row per member (no game to share)
-      const key = `off-${entry.memberName}`
-      byGame.set(key as unknown as number, {
-        key,
-        gamePk: null,
-        gameStatus: null,
-        awayTeam: null,
-        homeTeam: null,
-        awayScore: null,
-        homeScore: null,
-        gameDate: null,
-        todayProb: null,
-        members: [entry],
-      })
-      continue
-    }
-
-    const existing = byGame.get(entry.gamePk)
-    if (existing) {
-      existing.members.push(entry)
-      if ((entry.todayProb ?? 0) > (existing.todayProb ?? 0)) {
-        existing.todayProb = entry.todayProb
-      }
-    } else {
-      byGame.set(entry.gamePk, {
-        key: String(entry.gamePk),
-        gamePk: entry.gamePk,
-        gameStatus: entry.gameStatus,
-        awayTeam: entry.awayTeam,
-        homeTeam: entry.homeTeam,
-        awayScore: entry.awayScore,
-        homeScore: entry.homeScore,
-        gameDate: entry.gameDate,
-        todayProb: entry.todayProb,
-        members: [entry],
-      })
-    }
-  }
-
-  const rows = Array.from(byGame.values())
-  return {
-    playing: rows.filter(r => r.gameStatus !== null).sort((a, b) => sortKey(a) - sortKey(b)),
-    offDay:  rows.filter(r => r.gameStatus === null).sort((a, b) =>
-      a.members[0].memberName.localeCompare(b.members[0].memberName)
-    ),
-  }
+  if (e.gameStatus === 'Live') return 1
+  // Preview: sort by probability descending (2.0 – prob puts high-prob games first)
+  if (e.gameStatus === 'Preview') return 2 - (e.todayProb ?? 0)
+  if (e.gameStatus === 'Final') return 3
+  return 4  // no game
 }
 
 export default function TodayStrip({
@@ -118,11 +51,16 @@ export default function TodayStrip({
     timeZone: 'America/New_York',
   }).format(new Date())
 
-  const { playing, offDay } = buildGameRows(entries)
-  const sorted = [...playing, ...offDay]
+  const playing = entries.filter(e => e.gameStatus !== null)
+  const offDay  = entries.filter(e => e.gameStatus === null)
 
-  const liveCount     = playing.filter(r => r.gameStatus === 'Live').length
-  const thirteenToday = playing.filter(r => r.awayScore === 13 || r.homeScore === 13).length
+  const sorted = [
+    ...playing.sort((a, b) => sortKey(a) - sortKey(b)),
+    ...offDay.sort((a, b) => a.memberName.localeCompare(b.memberName)),
+  ]
+
+  const liveCount    = playing.filter(e => e.gameStatus === 'Live').length
+  const thirteenToday = playing.filter(e => e.awayScore === 13 || e.homeScore === 13).length
 
   return (
     <section>
@@ -150,18 +88,33 @@ export default function TodayStrip({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-        {sorted.map((row) => {
-          const hit13     = row.awayScore === 13 || row.homeScore === 13
-          const isFinal   = row.gameStatus === 'Final'
-          const isLive    = row.gameStatus === 'Live'
-          const isPreview = row.gameStatus === 'Preview'
+        {sorted.map((entry) => {
+          const hit13     = entry.awayScore === 13 || entry.homeScore === 13
+          const isFinal   = entry.gameStatus === 'Final'
+          const isLive    = entry.gameStatus === 'Live'
+          const isPreview = entry.gameStatus === 'Preview'
+          const opp       = entry.isHome ? entry.awayTeam : entry.homeTeam
+          const myScore   = entry.isHome ? entry.homeScore : entry.awayScore
+          const oppScore  = entry.isHome ? entry.awayScore : entry.homeScore
+          const myHit13   = myScore === 13
+          const oppHit13  = oppScore === 13
 
-          // Which teams in this game belong to league members?
-          const leagueTeams = new Set(row.members.map(m => m.team.toUpperCase()))
+          const nameEl = slug && entry.memberId ? (
+            <Link
+              href={`/league/${slug}/player/${entry.memberId}`}
+              className={`hover:text-[#39ff14] transition-colors ${hit13 ? 'text-[#39ff14]' : 'text-gray-400'}`}
+            >
+              {entry.memberName}
+            </Link>
+          ) : (
+            <span className={hit13 ? 'text-[#39ff14]' : 'text-gray-400'}>
+              {entry.memberName}
+            </span>
+          )
 
           return (
             <div
-              key={row.key}
+              key={entry.memberName}
               className={[
                 'flex items-center gap-3 px-3 py-2 text-sm rounded border',
                 hit13
@@ -185,85 +138,52 @@ export default function TodayStrip({
                     {hit13 ? '⚡ FINAL' : 'FINAL'}
                   </span>
                 )}
-                {isPreview && row.gameDate && (
+                {isPreview && entry.gameDate && (
                   <span className="text-gray-600 text-xs font-mono">
-                    {gameTime(row.gameDate)}
+                    {gameTime(entry.gameDate)}
                   </span>
                 )}
-                {!row.gameStatus && (
+                {!entry.gameStatus && (
                   <span className="text-gray-800 text-xs font-mono">OFF</span>
                 )}
               </div>
 
-              {/* Matchup — highlight league teams in white/green, opponents in gray */}
-              <div className="flex items-center gap-1 flex-1 min-w-0 font-mono text-sm">
-                {row.awayTeam ? (
-                  <>
-                    <span className={`font-black shrink-0 ${
-                      leagueTeams.has(row.awayTeam)
-                        ? (row.awayScore === 13 ? 'text-[#39ff14]' : 'text-white')
-                        : 'text-gray-500'
-                    }`}>
-                      {row.awayTeam}
-                    </span>
-                    <span className="text-gray-700 shrink-0 text-xs">@</span>
-                    <span className={`font-black shrink-0 ${
-                      leagueTeams.has(row.homeTeam ?? '')
-                        ? (row.homeScore === 13 ? 'text-[#39ff14]' : 'text-white')
-                        : 'text-gray-500'
-                    }`}>
-                      {row.homeTeam}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-gray-700 text-xs">—</span>
+              {/* Team + opponent */}
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <span className={`font-black font-mono text-sm shrink-0 ${hit13 ? 'text-[#39ff14]' : 'text-white'}`}>
+                  {entry.team.toUpperCase()}
+                </span>
+                {opp && (
+                  <span className="text-gray-600 text-xs font-mono shrink-0">
+                    {entry.isHome ? 'vs' : '@'} {opp}
+                  </span>
                 )}
               </div>
 
               {/* Score or probability */}
-              <div className="shrink-0 text-right min-w-[52px]">
-                {(isFinal || isLive) && row.awayScore !== null && row.homeScore !== null ? (
+              <div className="shrink-0 text-right min-w-[60px]">
+                {(isFinal || isLive) && myScore !== null && oppScore !== null ? (
                   <span className="font-mono text-sm">
-                    <span className={`font-bold ${row.awayScore === 13 ? 'text-[#39ff14] text-base' : 'text-white'}`}>
-                      {row.awayScore}
+                    <span className={`font-bold ${myHit13 ? 'text-[#39ff14] text-base' : 'text-white'}`}>
+                      {myScore}
                     </span>
                     <span className="text-gray-700 mx-0.5">–</span>
-                    <span className={`font-bold ${row.homeScore === 13 ? 'text-[#39ff14] text-base' : 'text-gray-400'}`}>
-                      {row.homeScore}
+                    <span className={`${oppHit13 ? 'text-[#39ff14] font-bold text-base' : 'text-gray-400'}`}>
+                      {oppScore}
                     </span>
                   </span>
-                ) : isPreview && row.todayProb !== null ? (
+                ) : isPreview && entry.todayProb !== null ? (
                   <span className="text-gray-500 text-xs font-mono">
-                    {(row.todayProb * 100).toFixed(1)}%
+                    {(entry.todayProb * 100).toFixed(1)}%
                   </span>
                 ) : (
                   <span className="text-gray-800 text-xs">—</span>
                 )}
               </div>
 
-              {/* Member name(s) */}
-              <div className="text-xs shrink-0 w-24 text-right font-mono">
-                {row.members.map((m, i) => {
-                  const memberHit13 = m.team.toUpperCase() === row.awayTeam
-                    ? row.awayScore === 13
-                    : row.homeScore === 13
-                  return slug && m.memberId ? (
-                    <div key={m.memberId}>
-                      <Link
-                        href={`/league/${slug}/player/${m.memberId}`}
-                        className={`hover:text-[#39ff14] transition-colors truncate block ${
-                          memberHit13 ? 'text-[#39ff14]' : i === 0 ? 'text-gray-400' : 'text-gray-600'
-                        }`}
-                      >
-                        {m.memberName}
-                      </Link>
-                    </div>
-                  ) : (
-                    <div key={m.memberName} className={`truncate ${memberHit13 ? 'text-[#39ff14]' : i === 0 ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {m.memberName}
-                    </div>
-                  )
-                })}
+              {/* Member name — links to player page if slug+memberId available */}
+              <div className="text-xs shrink-0 w-24 text-right truncate font-mono">
+                {nameEl}
               </div>
             </div>
           )

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import DraftRankingsBoard from './DraftRankingsBoard'
+import type { TeamStat } from './DraftRankingsBoard'
 
 interface Member {
   id: string
@@ -28,12 +30,13 @@ interface Props {
   members: Member[]
   activeDraft: DraftSession | null
   draftPicks: DraftPick[]
+  teamStats: TeamStat[]
 }
 
 const MLB_TEAMS = [
-  'ARI', 'ATL', 'BAL', 'BOS', 'CHC', 'CWS', 'CLE', 'COL', 'DET', 'HOU',
-  'KC', 'LAA', 'LAD', 'MIA', 'MIL', 'MIN', 'NYM', 'NYY', 'OAK', 'PHI',
-  'PIT', 'SD', 'SEA', 'SF', 'STL', 'TB', 'TEX', 'TOR', 'WSH'
+  'ARI', 'ATL', 'BAL', 'BOS', 'CHC', 'CIN', 'CWS', 'CLE', 'COL', 'DET',
+  'HOU', 'KC', 'LAA', 'LAD', 'MIA', 'MIL', 'MIN', 'NYM', 'NYY', 'ATH',
+  'PHI', 'PIT', 'SD', 'SEA', 'SF', 'STL', 'TB', 'TEX', 'TOR', 'WSH'
 ]
 
 export default function DraftRoom({
@@ -42,12 +45,20 @@ export default function DraftRoom({
   members,
   activeDraft,
   draftPicks,
+  teamStats,
 }: Props) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [draftMode, setDraftMode] = useState<'random-assign' | 'double-blind'>('random-assign')
-  const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [autoRefresh, setAutoRefresh] = useState(true)
+
+  // Double-blind draw state
+  const [drawnMember, setDrawnMember] = useState<Member | null>(null)
+  const [drawnTeam, setDrawnTeam]     = useState<string | null>(null)
+  const [scoutReport, setScoutReport] = useState<string | null>(null)
+  const [scoutLoading, setScoutLoading] = useState(false)
+  // Cache reports by team abbr so we don't re-fetch on re-draws
+  const [reportCache, setReportCache] = useState<Map<string, string>>(new Map())
 
   // Auto-refresh every 2 seconds when draft is in progress
   useEffect(() => {
@@ -102,27 +113,6 @@ export default function DraftRoom({
     }
   }
 
-  const handlePickTeam = async (teamAbbr: string) => {
-    setIsLoading(true)
-    try {
-      const res = await fetch(`/api/league/${leagueSlug}/draft/pick`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ team_abbr: teamAbbr }),
-      })
-
-      if (!res.ok) throw new Error('Failed to pick team')
-
-      setSelectedTeam(null)
-      router.refresh()
-    } catch (err) {
-      console.error(err)
-      alert('Error picking team')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const handleCompleteDraft = async () => {
     setIsLoading(true)
     try {
@@ -171,6 +161,8 @@ export default function DraftRoom({
             </button>
           </div>
         </div>
+
+        <DraftRankingsBoard teamStats={teamStats} pickedTeams={pickedTeams} />
       </div>
     )
   }
@@ -237,99 +229,246 @@ export default function DraftRoom({
             </table>
           </div>
         </div>
+
+        <DraftRankingsBoard teamStats={teamStats} pickedTeams={pickedTeams} />
       </div>
     )
   }
 
+  // Double-blind helpers
+  const pickedMemberIds = new Set(draftPicks.map((p) => p.member_id))
+  const unpickedMembers = members.filter((m) => !pickedMemberIds.has(m.id))
+
+  const handleDrawName = () => {
+    if (unpickedMembers.length === 0) return
+    const idx = Math.floor(Math.random() * unpickedMembers.length)
+    setDrawnMember(unpickedMembers[idx])
+    setDrawnTeam(null)
+    setScoutReport(null)
+  }
+
+  const fetchScoutReport = async (teamAbbr: string) => {
+    // Return cached report immediately
+    if (reportCache.has(teamAbbr)) {
+      setScoutReport(reportCache.get(teamAbbr)!)
+      return
+    }
+    setScoutLoading(true)
+    setScoutReport(null)
+    try {
+      const res = await fetch(`/api/league/${leagueSlug}/draft/scout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ team_abbr: teamAbbr }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const report = data.report as string
+        setReportCache(prev => new Map(prev).set(teamAbbr, report))
+        setScoutReport(report)
+      }
+    } catch (err) {
+      console.error('Scout fetch error:', err)
+    } finally {
+      setScoutLoading(false)
+    }
+  }
+
+  const handleDrawTeam = () => {
+    if (availableTeams.length === 0) return
+    const idx = Math.floor(Math.random() * availableTeams.length)
+    const team = availableTeams[idx]
+    setDrawnTeam(team)
+    fetchScoutReport(team)
+  }
+
+  const handleConfirmPick = async () => {
+    if (!drawnMember || !drawnTeam) return
+    setIsLoading(true)
+    try {
+      const res = await fetch(`/api/league/${leagueSlug}/draft/pick`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_id: drawnMember.id, team_abbr: drawnTeam }),
+      })
+      if (!res.ok) throw new Error('Failed to confirm pick')
+      setDrawnMember(null)
+      setDrawnTeam(null)
+      setScoutReport(null)
+      router.refresh()
+    } catch (err) {
+      console.error(err)
+      alert('Error confirming pick')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   // Draft in progress - Double-Blind Draw mode
+  const phase = !drawnMember ? 'draw-name' : !drawnTeam ? 'draw-team' : 'confirm'
+
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-gray-800 bg-[#111] p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold">📦 Double-Blind Draw</h2>
-          <div className="text-sm text-gray-400">
-            {draftPicks.length} / {members.length} teams picked
+          <div className="text-sm text-gray-400 font-mono">
+            {draftPicks.length} / {members.length} picked
           </div>
         </div>
 
-        {/* Team Selection */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">Pick a Team:</label>
-            <select
-              value={selectedTeam || ''}
-              onChange={(e) => setSelectedTeam(e.target.value)}
-              disabled={isLoading}
-              className="w-full bg-[#0a0a0a] border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-[#39ff14]"
-            >
-              <option value="">Select team...</option>
-              {availableTeams.map((team) => (
-                <option key={team} value={team}>
-                  {team}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">&nbsp;</label>
-            <button
-              onClick={() => selectedTeam && handlePickTeam(selectedTeam)}
-              disabled={!selectedTeam || isLoading}
-              className="w-full px-4 py-2 bg-[#39ff14] text-black font-bold rounded hover:bg-[#2fd400] disabled:opacity-50"
-            >
-              Pick Team
-            </button>
-          </div>
-        </div>
+        {draftPicks.length === members.length ? (
+          /* All done */
+          <button
+            onClick={handleCompleteDraft}
+            disabled={isLoading}
+            className="w-full px-4 py-3 bg-green-600 text-white font-bold rounded hover:bg-green-700 disabled:opacity-50 mb-6"
+          >
+            ✓ Complete Draft
+          </button>
+        ) : (
+          /* Draw flow */
+          <div className="space-y-4 mb-6">
 
-        {draftPicks.length === members.length && (
-          <div className="mb-6">
-            <button
-              onClick={handleCompleteDraft}
-              disabled={isLoading}
-              className="w-full px-4 py-3 bg-green-600 text-white font-bold rounded hover:bg-green-700 disabled:opacity-50"
-            >
-              ✓ Complete Draft
-            </button>
+            {/* Step 1: Draw Name */}
+            <div className={`rounded-lg border p-4 transition-colors ${phase === 'draw-name' ? 'border-[#39ff14] bg-[#0d1a0d]' : 'border-gray-800 bg-[#0a0a0a]'}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-gray-500 font-mono mb-1">STEP 1 — DRAW NAME</div>
+                  {drawnMember ? (
+                    <div className="text-2xl font-black text-[#39ff14]">{drawnMember.name}</div>
+                  ) : (
+                    <div className="text-gray-600 text-sm">{unpickedMembers.length} members remaining</div>
+                  )}
+                </div>
+                <button
+                  onClick={handleDrawName}
+                  disabled={isLoading || unpickedMembers.length === 0}
+                  className="px-5 py-2 bg-[#39ff14] text-black font-bold rounded hover:bg-[#2fd400] disabled:opacity-40 text-sm"
+                >
+                  {drawnMember ? '↩ Re-draw Name' : '🎲 Draw Name'}
+                </button>
+              </div>
+            </div>
+
+            {/* Step 2: Draw Team */}
+            <div className={`rounded-lg border p-4 transition-colors ${
+              phase === 'draw-team' ? 'border-yellow-500 bg-[#1a1500]' :
+              phase === 'confirm'   ? 'border-gray-700 bg-[#0a0a0a]' :
+              'border-gray-800 bg-[#0a0a0a] opacity-40'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-gray-500 font-mono mb-1">STEP 2 — DRAW TEAM</div>
+                  {drawnTeam ? (
+                    <div className="text-2xl font-black text-yellow-400 font-mono">{drawnTeam}</div>
+                  ) : (
+                    <div className="text-gray-600 text-sm">{availableTeams.length} teams remaining</div>
+                  )}
+                </div>
+                <button
+                  onClick={handleDrawTeam}
+                  disabled={isLoading || !drawnMember || availableTeams.length === 0}
+                  className="px-5 py-2 bg-yellow-500 text-black font-bold rounded hover:bg-yellow-400 disabled:opacity-40 text-sm"
+                >
+                  {drawnTeam ? '↩ Re-draw Team' : '🎲 Draw Team'}
+                </button>
+              </div>
+              {/* Scout report */}
+              {drawnTeam && (
+                <div className="mt-3 pt-3 border-t border-yellow-900/40">
+                  {scoutLoading ? (
+                    <div className="flex items-center gap-2 text-xs text-yellow-600">
+                      <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                      </svg>
+                      Scouting report generating…
+                    </div>
+                  ) : scoutReport ? (
+                    <p className="text-xs text-yellow-200/80 italic leading-relaxed">{scoutReport}</p>
+                  ) : null}
+                </div>
+              )}
+            </div>
+
+            {/* Step 3: Confirm */}
+            {phase === 'confirm' && (
+              <div className="rounded-lg border border-[#39ff14] bg-[#0d1a0d] p-4">
+                <div className="text-xs text-gray-500 font-mono mb-2">STEP 3 — CONFIRM PAIRING</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-lg font-bold">
+                    <span className="text-[#39ff14]">{drawnMember!.name}</span>
+                    <span className="text-gray-500 mx-3">→</span>
+                    <span className="font-mono text-white bg-[#39ff14] text-black px-2 py-0.5 rounded">{drawnTeam}</span>
+                  </div>
+                  <button
+                    onClick={handleConfirmPick}
+                    disabled={isLoading}
+                    className="px-5 py-2 bg-green-600 text-white font-bold rounded hover:bg-green-500 disabled:opacity-40 text-sm"
+                  >
+                    ✓ Confirm
+                  </button>
+                </div>
+                {/* Scout report echo */}
+                {scoutReport && (
+                  <p className="mt-3 pt-3 border-t border-green-900/40 text-xs text-[#39ff14]/70 italic leading-relaxed">
+                    {scoutReport}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Picks Made */}
-        <div className="rounded border border-gray-800 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-[#0a0a0a] border-b border-gray-800">
-                <th className="text-left px-4 py-3 text-gray-400">Pick #</th>
-                <th className="text-left px-4 py-3 text-gray-400">Team</th>
-              </tr>
-            </thead>
-            <tbody>
-              {draftPicks.map((pick, idx) => (
-                <tr key={pick.id} className="border-b border-gray-900 hover:bg-[#0a0a0a]">
-                  <td className="px-4 py-3 text-gray-400">#{idx + 1}</td>
-                  <td className="px-4 py-3">
-                    <span className="px-2 py-1 rounded bg-[#39ff14] text-black font-mono font-bold text-sm">
-                      {pick.team_abbr}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* Picks log */}
+        {draftPicks.length > 0 && (
+          <div className="rounded border border-gray-800 overflow-hidden">
+            <div className="bg-[#0a0a0a] px-4 py-2 text-xs text-gray-500 font-mono border-b border-gray-800">
+              PICKS LOG
+            </div>
+            <table className="w-full text-sm">
+              <tbody>
+                {[...draftPicks].reverse().map((pick, idx) => {
+                  const member = members.find((m) => m.id === pick.member_id)
+                  return (
+                    <tr key={pick.id} className="border-b border-gray-900 hover:bg-[#0a0a0a]">
+                      <td className="px-4 py-2 text-gray-600 font-mono text-xs w-8">
+                        #{draftPicks.length - idx}
+                      </td>
+                      <td className="px-4 py-2 text-white font-semibold">
+                        {member?.name ?? '—'}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <span className="px-2 py-0.5 rounded bg-[#39ff14] text-black font-mono font-bold text-xs">
+                          {pick.team_abbr}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        <div className="mt-6">
-          <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+        <div className="mt-4">
+          <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
             <input
               type="checkbox"
               checked={autoRefresh}
               onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="w-4 h-4"
+              className="w-3 h-3"
             />
             Auto-refresh every 2 seconds
           </label>
         </div>
       </div>
+
+      <DraftRankingsBoard
+        teamStats={teamStats}
+        pickedTeams={pickedTeams}
+      />
     </div>
   )
 }

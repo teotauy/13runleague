@@ -1,4 +1,4 @@
-import { fetchTodaySchedule, fetchTeamSeasonStats, fetchPitcherEra, fetchLiveFeed, fetchTeamGameLog, currentSeason, fetchLastSeasonRunsPerGame, baseballToday } from '@/lib/mlb'
+import { fetchTodaySchedule, fetchTeamSeasonStats, fetchPitcherEra, fetchLiveFeed, fetchTeamGameLog, currentSeason, fetchLastSeasonRunsPerGame, baseballToday, fetchOnThisDayThirteens } from '@/lib/mlb'
 import { buildLambda, gameThirteenProbability, getConditionalProbability } from '@/lib/probability'
 import CollapsibleGameCard from '@/components/CollapsibleGameCard'
 import LiveWatchCard from '@/components/LiveWatchCard'
@@ -6,6 +6,12 @@ import LiveScoreboard from '@/components/LiveScoreboard'
 import ScorigramiGrid from '@/components/ScorigramiGrid'
 import LeagueExplainer from '@/components/LeagueExplainer'
 import ThirteenRunLore from '@/components/ThirteenRunLore'
+import ThirteenCelebration from '@/components/ThirteenCelebration'
+import OnThisDayMLB from '@/components/OnThisDayMLB'
+import ThirteenRunHistoryCard from '@/components/ThirteenRunHistoryCard'
+import SiteFooter from '@/components/SiteFooter'
+import SeasonBanner from '@/components/SeasonBanner'
+import type { SeasonState } from '@/components/SeasonBanner'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { MLBGame, MLBLiveGame } from '@/lib/mlb'
 import type { LiveGameState } from "@/lib/probability"
@@ -140,11 +146,11 @@ export default async function HomePage({ searchParams }: PageProps) {
       return [{
         gamePk: feed.gamePk,
         away: {
-          team: feed.gameData.teams.away.team.abbreviation,
+          team: feed.gameData.teams.away.abbreviation,
           runs: feed.liveData.linescore.teams.away.runs ?? 0,
         },
         home: {
-          team: feed.gameData.teams.home.team.abbreviation,
+          team: feed.gameData.teams.home.abbreviation,
           runs: feed.liveData.linescore.teams.home.runs ?? 0,
         },
         inning: feed.liveData.linescore.currentInning ?? 1,
@@ -187,6 +193,10 @@ export default async function HomePage({ searchParams }: PageProps) {
     })
   )
 
+  // On This Day — historical MLB 13-run games
+  const todayMonthDay = baseballToday().slice(5) // MM-DD
+  const onThisDayGames = await fetchOnThisDayThirteens(todayMonthDay).catch(() => [])
+
   // Historical 13-run games for lore section
   const supabase = createServiceClient()
   const { data: thirteenHistory } = await supabase
@@ -194,20 +204,48 @@ export default async function HomePage({ searchParams }: PageProps) {
     .select('game_date, home_team, away_team, winning_team, home_score, away_score')
     .eq('was_thirteen', true)
     .order('game_date', { ascending: false })
-    .limit(10000)
+
+  const todayStr = baseballToday()
+  const todayThirteens = (thirteenHistory ?? []).filter((g) => g.game_date === todayStr)
+
+  // ── Season state for banner ──
+  const bannerTodayStr = baseballToday()
+  const [bY, bMo, bDy] = bannerTodayStr.split('-').map(Number)
+  const bMonth = bMo - 1 // 0-indexed
+  const bDay = bDy
+
+  // Opening Day is March 25 of the current or next year
+  const openingYear = (bMonth > 2 || (bMonth === 2 && bDay >= 25)) ? bY + 1 : bY
+  const openingDayDate = new Date(`${openingYear}-03-25T00:00:00-04:00`)
+  const nowForBanner = new Date(bannerTodayStr + 'T12:00:00-04:00')
+  const daysToOpening = Math.max(0, Math.ceil((openingDayDate.getTime() - nowForBanner.getTime()) / (1000 * 60 * 60 * 24)))
+  const openingDateStr = openingDayDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })
+
+  // Offseason: Oct 5 → ~Feb 19 (before spring training camps open)
+  const isOffseason = (bMonth > 9) || (bMonth === 9 && bDay >= 5) || bMonth === 0 || (bMonth === 1 && bDay < 20)
+  // Spring Training: ~Feb 20 → Opening Day
+  const isSpring = !isOffseason && nowForBanner < openingDayDate
+  const seasonState: SeasonState = isOffseason ? 'offseason' : isSpring ? 'spring' : null
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-10">
+    <div className="min-h-screen bg-[#0f1115] stadium-texture text-white">
+      {/* Season banner — sticky at top, dismissible */}
+      <SeasonBanner type={seasonState} daysToOpening={daysToOpening} openingDate={openingDateStr} />
 
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      {todayThirteens.length > 0 && (
+        <ThirteenCelebration games={todayThirteens} />
+      )}
+
+      <div className="max-w-6xl mx-auto px-4 py-10 space-y-8">
+
+        {/* ── Header ── */}
+        <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-white/5">
           <div>
-            <h1 className="text-4xl font-black tracking-tight">
+            <p className="section-label mb-1">Live Probability Dashboard</p>
+            <h1 className="text-5xl font-black tracking-tight leading-none">
               <span className="text-[#39ff14]">13</span> Run League
             </h1>
-            <p className="text-gray-500 mt-1 text-sm">
-              Live probability dashboard —{' '}
+            <p className="text-gray-600 mt-2 text-sm">
               {new Date(baseballToday() + 'T12:00:00-04:00').toLocaleDateString('en-US', {
                 timeZone: 'America/New_York',
                 weekday: 'long',
@@ -218,93 +256,47 @@ export default async function HomePage({ searchParams }: PageProps) {
           </div>
 
           <div className="flex flex-col sm:items-end gap-2">
-            {process.env.NEXT_PUBLIC_LEAGUE_SLUG && (
-              <a
-                href={`/league/${process.env.NEXT_PUBLIC_LEAGUE_SLUG}`}
-                className="self-start sm:self-auto px-4 py-2 bg-[#39ff14] text-black text-sm font-bold rounded hover:bg-[#2de010] transition-colors"
-              >
-                League Login →
-              </a>
-            )}
-
-          {/* Rolling window selector */}
-          <div className="flex items-center gap-1 bg-[#111] border border-gray-800 rounded p-1">
-            <span className="text-xs text-gray-500 px-2">Window:</span>
-            {WINDOW_OPTIONS.map((w) => (
-              <a
-                key={w}
-                href={`?window=${w}`}
-                className={`px-3 py-1 rounded text-xs font-mono transition-colors ${
-                  rollingWindow === w
-                    ? 'bg-[#39ff14] text-black font-bold'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                {WINDOW_LABELS[w]}
-              </a>
-            ))}
+            <a
+              href={process.env.NEXT_PUBLIC_LEAGUE_SLUG ? `/league/${process.env.NEXT_PUBLIC_LEAGUE_SLUG}` : '/league'}
+              className="self-start sm:self-auto px-4 py-2 bg-[#39ff14] text-black text-sm font-bold rounded-lg hover:bg-[#2de010] transition-colors"
+            >
+              My League →
+            </a>
+            <div className="flex items-center gap-1 bg-white/[0.04] border border-white/[0.07] rounded-lg p-1">
+              <span className="section-label px-2">Window</span>
+              {WINDOW_OPTIONS.map((w) => (
+                <a
+                  key={w}
+                  href={`?window=${w}`}
+                  className={`px-3 py-1 rounded-md text-xs font-mono transition-colors ${
+                    rollingWindow === w
+                      ? 'bg-[#39ff14] text-black font-bold'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {WINDOW_LABELS[w]}
+                </a>
+              ))}
+            </div>
           </div>
           </div>
         </header>
 
-        {/* Offseason countdown banner — shown Oct 5 through Mar 24 */}
-        {(() => {
-          // Use baseball today (6 AM ET cutoff) so late-night games don't flip the date
-          const todayStr = baseballToday() // YYYY-MM-DD
-          const [y, mo, dy] = todayStr.split('-').map(Number)
-          const month = mo - 1 // 0-indexed for consistency with Date methods
-          const day = dy
-          // Offseason: Oct 5 - Mar 24
-          const isOffseason = (month > 9) || (month === 9 && day >= 5) || (month < 2) || (month === 2 && day < 25)
-
-          if (!isOffseason) return null
-
-          // Calculate days to next Opening Day (Mar 25)
-          const nextYear = (month > 2 || (month === 2 && day >= 25)) ? y + 1 : y
-          const openingDay = new Date(`${nextYear}-03-25T00:00:00-04:00`)
-          const now = new Date(`${todayStr}T12:00:00-04:00`) // noon on baseball today
-          const msDiff = openingDay.getTime() - now.getTime()
-          const daysLeft = Math.ceil(msDiff / (1000 * 60 * 60 * 24))
-
-          return (
-            <div className="rounded border border-purple-900 bg-purple-950/30 px-4 py-3 text-purple-300 text-sm flex items-start gap-3">
-              <span className="text-lg leading-none mt-0.5">🏟️</span>
-              <div>
-                <span className="font-semibold text-purple-200">MLB Offseason.</span>
-                {' '}Next Opening Day is{' '}
-                <span className="text-purple-100 font-bold">March 25</span>
-                {' '}({daysLeft} {daysLeft === 1 ? 'day' : 'days'} away).
-              </div>
-            </div>
-          )
-        })()}
-
-        {/* Spring Training banner — shown until Opening Day */}
-        {new Date(baseballToday() + 'T12:00:00-04:00') < new Date('2026-03-25T00:00:00-04:00') && (
-          <div className="rounded border border-blue-900 bg-blue-950/30 px-4 py-3 text-blue-300 text-sm flex items-start gap-3">
-            <span className="text-lg leading-none mt-0.5">⚾</span>
-            <div>
-              <span className="font-semibold text-blue-200">Spring Training in progress.</span>
-              {' '}Probabilities are based on Spring Training stats, which may not reflect regular season performance.
-              {' '}<span className="text-blue-400">Opening Day is March 25.</span>
-            </div>
-          </div>
-        )}
-
         {/* API error banner */}
         {fetchError && (
-          <div className="rounded border border-amber-900 bg-amber-950/30 px-4 py-3 text-amber-400 text-sm">
+          <div className="rounded-xl border border-amber-900/60 bg-amber-950/20 px-4 py-3 text-amber-400 text-sm">
             ⚠ MLB Stats API unavailable: {fetchError}. Showing fallback Poisson estimates.
           </div>
         )}
 
-        {/* Live Scoreboard - Shows all in-progress games */}
+        {/* ── Live Scoreboard ── */}
         <LiveScoreboard games={scoreboardGames} />
 
-        {/* Live 13-Watch */}
+        {/* ── Live 13-Watch ── */}
         {watchGames.length > 0 && (
-          <section>
-            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <section className="module-card">
+            <p className="section-label mb-1">In Progress</p>
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <span className="text-red-500 animate-pulse">●</span> Live 13-Watch
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -350,8 +342,8 @@ export default async function HomePage({ searchParams }: PageProps) {
                   <LiveWatchCard
                     key={feed.gamePk}
                     gamePk={feed.gamePk}
-                    awayTeam={feed.gameData.teams.away.team?.abbreviation ?? '???'}
-                    homeTeam={feed.gameData.teams.home.team?.abbreviation ?? '???' }
+                    awayTeam={feed.gameData.teams.away.abbreviation ?? '???'}
+                    homeTeam={feed.gameData.teams.home.abbreviation ?? '???'}
                     awayRuns={awayRuns}
                     homeRuns={homeRuns}
                     inning={inning}
@@ -371,14 +363,17 @@ export default async function HomePage({ searchParams }: PageProps) {
           </section>
         )}
 
-        {/* Today's Games */}
-        <section>
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="text-lg font-bold text-white">Today&apos;s Games</h2>
+        {/* ── Today's Games ── */}
+        <section className="module-card">
+          <div className="flex items-baseline justify-between mb-4">
+            <div>
+              <p className="section-label mb-1">Today&apos;s Hunt</p>
+              <h2 className="text-xl font-bold text-white">Today&apos;s Games</h2>
+            </div>
             <span className="text-xs text-gray-700">sorted by P(13) · tap to expand</span>
           </div>
           {enrichedGames.length === 0 ? (
-            <div className="rounded border border-gray-800 bg-[#111] px-6 py-16 text-center space-y-2">
+            <div className="px-6 py-16 text-center space-y-2">
               <div className="text-gray-500 font-mono text-lg">No games scheduled today</div>
               <div className="text-gray-700 text-sm">
                 Check back during the MLB season (March–October)
@@ -390,34 +385,49 @@ export default async function HomePage({ searchParams }: PageProps) {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {enrichedGames.map(
-                ({ game, awayLambda, homeLambda, combinedProb, isBlended, awayPitcherName, homePitcherName }) => (
-                  <CollapsibleGameCard
-                    key={game.gamePk}
-                    gamePk={game.gamePk}
-                    awayTeam={game.teams.away.team.abbreviation}
-                    homeTeam={game.teams.home.team.abbreviation}
-                    venueName={game.venue.name}
-                    venueId={String(game.venue.id)}
-                    awayPitcher={awayPitcherName}
-                    homePitcher={homePitcherName}
-                    awayLambda={awayLambda}
-                    homeLambda={homeLambda}
-                    combinedProbability={combinedProb}
-                    isBlended={isBlended}
-                    gameStatus={game.status.abstractGameState}
-                    awayScore={game.teams.away.score}
-                    homeScore={game.teams.home.score}
-                  />
-                )
+                ({ game, awayLambda, homeLambda, combinedProb, isBlended, awayPitcherName, homePitcherName }) => {
+                  const liveFeed = activeLiveFeeds.find(f => f.gamePk === game.gamePk)
+                  const liveInning = liveFeed?.liveData.linescore.currentInning
+                  const liveIsTop = liveFeed?.liveData.linescore.isTopInning
+
+                  return (
+                    <CollapsibleGameCard
+                      key={game.gamePk}
+                      gamePk={game.gamePk}
+                      awayTeam={game.teams.away.team.abbreviation}
+                      homeTeam={game.teams.home.team.abbreviation}
+                      venueName={game.venue.name}
+                      venueId={String(game.venue.id)}
+                      awayPitcher={awayPitcherName}
+                      homePitcher={homePitcherName}
+                      awayLambda={awayLambda}
+                      homeLambda={homeLambda}
+                      combinedProbability={combinedProb}
+                      isBlended={isBlended}
+                      gameStatus={game.status.abstractGameState}
+                      awayScore={game.teams.away.score}
+                      homeScore={game.teams.home.score}
+                      inning={liveInning}
+                      isTopInning={liveIsTop}
+                    />
+                  )
+                }
               )}
             </div>
           )}
         </section>
 
-        {/* Scorigami Squares — only show if we have game data */}
+        {/* ── On This Day in MLB History ── */}
+        <section className="module-card">
+          <p className="section-label mb-1">On This Day</p>
+          <OnThisDayMLB games={onThisDayGames} monthDay={todayMonthDay} />
+        </section>
+
+        {/* ── Scorigami Squares ── */}
         {scorigramiData.some((d) => Object.keys(d.counts).length > 0) && (
-          <section>
-            <h2 className="text-lg font-bold text-white mb-1">Scorigami Squares</h2>
+          <section className="module-card">
+            <p className="section-label mb-1">Scoring Patterns</p>
+            <h2 className="text-xl font-bold text-white mb-1">Scorigami Squares</h2>
             <p className="text-gray-600 text-xs mb-4">
               Run-scoring distribution for today&apos;s highest-probability teams (cell brightness = frequency)
             </p>
@@ -429,82 +439,32 @@ export default async function HomePage({ searchParams }: PageProps) {
           </section>
         )}
 
-        {/* ── Explainer Zone ── */}
-        <LeagueExplainer />
-
-        {/* ── 13-Run History (recent) ── */}
+        {/* ── 13-Run History ── */}
         {thirteenHistory && thirteenHistory.length > 0 && (
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-lg font-bold"><span className="text-[#39ff14]">13</span>-Run History</h2>
-              <span className="text-xs text-gray-600 font-mono">most recent</span>
-            </div>
-            <div className="space-y-2">
-              {thirteenHistory.slice(0, 10).map((result) => (
-                <div
-                  key={`${result.game_date}-${result.home_team}`}
-                  className="flex items-center gap-3 text-sm rounded bg-[#111] border border-gray-900 px-4 py-2"
-                >
-                  <span className="text-[#39ff14] font-bold text-lg">13</span>
-                  <span className="text-gray-400 font-mono">{result.game_date}</span>
-                  <span className="text-white">
-                    <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
-                    {' scored '}
-                    <span className="text-[#39ff14] font-bold">13</span>
-                    {' — '}
-                    {result.away_team} @ {result.home_team}{' '}
-                    ({result.away_score}–{result.home_score})
-                  </span>
-                </div>
-              ))}
-            </div>
+          <section className="module-card">
+            <p className="section-label mb-1">League History</p>
+            <h2 className="text-xl font-bold mb-4"><span className="text-[#39ff14]">13</span>-Run History</h2>
+            <ThirteenRunHistoryCard games={thirteenHistory} />
           </section>
         )}
 
         {/* ── 13-Run Lore ── */}
         {thirteenHistory && thirteenHistory.length > 0 && (
-          <ThirteenRunLore games={thirteenHistory} />
+          <section className="module-card">
+            <p className="section-label mb-1">The Lore</p>
+            <ThirteenRunLore games={thirteenHistory} />
+          </section>
         )}
 
+        {/* ── Explainer ── */}
+        <section className="module-card">
+          <p className="section-label mb-1">How It Works</p>
+          <LeagueExplainer />
+        </section>
+
         {/* Footer */}
-        <footer className="border-t border-gray-900 pt-6 text-gray-600 text-xs space-y-2">
-          <p>
-            The information used here was obtained free of charge from and is copyrighted by{' '}
-            <a
-              href="https://www.retrosheet.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-gray-400"
-            >
-              Retrosheet
-            </a>
-            . Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
-          </p>
-          <p className="text-gray-700">
-            Live data via MLB Stats API · Probabilities are estimates, not gambling advice.
-          </p>
-          <div className="flex flex-wrap gap-4 items-center">
-            <a
-              href="https://buymeacoffee.com/colbyblack"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-yellow-500 hover:text-yellow-400 transition-colors"
-            >
-              ☕ Buy me a coffee
-            </a>
-            <span className="text-gray-800">·</span>
-            <a href="/privacy" className="hover:text-gray-400 transition-colors">Privacy Policy</a>
-            <span className="text-gray-800">·</span>
-            <a href="/terms" className="hover:text-gray-400 transition-colors">Terms of Use</a>
-            <span className="text-gray-800">·</span>
-            <span className="text-gray-700">Built by Red Crow Labs · South Brooklyn</span>
-            <span className="text-gray-800">·</span>
-            <PushNotificationButton />
-            <span className="text-gray-800">·</span>
-            <InstallAppLink />
-          </div>
-        </footer>
+        <SiteFooter />
       </div>
-    </main>
+    </div>
   )
 }

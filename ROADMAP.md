@@ -1,320 +1,116 @@
-# 13 Run League - Project Roadmap
+# Thirteen Run League — Roadmap
 
-A baseball pool where members buy MLB teams for $10/week and win the pot if their team scores exactly 13 runs. South Brooklyn's finest labor of love since 2018.
-
-Stack: Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase, Vercel
-Repo: teotauy/13runleague
-Live: 13runleague.com
-
----
-
-## Phase 0 - Database Safety ⚠️
-
-**READ THIS BEFORE TOUCHING THE DATABASE. NON-NEGOTIABLE.**
-
-On March 3, 2026 the Supabase database was scrubbed by an agent running destructive SQL. These rules exist to prevent that from ever happening again.
-
-### The Rules
-
-- **0.1 Enable Supabase Point-in-Time Recovery** — Go to Supabase Dashboard → Project Settings → Add-ons, enable PITR. **REQUIRED before any further development.** Allows rollback to any second in the last 7 days.
-
-- **0.2 All database changes go in migration files** — Never paste raw SQL into the Supabase editor. Every change gets a new file in `supabase/migrations/` with a timestamp prefix (e.g. `20260304000000_description.sql`). The migration history is the source of truth.
-
-- **0.3 All seed and migration scripts must be idempotent** — Safe to run multiple times without destroying existing data. Always use `INSERT ... ON CONFLICT DO NOTHING` or equivalent. **Never use DROP TABLE, TRUNCATE, or DELETE without explicit user confirmation.**
-
-- **0.4 End-of-session backup ritual** — Run this after every working session:
-  ```bash
-  supabase db dump -f backup_$(date +%Y%m%d_%H%M).sql
-  git add supabase/
-  git commit -m "chore: end of session backup [date]"
-  git push
-  ```
-
-- **0.5 Never re-run the seed script without checking first** — Before running `npm run seed`, always run a `SELECT COUNT(*)` on the affected tables to confirm they are empty or that the script is safe to re-run.
-
-### For Claude Code and Cursor Agents
-
-- **State out loud** which migration file you are creating or modifying
-- **Never run `supabase db reset`** without explicit user confirmation
-- **Never drop or truncate tables**
-- **If unsure whether a change is destructive, ask first**
-
-### Recovery Procedure (if something goes wrong)
-
-1. Stop all agents immediately
-2. Go to Supabase Dashboard → Database → Backups
-3. If PITR is enabled, restore to the timestamp before the damage
-4. If PITR is not enabled, restore from the most recent `backup_YYYYMMDD.sql` file:
-   ```bash
-   psql [connection string] < backup_YYYYMMDD.sql
-   ```
-5. Verify row counts match expectations before resuming work
+## Deploy Strategy (as of March 2026)
+- **Bug fixes** → push immediately as needed
+- **New features** → build locally, hold, batch push at start of next Vercel billing cycle
+- Goal: minimize build minutes on Vercel Pro while keeping the app stable for Opening Day 2026
 
 ---
 
-## How to Use This Roadmap
+## ✅ Completed
 
-Each phase is designed to be handed to Claude Code or Cursor as a discrete working session. Copy the phase heading and its task list as your prompt context. The scripts/history_import.json file contains 8 years of pre-processed historical data ready to seed.
+### Design & UI
+- [x] Dark theme overhaul — `bg-[#0f1115]` + stadium seat SVG texture across all pages
+- [x] Luma-inspired card depth — `bg-white/[0.025] border border-white/[0.07]` + shadows
+- [x] `module-card`, `section-label`, `stadium-texture` global CSS utility classes
+- [x] SeasonBanner — dismissible top bar with countdown to Opening Day / Spring Training / Live states
+- [x] OnThisDayMLB — 13-run games on this date in MLB history
+- [x] ThirteenCelebration — public homepage flash when any team scores 13 today (team colors + confetti, no player name)
+- [x] Win celebration banner (`WinCelebration.tsx`) — slides down with confetti, winner name, team badge, payout. Dismisses via localStorage per win.
 
----
+### Data & Admin
+- [x] Supabase RPC functions to bypass row cap (`get_opponent_game_counts`, `get_all_allowed_counts`)
+- [x] Merge Zack → Zack Fogelman in `historical_results`
+- [x] Merge Robyn → Robyn Walters in `historical_results`
+- [x] Merge Dave → Cleveland Dave in `historical_results`
+- [x] Atomic rename RPC (`rename_member`) — updates both `members` and `historical_results` in one transaction
+- [x] `is_active boolean default true` column on `members` for soft-deactivate (alumni)
+- [x] Admin PATCH endpoint handles name changes, `is_active` toggle, and field updates without clobbering
+- [x] CIN (Cincinnati Reds) added to `TeamAssignment.tsx` and both random-assign APIs — was missing, causing only 29 teams to appear in draft
 
-## Phase 1 - Foundation
+### Roster / Members
+- [x] Active / Alumni / All filter tabs with counts
+- [x] Years-played column (derived from `historical_results`)
+- [x] "Alumni" soft-deactivate button (yellow) — keeps member in DB, marks inactive
+- [x] "Reactivate" button (blue) for alumni
+- [x] Alumni rows shown at 60% opacity with `alumni` badge
 
-Get the database live and historical data seeded. Nothing else works without this.
+### League / Rankings
+- [x] Player links working in All-Time rankings (case-insensitive name match → member ID)
+- [x] Player links working in year-tab views (`LeagueTabs`, `SeasonYearTabs`)
+- [x] Years column hidden in single-year tab views (redundant when tab already scopes year)
+- [x] Team links in Team Rankings tab
 
-- [x] 1.1 Run supabase/schema.sql in Supabase SQL editor - creates leagues, members, game_results, streaks, alert_log tables ✓ claude1
-- [x] 1.2 Add email column to members table ✓ claude1
-- [x] 1.3 Write scripts/seed_history.ts - reads scripts/history_import.json, inserts 8 years of South Brooklyn league data into Supabase ✓ claude1 (8 years × 30 members seeded to Supabase)
-- [x] 1.4 Fix MLB Stats API gameType filter - regular season (R) only, filter out spring training and WBC ✓ claude1 (added gameType=R to fetchTodaySchedule and fetchScheduleForDate)
-- [x] 1.5 Offseason banner - show from end of regular season (Oct 5) until Opening Day (Mar 25), with countdown to next season ✓ claude1
-- [x] 1.6 Spring training banner - Currently showing Spring Training games. MLB Regular Season starts March 25, 2026 ✓ claude1
-- [x] 1.7 Favicon and app icons - browser tab, iOS home screen, OG image ✓ claude1
+### Team Page
+- [x] Home vs Visitor donut chart — green (home) on bottom half, red (visitor) on top (scorecard orientation)
+- [x] Opponent chart (`OpponentChart.tsx`) with COUNT / SHARE toggle
+  - COUNT: raw 13-run games scored vs each opponent
+  - SHARE: this team's count as % of opponent's all-time 13-run-allowed games
+  - SHARE shows example sentence explaining the metric
+  - Minimum 5 allowed-games threshold before SHARE is shown
 
----
-
-## Phase 2 - Core League Features
-
-The minimum viable product for running a real league.
-
-- [ ] 2.1 League creation flow - commissioner sets league name, slug, password, weekly buy-in
-- [x] 2.2 Member roster management - add, edit, remove members; track payment status per week ✓ claude1
-- [x] 2.3 Team assignment UI - commissioner assigns 30 MLB teams at season start; support random draw mode ✓ claude1
-- [x] 2.4 Draft Room - live team draft at season start; two modes: (a) random assign - commissioner triggers, everyone watches teams get assigned in real time; (b) double-blind draw - 30 sealed envelopes, members pick blind, live reveal ✓ claude1
-- [x] 2.5 Weekly pot tracker - shares-based split logic (pot divided by winners that week), rollover if no winners, week runs Sunday-Saturday ✓ claude-code (pot.ts service, calculate-payouts API, PotBreakdown component, payout controls in admin)
-- [x] 2.6 Payment tracking with manual override - mark members as paid (Venmo, cash, Stripe, etc.); commissioner can override any week with a note ✓ claude-code (OverrideModal, PaymentBoard enhancements, override_note field)
-- [ ] 2.7 Commissioner result override - manually correct game results, adjust payouts, add notes
-- [x] 2.8 League password auth - cookie-based, middleware enforces noindex on all /league/[slug] routes ✓ claude-code (proxy.ts auth checks on 5 pages)
-- [ ] 2.9 Draft board team rankings - sortable by Win Rate / Dollar Rate / WAR / Spring Training; filterable to available teams only; updates live as teams are picked
-- [x] 2.10 Tooltips and stat explainers - hover tooltips for all stats, stats glossary page, explain WAR/Dollar Rate/Win Rate/Sweat Factor/Park Factors ✓ claude-code
-- [x] 2.11 Season year tabs — sticky nav bar across the top of the league dashboard; Tab 1: current year (e.g. 2026, active season — leaderboard, drought, P(13), today's games); Tab 2: All Time (existing rankings tabs); subsequent tabs: past seasons in reverse order (2025, 2024, 2023...) each showing that year's member/team assignments, week-by-week winners, pot total, and 13-run games; active tab highlighted in neon green ✓ claude-code
-
----
-
-## Phase 2 Quick Wins - League Dashboard Polish
-
-Small UX fixes that came up during 2026 Spring Training setup.
-
-- [x] 2.12 Remove redundant "Pot Tracker" header section from league page — PotBreakdown already owns that real estate; the $0 / 0 weeks card adds nothing ✓
-- [x] 2.13 Closest Miss formatting — show date before score ("4/5 — 12 runs"); tie-break: when two games are equally close to 13, most recent date wins ✓
-- [x] 2.14 Leaderboard overhaul — replaced static table with sortable LeaderboardTable client component; columns: P(13) [sortable], Drought (current_streak), Wins (season winning weeks), $$$ (season earnings); all sortable asc/desc ✓
-- [x] 2.15 P(13) tooltips everywhere — custom Tooltip component added to GameCard (Preview + Final), LeaderboardTable header, SeasonYearTabs header (fixed wrong "13+" → "exactly 13"), LiveWatchCard ProbBadge ✓
-- [x] 2.16 Player profile achievement banners — BBRef-style layout: achievement badges top-right (💰 Top Earner [year], 🏆 Most Wins [year], ⚡ Top $/Win [year], 🏟️ Ironman); season circles timeline with team abbreviations color-coded by achievement tier; By Season table rows with neon tint + emoji for leader years ✓
-- [ ] 2.17 Run dedup migration — execute `supabase/migrations/20260304120000_dedup_historical_results.sql` manually in Supabase SQL Editor; adds UNIQUE constraint on (league_id, member_name, year, team); player page has display-level dedup as fallback
-- [ ] 2.18 Badge tooltip polish on mobile — emoji badges (🏆 Ironman, ⭐ Active in RankingsTabs) use native title= which doesn't fire on touch; replace with Tooltip.tsx for consistency on mobile
-- [x] 2.19 Pre-season state management — admin-only section on admin page showing each 2025 member with Yes/No/Maybe returning dropdown + Paid/Not Paid checkbox; vacancy counter warns commissioner how many slots need filling before the draft; migration adds pre_season_returning + pre_season_paid columns to members ✓
-- [x] 2.20 Two-tier auth — member password (shared read-only view for all 30 players) + admin password (commissioner full access); cookie stores { role: 'member' | 'admin' }; middleware gates admin routes; members see league dashboard but not admin panel ✓
-- [x] 2.21 PaymentBoard collapse + bulk-pay — collapsible panel with summary pill (X/Y paid · N behind) always visible; "✓ All" button per member row marks all weeks paid in one click for annual payers ✓
-- [x] 2.22 All-time rankings badge system — 5 emoji badges computed from data: 🏆 Ironman (every season), 👑 Career Wins Leader, 💰 Career Money Leader, 🔥 Single-Season Wins Record, 💸 Single-Season Money Record; legend shows only badge types present ✓
-- [x] 2.23 Cliff Lungaretti 2020 data fix — migration 20260306010000_fix_cliff_2020.sql corrects shares=0/total_won=0 to shares=1/total_won=1050 for Week 1 2020 ✓
-- [x] 2.24 Team rankings cleanup — removed "Years Won" column (misleading in context); table now shows 13-Run Weeks + Total Paid Out only ✓
-- [x] 2.25 OAK→ATH franchise alias — TEAM_ABBR_ALIASES + normalizeTeamAbbr() + franchiseAbbrs() in teamColors.ts; ThirteenRunLore, HeartbreakBoard, and /teams/[abbr] page all merge OAK history under ATH ✓ claude/magical-mclean
-- [x] 2.26 Losing streak (Drought) pipeline — recalculateStreaks() in lib/streaks.ts; recalculate-streaks API endpoint; admin "Recalculate Streaks" button; streaks auto-update on payout settlement ✓ claude/magical-mclean; cross-season drought (globalWeek counter spanning all 8 seasons) ✓ claude/magical-mclean
-- [ ] 2.27 Draft draw animation (nice to have) — brief suspense animation when 🎲 Draw Name or 🎲 Draw Team is clicked; e.g. cycling through random names/teams for ~1.5s before landing on the result; makes the moment feel like a real draw
-- [ ] 2.28 Draft wish list (nice to have) — before or during double-blind draw, record each member's most-wanted and least-wanted team; shown in the picks log alongside their actual result; commissioner can enter via a simple pre-draft form or inline during the draw
+### Player Page
+- [x] Blue Jays (and other long team names) text-aligned in avatar circles
 
 ---
 
-## Phase 3 - Stats and History
+## 🐛 Bugs — Fix & Push Immediately
 
-What makes this feel like a real league, not a spreadsheet.
-
-- [x] 3.1 League page - All-Time Rankings table - sortable by total won / shares / years played; Ironman badge for all 8 years; active player indicator ✓ (RankingsTabs component, sortable columns, Ironman 🏆 + active ⭐ badges, links to player profiles)
-- [x] 3.2 League page - Team Rankings table - MLB teams sorted by 13-run weeks in league history + total paid out ✓ (RankingsTabs TeamTable tab, sortable)
-- [x] 3.9 MLB historical lore zone — ThirteenRunLore component with 4 stat panels (By Franchise, By Day of Week, Home vs Visitor, By Month) + interactive year chart (1877–2025); mouse scrubbing crosshair with year/count tooltip; MLB milestone markers (schedule changes, expansions, strikes, COVID); green South Brooklyn era overlay ✓
-- [x] 3.10 Retrosheet historical seed — seed_retrosheet_games.ts seeded 2,973 thirteen-run games from 1877–2025 into game_results; ~100 Retrosheet team code mappings; game_pk idempotent with retro- prefix ✓
-- [x] 3.3 Past Champions Banner - scrolling hall of fame across top of history page; each champion color-coded to their MLB team that year ✓ claude-code (teamColors.ts, PastChampionsBanner component, auto-scroll + swipe, all yearly winners)
-- [x] 3.4 Dynasty Tracker - surfaces multi-win seasons and dominant stretches (e.g. Brad Brown 3 wins in 2018, Matt Pariseau 19 shares all-time) ✓ claude/magical-mclean
-- [x] 3.5 Historical season browser — "Season Log" third tab on each year's league page; tour-shirt week-by-week list (01 APR 11 · Aaron Goldfarb · NYY · 13–4 BOS · $260); stats header (Champion, Most Earned, Biggest Pot, Hot Streak, Hottest Team, MLB 13s); rollover weeks shown as · · · ROLLOVER · · ·; data from historical_results + payouts + game_results; lazy-loads on tab click ✓
-- [x] 3.6 Player profile page - /league/[slug]/player/[id]; career stats, teams held by year, win history, earnings timeline; clicking player name in leaderboard and rankings navigates here ✓ (BBRef-style layout: achievement badges 💰🏆⚡🏟️, season circles timeline, career stats, active streak, by-season table with leader highlights)
-- [x] 3.7 Heartbreak Board - teams that reached 12 runs and stopped; running all-time tally; The Cubs have broken hearts 7 times ✓ claude/magical-mclean (HeartbreakBoard component on /history page, bar chart ranked by franchise, most recent near-miss footer)
-- [ ] 3.8 Cursed Team Badge - algorithmically determined weekly from probability model
-- [ ] 3.9 Random facts widget - first 13-run game in league history, team with most 13-run weeks, team with most 12-run heartbreaks, days since last 13-run game
-- [ ] 3.10 Sweat Factor indicator - your team hits 13; real-time probability you end the week as solo winner vs. splitting based on remaining games and Poisson model. Shows something like: Sweat Factor: 34% chance you are sharing this pot
-- [ ] 3.11 Advanced stats suite - for both teams and players:
-    - Win Rate: 13-run games divided by total games (raw frequency)
-    - Dollar Rate: total paid out divided by total games (accounts for splits)
-    - WAR (dollars per share): pure efficiency metric. A solo $900 win = $900/share. Five-way split of $300 = $60/share. Very different.
-    - Consistency: seasons with at least one win divided by total seasons
-    - Clutch: win rate in rollover weeks specifically (higher stakes)
-    - Best Season: single year peak earnings
-- [x] 3.13 Rookie of the Year — detect first-year players dynamically (no historical_results rows for ANY prior year = rookie; returning players after a hiatus are NOT rookies; no mid-season joins so all rookies start week 1); 🐣 Rookie badge in leaderboard next to name; "Rookie Race" card on league home page showing rookies ranked by $$ earned; ROTY = rookie with most $$ earned that season (tie: most wins); ROTY badge displayed in season log + rankings for that year; skip 2018 (inaugural season, everyone was a rookie); computed dynamically from historical_results — no DB migration needed
-
-- [x] 3.12 AI draft scouting reports - one Claude-generated scouting line per team based on their historical stats. Cached at draft time. Examples:
-    - The Padres are the most reliable team in league history. 15 wins, strong Dollar Rate, produced in 6 of 8 seasons. High floor, proven ceiling.
-    - The Rockies hit 13 often but almost always in splits. Great Win Rate, terrible WAR. You will celebrate a lot and take home less than you think.
-    - The Yankees have the highest Dollar Rate in league history but streaky. Four dead years then two monster seasons. High variance pick.
+- [ ] Alumni and All tabs in Roster are empty — likely a filter bug in `MemberRoster.tsx`
+- [ ] Error state for duplicate-name rename (two Chris Williams edge case — no FK between `historical_results` and `members`)
+- [ ] Rename feature needs error UI if name already exists or would cause ambiguity
+- [ ] Recalculate Streaks button — exists in admin UI, hasn't been triggered yet for 2026 data
+- [ ] Sentry error alerts — set up email or Slack notification channel in Sentry dashboard
 
 ---
 
-## Phase 4 - Live Game Experience
+## 🔒 Features — Hold for Next Billing Cycle
 
-The reason people check their phones during games.
+### Homepage & Design
+- [ ] Logo / wordmark — no mark exists yet; explore SVG concept built in-browser
+- [ ] Grain/noise texture overlay on hero (Luma-style depth)
+- [ ] Big bold hero section — "13 runs. One winner." energy
+- [ ] Module cards with small-caps headers: `TODAY'S HUNT`, `ON THIS DAY`, `THE LORE`
+- [ ] Collapsible 13-Run History — show most recent 1, [+] more opens next 10
+- [ ] Collapsible League Explainer — show teaser, [+] more expands full explanation
+- [ ] Probability tooltip on live games — explain what 0.31% actually means
 
-- [x] 4.1 Probability cards - Poisson model per game, rolling window selector (5/10/20/full), park factors, pitcher adjustment, early season blended model badge ✓ claude-code (GameCard enhanced with clear lambda breakdown headers, rolling window UI, blending badge, error handling, no-games state)
-- [x] 4.2 Live game tracker - real-time score updates via MLB Stats API; poll every 30s during game hours ✓ claude-code (30-second polling in LiveWatchCard, real-time probability recalculation, UI indicators for last update time and loading state)
-- [x] 4.3 13-run game card celebration — full-width "⚡ 13-Run Game" banner, dark green glow border + background, score number bumped to text-2xl, FINAL badge turns green, card no longer dimmed ✓
-- [x] 4.4 Today in the League strip — compact per-member scoreboard at top of league dashboard; sorted by 13-run games → Live → Preview (prob desc) → Final → Off day; shows LIVE pulse, game time ET, or FINAL per row; green tint on 13-run rows; links to MLB Gameday ✓
-- [x] 4.5 Historical probability lookup - use public/data/thirteen_lookup.json for in-game probability (inning + current score); fall back to Poisson if sample under 25 ✓ claude/magical-mclean (CollapsibleGameCard wired to live inning data; Retrosheet conditional P(13) shown in expanded card)
-- [x] 4.6 On Deck Alert - team has 10+ runs after 7th inning, early heads-up: Get ready - Cubs have 11 after 7 ✓ claude/magical-mclean (🔔 amber alert in CollapsibleGameCard, LiveWatchCard, LiveScoreboard; isPulsing triggers on isOnDeck)
-- [x] 4.7 In-app threshold alerts - over 40% show indicator, over 65% highlight card, over 80% banner ✓ claude/magical-mclean (getAlertTier() drives border color + glow + emoji tiers on CollapsibleGameCard)
-- [ ] 4.8 SMS alerts via Twilio - 5 event types:
-    - Threshold alert (over 80%): Red Sox have 9 runs in the 6th. P(final=13): 71%
-    - Live 13 alert: Red Sox have 13 runs! Game still going...
-    - Heartbreak alert: Red Sox just scored run 14.
-    - Winner alert: Red Sox did it! Final: Red Sox 13, Yankees 4.
-    - Final score: Final - Red Sox 11, Yankees 4.
-- [ ] 4.9 Alert deduplication - alert_log table prevents repeat messages per game per event type
-- [ ] 4.10 SMS opt-in flow - phone number, team preference, threshold setting, consent checkbox with timestamp, STOP handler
-- [x] 4.11 Live game indicators - visual "LIVE" badge with pulsing indicator on game cards in the heatmap; show inning and current score for games in progress; make it immediately obvious which games are happening right now ✓ claude/magical-mclean
-- [x] 4.12 Browser push notifications — "🔔 Get notified on 13s" opt-in button in footer; service worker (public/sw.js); ServiceWorkerRegistration client component in layout; push_subscriptions + push_notifications_sent tables; /api/push/subscribe saves subscriptions; /api/cron/push Vercel Cron every 5 min during game hours fires push to all subscribers when any MLB team's final score = 13; dedup + expired sub cleanup; web-push + VAPID keys (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_EMAIL, NEXT_PUBLIC_VAPID_PUBLIC_KEY) ✓
-- [x] 4.13 PWA / Add to Home Screen — manifest.json with PNG icons; AddToHomeScreenBanner with progressive snooze (7d→14d→30d→never), snooze label on ✕; InstallAppLink in footer (iOS only, opens step-by-step modal); banner iOS-only (Android Chrome handles install natively) ✓
+### Co-ownership
+- [ ] Co-owner display — league table shows both names on same team row
+- [ ] Team page shows both as co-owners in header
+- [ ] Payout recording notes split when co-owners win (two names, half amount each)
+- [ ] Win celebration shows both names for co-owned teams
 
----
+### Notifications
+- [ ] Monthly waitlist emails — manual Resend broadcasts (no automation yet)
+- [ ] **4.8** SMS alerts via Twilio — 5 event types:
+  - **Threshold alert** (>80% P13): "Red Sox have 9 runs in the 6th. P(final=13): 71%"
+  - **Live 13 alert**: "Red Sox have 13 runs! Game still going..."
+  - **Heartbreak alert**: "Red Sox just scored run 14."
+  - **Winner alert**: "Red Sox did it! Final: Red Sox 13, Yankees 4."
+  - **Final score**: "Final - Red Sox 11, Yankees 4."
+- [ ] **4.9** Alert deduplication — `alert_log` table prevents repeat messages per game per event type
+- [ ] **4.10** SMS opt-in flow — phone number, team preference, threshold setting, consent checkbox with timestamp, STOP handler
 
-## Phase 5 - Public Pages
-
-Discovery and shareability.
-
-- [x] 5.1 Add login button/link to homepage that routes to league access/login ✓ claude/magical-mclean (always-visible "My League →" button; falls back to /league if slug env not set)
-- [x] 5.1 Public dashboard (/) - today's games + probability cards; no login required ✓
-- [x] 5.2 What is a 13 Run League? explainer section on homepage — LeagueExplainer component with How a Week Works, What Makes It Fun, Origin Story, Why This Site Exists; also shown on league page ✓
-- [ ] 5.3 /history - all-time 13-run game tracker; searchable by team, year, score
-- [x] 5.4 /matchup/[away]/[home] - head-to-head analysis; both teams colored in franchise colors; who-scored-13 split cards; YearChart; by-month grid; run distribution histograms (0–16) with team-colored bars; full 13-run game log; footer links to both franchise pages; fixes all Season Log matchup 404s ✓
-- [ ] 5.5 Win Celebration Page - auto-generate shareable image via @vercel/og when a team scores 13; winner name, team, pot amount
-- [ ] 5.6 Season Countdown - offseason widget; days until opening day; historical callback from same week last year
-- [x] 5.7 OG meta tags - every public page gets proper share previews for iMessage, Twitter, Discord; PNG via next/og ImageResponse at /api/og?title=&subtitle=; generateMetadata on league + player pages; /icon.tsx + /apple-icon.tsx PNG conventions ✓
-- [ ] 5.8 Instagram auto-post - connect central @13runleague account via Meta Graph API; auto-post win celebration image every time any MLB team scores 13; requires instagram_content_publish permission (Meta review 1-2 weeks)
-- [ ] 5.9 Instagram growth posts - generic 13 Run League content for league acquisition; Think you could have called that? Start a 13 Run League at 13runleague.com
+### Bigger Features
+- [ ] Day-of-week chart on team page
+- [ ] Payout UI — cleaner history, better recording flow
+- [ ] Onboarding flow for new leagues (commissioner sign-up, league creation)
+- [ ] Stripe Connect integration for multi-league money handling (dues → hold → payout → platform fee)
+- [ ] Multi-league SaaS model — sell league access, hold funds, make payouts, keep fee
+  - Requires Stripe Connect (sub-accounts per league)
+  - Legal: money transmitter territory — use Stripe to shield; consult lawyer before scaling
+  - Fee model options: per-league SaaS, % of transaction, or both
 
 ---
 
-## Phase 6 - Community
+## Architecture Notes
 
-Where the banter lives.
-
-- [ ] 6.1 Discord server setup - create South Brooklyn 13 Run League server; enable widget; embed on league page
-- [ ] 6.2 Discord bot - auto-post on: team reaches 80% probability, team scores 13, heartbreak miss, weekly winner, rollover milestones (e.g. 4 weeks no winner, pot at $1,200)
-- [ ] 6.3 Weekly recap text generator - commissioner tool; plain text summary of that week's results, close calls, current streaks and standings, rollover status; commissioner copies into email or Discord
-
----
-
-## Phase 7 - Money
-
-Keep it simple. Commissioner is the source of truth.
-
-- [ ] 7.1 Payment status board - per-member, per-week grid; shows paid / unpaid / override
-- [ ] 7.2 Manual payment override - commissioner marks any member as paid; add note (e.g. cash at bar, Venmo @colby)
-- [ ] 7.3 Pot calculation dashboard - auto-calculates weekly pot from paid members; shows expected vs actual
-- [ ] 7.4 Stripe integration (optional v2) - members pay via Stripe; auto-marks as paid; commissioner still has override
-- [ ] 7.5 Auto email payment reminders — send "invoice"-style emails to unpaid members via Resend; email shows member name, which weeks are unpaid, total amount owed, and Venmo/payment instructions; cadence is configurable per-league (e.g. every Monday, every N days after week closes, or manual trigger only); commissioner can preview the email, send to all unpaid at once or to individual members; opt-out flag per member; template lives in admin settings
-- [ ] 7.6 Buy Me a Coffee button - on public homepage and history page
-
----
-
-## Phase 8 - Legal and Compliance
-
-Required before Twilio SMS goes live.
-
-- [ ] 8.1 /sms-terms page - Twilio compliance; opt-in language, STOP instructions, message frequency, data rates
-- [x] 8.2 /privacy page — data collection, Supabase/Retrosheet/MLB API/Vercel/Resend attribution, no-wagering note ✓
-- [x] 8.3 /terms page — Terms of Use with formal No Wagering clause, probability disclaimer, IP, liability limitation; links to /privacy ✓
-- [ ] 8.4 Twilio use case submission - submit A2P 10DLC registration with proof of consent URL
-- [ ] 8.5 Resend domain verification - verify 13runleague.com in Resend dashboard
-
----
-
-## Phase 9 - Launch
-
-- [ ] 9.1 Connect 13runleague.com domain in Vercel dashboard
-- [ ] 9.2 Set all production environment variables in Vercel
-- [ ] 9.3 End-to-end test - create league, add members, assign teams, simulate a winning week
-- [x] 9.4 Retrosheet attribution in footer - Historical data from Retrosheet. 20 Sunset Rd., Newark, DE 19711 ✓ claude/magical-mclean (SiteFooter component on all public pages)
-- [ ] 9.5 Invite first league members for 2026 season
-- [x] 9.6 Legal footer - Not affiliated with MLB or any MLB team. Use team names only, no logos. Built by Red Crow Labs (redcrowlabs.com). As always, no wagering, please. ✓ claude/magical-mclean (SiteFooter component with MLB disclaimer, tagline, Red Crow Labs link)
-- [ ] 9.7 Tagline appears in: site footer, SMS terms page, recap text generator output, Instagram posts, Discord bot - As always, no wagering, please.
-
-Built by Red Crow Labs - redcrowlabs.com
-
----
-
-## Key Data and Context
-
-### Historical Data (scripts/history_import.json)
-- 8 seasons: 2018-2025
-- 30 members per year, $10/week buy-in, $300 weekly pot
-- Year-to-year rollovers tracked and chained correctly
-- 2020: 11-week COVID season, $750/week pot
-- Name merges already applied, canonical names throughout
-
-### All-Time Leaders
-
-| Rank | Player | Total Won | Shares | Years | WAR ($/share) |
-|------|--------|-----------|--------|-------|---------------|
-| 1 | Matt Pariseau | $5,650 | 19 | 8 | $297 |
-| 2 | Joe Bova | $4,125 | 8 | 6 | $516 |
-| 3 | Aaron Goldfarb | $4,000 | 9 | 6 | $444 |
-| 4 | Brad Brown | $3,350 | 10 | 8 | $335 |
-| 5 | New Cleveland Dave | $3,150 | 10 | 6 | $315 |
-| 6 | Cliff Lungaretti | $3,050 | 13 | 8 | $235 |
-
-### Ironmen - All 8 Seasons (2018-2025)
-Matt Pariseau, Brad Brown, Cliff Lungaretti, JFC, TJ, Aunt Deb, Whitey, Dianne, Brian Devine, Colby Black
-
-### Luckiest MLB Teams in League History
-1. Padres - 15 thirteen-run weeks
-2. Giants - 13 times
-3. Astros, Rockies, Mets, Phillies - 12 times each
-
-### MLB Licensing Notes
-- Team names (Yankees, Red Sox, etc.) are fine - used commercially by DraftKings and every fantasy site
-- MLB logos and jersey designs - do NOT use without a license
-- Use text-only team references throughout the app
-- Footer must say: Not affiliated with MLB or any MLB team
-
-### Probability Engine
-- Model: Poisson distribution, lambda = team runs/game
-- Adjustments: Park factor (Coors 1.35x), pitcher ERA, rolling window (5/10/20/full)
-- Early season: fewer than 10 games = 70% last season + 30% current blended
-- Live game: public/data/thirteen_lookup.json - 16.3M plate appearances, lookup by {vis_or_home}|{inning}|{current_score}
-- Data: Retrosheet 1901-present
-
-### MLB Stats API
-- Schedule: https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=YYYY-MM-DD&gameType=R
-- Live feed: https://statsapi.mlb.com/api/v1.1/game/{gamePk}/feed/live
-- Always filter gameType R for regular season only
-- Coors Field venue ID: 19
-
-### Environment Variables (set in Vercel)
-- NEXT_PUBLIC_SUPABASE_URL
-- NEXT_PUBLIC_SUPABASE_ANON_KEY
-- SUPABASE_SERVICE_ROLE_KEY
-- RESEND_API_KEY
-- TWILIO_ACCOUNT_SID
-- TWILIO_AUTH_TOKEN
-- TWILIO_PHONE_NUMBER
-- CRON_SECRET
-- ANTHROPIC_API_KEY (for AI scouting reports)
-- META_ACCESS_TOKEN (for Instagram posting)
-- INSTAGRAM_ACCOUNT_ID (for Instagram posting)
-
-### Claude Code and Cursor Session Tips
-- Start each session by stating the phase and task numbers you are working on
-- scripts/history_import.json is the source of truth for all historical data - do not regenerate it
-- public/data/thirteen_lookup.json is the Retrosheet lookup - 936MB uncompressed, reference by key only, never load the whole file into memory
-- /lib/probability.ts - Poisson model already implemented
-- /lib/mlb.ts - MLB Stats API helpers already implemented
-- /lib/alerts.ts - SMS alert logic already scaffolded
-- Middleware - league auth via cookie league_auth_{slug}, bcrypt password hashing
-- Theme - dark background, neon green accent #39FF14, monospace numbers
-- WAR stat = dollars per share (not baseball WAR). Solo $900 win = $900/share. Five-way $300 split = $60/share. Used in player profile "⚡ Top $/Win" badge.
-- Sweat Factor = P(no other team scores 13 in remaining games this week) given current team already hit 13
-- Player profile badges (src/app/league/[slug]/player/[memberId]/page.tsx): 💰 Top Earner = most total_won in that year; 🏆 Most Wins = most shares (winning weeks) in that year; ⚡ Top $/Win = highest total_won/shares ratio in that year (WAR); 🏟️ Ironman = played every year that appears in historical_results for this league (dynamic — grows automatically when a new season is seeded, no hardcoded year count). All computed by querying all historical_results for the league and finding per-year maximums.
-
----
-
-Built with love in South Brooklyn. Est. 2018.
-
-As always, no wagering, please.
-
-Built by Red Crow Labs - redcrowlabs.com
-
+- `historical_results.member_name` is a plain string — no FK to `members.id`
+  - Rename RPC is safe for unique names; ambiguous for two people sharing a name
+  - Mitigation: disambiguate at entry time (e.g. "Chris W. (2)")
+  - Long-term fix: add `member_id` FK column to `historical_results` (backfill by name match)
+- Supabase free tier has a row-return cap — always use RPC for aggregations
+- `is_active` defaults to `true`; alumni = `is_active = false` (never hard-deleted)
+- Co-owners: two members with same `assigned_team` value — team wins split one share by house rules
+- Vercel Pro plan: $20/month included credits; build minutes are the main cost driver — batch pushes

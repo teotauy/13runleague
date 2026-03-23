@@ -88,11 +88,6 @@ export default function SeasonYearTabs({
     // Past year: reconstruct from historical_results
     const yearData = historicalRaw.filter((r) => r.year === year)
 
-    // Build name → id map from enrichedMembers (current members)
-    const memberIdByName = new Map(
-      enrichedMembers.map((em) => [em.member.name.trim().toLowerCase(), em.member.id])
-    )
-
     // Reconstruct AllTimeEntry for this year
     const newAllTimeMap = new Map<string, AllTimeEntry>()
     for (const row of yearData) {
@@ -104,14 +99,12 @@ export default function SeasonYearTabs({
           existing.yearsPlayed.push(row.year)
         }
       } else {
-        const memberId = memberIdByName.get(row.member_name.trim().toLowerCase())
         newAllTimeMap.set(row.member_name, {
           name: row.member_name,
           totalWon: row.total_won,
           totalShares: row.shares,
           yearsPlayed: [row.year],
-          isActive: !!memberId,
-          id: memberId,
+          isActive: false, // Past year members not active
         })
       }
     }
@@ -293,7 +286,6 @@ export default function SeasonYearTabs({
         allTime={Array.from(currentData.allTimeMap.values())}
         teams={Array.from(currentData.teamsMap.values())}
         slug={slug}
-        year={typeof selectedYear === 'number' && selectedYear !== 2026 ? selectedYear : undefined}
       />
     </div>
   )

@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { createServiceClient } from '@/lib/supabase/server'
 import PastChampionsBanner, { type YearlyChampions } from '@/components/PastChampionsBanner'
-import Link from 'next/link'
+import HeartbreakBoard from '@/components/HeartbreakBoard'
+import DynastyTracker from '@/components/DynastyTracker'
+import SiteFooter from '@/components/SiteFooter'
 
 export const revalidate = 3600
 
@@ -29,6 +31,14 @@ export default async function HistoryPage() {
     .eq('was_thirteen', true)
     .order('game_date', { ascending: false })
     .limit(200)
+
+  // Fetch heartbreak games — was_thirteen + one team scored exactly 12
+  const { data: heartbreakGames } = await supabase
+    .from('game_results')
+    .select('game_date, home_team, away_team, home_score, away_score, winning_team')
+    .eq('was_thirteen', true)
+    .or('home_score.eq.12,away_score.eq.12')
+    .order('game_date', { ascending: false })
 
   // Fetch historical results for champions banner
   const { data: historicalData } = await supabase
@@ -78,7 +88,7 @@ export default async function HistoryPage() {
     .sort((a, b) => b.year - a.year)
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         <header>
           <a href="/" className="text-gray-600 text-sm hover:text-gray-400 mb-4 inline-block">← Dashboard</a>
@@ -91,13 +101,17 @@ export default async function HistoryPage() {
         {/* Past Champions Banner */}
         <PastChampionsBanner yearlyChampions={yearlyChampions} />
 
-        {/* Summary grid — each card links to the team's profile page */}
+        {/* Dynasty Tracker */}
+        {historicalData && historicalData.length > 0 && (
+          <DynastyTracker data={historicalData} />
+        )}
+
+        {/* Summary grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
           {teamsSorted.map(([team, teamGames]) => (
             <Link
               key={team}
-              href={`/teams/${team.toLowerCase()}`}
-              className="rounded bg-[#111] border border-gray-900 p-3 text-center hover:border-gray-700 hover:bg-[#191919] transition-colors block"
+              className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-3 text-center"
             >
               <div className="text-xs text-gray-500 font-mono">{team}</div>
               <div className="text-2xl font-black text-[#39ff14] mt-1">
@@ -107,6 +121,9 @@ export default async function HistoryPage() {
             </Link>
           ))}
         </div>
+
+        {/* Heartbreak Board */}
+        <HeartbreakBoard games={heartbreakGames ?? []} />
 
         {/* Full log */}
         <section>
@@ -123,7 +140,7 @@ export default async function HistoryPage() {
               </thead>
               <tbody>
                 {(games ?? []).map((g) => (
-                  <tr key={g.id} className="border-b border-gray-900 hover:bg-[#111]">
+                  <tr key={g.id} className="border-b border-gray-900 hover:bg-white/[0.03]">
                     <td className="py-2 pr-4 text-gray-400">{g.game_date}</td>
                     <td className="py-2 pr-4 text-gray-300">
                       <a
@@ -144,22 +161,7 @@ export default async function HistoryPage() {
           </div>
         </section>
 
-        <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs space-y-2">
-          <p>
-            The information used here was obtained free of charge from and is copyrighted by Retrosheet.
-            Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
-          </p>
-          <p>
-            <a
-              href="https://buymeacoffee.com/colbyblack"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-yellow-500 hover:text-yellow-400 transition-colors"
-            >
-              ☕ Buy me a coffee
-            </a>
-          </p>
-        </footer>
+        <SiteFooter />
       </div>
     </main>
   )

@@ -43,9 +43,6 @@ export default function LeagueDashboardHeader({ leagueName, slug, role }: Props)
                 {showAdminUI ? 'View as Member' : 'View as Admin'}
               </button>
             )}
-            <a href={`/api/league/${slug}/logout`} className="text-gray-600 text-xs hover:text-red-400 transition-colors">
-              Log out
-            </a>
             <a href="/" className="text-gray-600 text-sm hover:text-gray-400">
               ← Public
             </a>

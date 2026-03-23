@@ -45,22 +45,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
 
     const pickOrder = (existingPicks?.length ?? 0) + 1
 
-    // Get a member without a team yet
-    const { data: members } = await supabase
-      .from('members')
-      .select('id')
-      .eq('league_id', league.id)
+    // Resolve which member is picking:
+    // - If body.member_id is provided (double-blind draw), use that specific member
+    // - Otherwise fall back to first unpicked member (legacy / random-assign flow)
+    let targetMemberId: string
 
-    const { data: picks } = await supabase
-      .from('draft_picks')
-      .select('member_id')
-      .eq('draft_session_id', draft.id)
+    if (body.member_id) {
+      targetMemberId = body.member_id
+    } else {
+      const { data: members } = await supabase
+        .from('members')
+        .select('id')
+        .eq('league_id', league.id)
 
-    const pickedMemberIds = new Set(picks?.map((p) => p.member_id) ?? [])
-    const unpickedMember = members?.find((m) => !pickedMemberIds.has(m.id))
+      const { data: picks } = await supabase
+        .from('draft_picks')
+        .select('member_id')
+        .eq('draft_session_id', draft.id)
 
-    if (!unpickedMember) {
-      return NextResponse.json({ error: 'All teams already picked' }, { status: 400 })
+      const pickedMemberIds = new Set(picks?.map((p) => p.member_id) ?? [])
+      const unpickedMember = members?.find((m) => !pickedMemberIds.has(m.id))
+
+      if (!unpickedMember) {
+        return NextResponse.json({ error: 'All teams already picked' }, { status: 400 })
+      }
+      targetMemberId = unpickedMember.id
     }
 
     // Create draft pick
@@ -68,7 +77,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       .from('draft_picks')
       .insert({
         draft_session_id: draft.id,
-        member_id: unpickedMember.id,
+        member_id: targetMemberId,
         team_abbr: body.team_abbr,
         pick_order: pickOrder,
       })
@@ -81,7 +90,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     await supabase
       .from('members')
       .update({ assigned_team: body.team_abbr })
-      .eq('id', unpickedMember.id)
+      .eq('id', targetMemberId)
 
     return NextResponse.json(newPick, { status: 201 })
   } catch (err) {

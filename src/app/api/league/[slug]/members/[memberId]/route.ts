@@ -65,11 +65,10 @@ export async function PATCH(
     const { data, error } = await supabase
       .from('members')
       .update({
-        ...(nameChanged ? {} : body.name !== undefined ? { name: body.name } : {}),
-        ...(body.assigned_team !== undefined ? { assigned_team: body.assigned_team } : {}),
-        ...(body.phone !== undefined ? { phone: body.phone } : {}),
-        ...(body.email !== undefined ? { email: body.email } : {}),
-        ...(typeof body.is_active === 'boolean' ? { is_active: body.is_active } : {}),
+        name: body.name,
+        assigned_team: body.assigned_team ?? '',
+        phone: body.phone,
+        email: body.email,
       })
       .eq('id', memberId)
       .select()

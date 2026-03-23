@@ -20,7 +20,7 @@ export default async function LeagueLoginPage({ params, searchParams }: Props) {
     // Fetch core password hash (always present)
     const { data: league, error: dbError } = await supabase
       .from('leagues')
-      .select('password_hash')
+      .select('password_hash, member_password_hash')
       .eq('slug', slug)
       .single()
 
@@ -37,20 +37,14 @@ export default async function LeagueLoginPage({ params, searchParams }: Props) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 7,
-        path: '/',
+        path: `/league/${slug}`,
       })
       redirect(`/league/${slug}/admin`)
     }
 
-    // Check member (view-only) password — column may not exist yet, handle gracefully
-    const { data: memberPwRow } = await supabase
-      .from('leagues')
-      .select('member_password_hash')
-      .eq('slug', slug)
-      .single()
-
-    if (memberPwRow?.member_password_hash) {
-      const isMember = await bcrypt.compare(password, memberPwRow.member_password_hash)
+    // Check member (view-only) password
+    if (league.member_password_hash) {
+      const isMember = await bcrypt.compare(password, league.member_password_hash)
       if (isMember) {
         const cookieStore = await cookies()
         cookieStore.set(`league_auth_${slug}`, 'member', {
@@ -58,7 +52,7 @@ export default async function LeagueLoginPage({ params, searchParams }: Props) {
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
           maxAge: 60 * 60 * 24 * 7,
-          path: '/',
+          path: `/league/${slug}`,
         })
         redirect(`/league/${slug}`)
       }
@@ -68,7 +62,7 @@ export default async function LeagueLoginPage({ params, searchParams }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
+    <main className="min-h-screen bg-[#0f1115] stadium-texture flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white">

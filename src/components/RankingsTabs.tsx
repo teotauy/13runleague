@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import SeasonLog from './SeasonLog'
 
 export interface AllTimeEntry {
   name: string
@@ -223,7 +222,7 @@ function AllTimeTable({
             <tr className="text-gray-500 border-b border-gray-800">
               <th className="pb-2 pr-4 text-left">#</th>
               <th className="pb-2 pr-4 text-left">Player</th>
-              {!year && <SortTh label="Years" col="yearsPlayed" current={sortCol} dir={dir} onClick={handleSort} />}
+              <SortTh label="Years" col="yearsPlayed" current={sortCol} dir={dir} onClick={handleSort} />
               <SortTh label="Wins" col="totalShares" current={sortCol} dir={dir} onClick={handleSort} />
               <SortTh label="Total Won" col="totalWon" current={sortCol} dir={dir} onClick={handleSort} />
               <th className="pb-2 text-left">Badges</th>
@@ -250,11 +249,9 @@ function AllTimeTable({
                       entry.name
                     )}
                   </td>
-                  {!year && (
-                    <td className="py-2 pr-4 text-gray-400">
-                      {yearRange(entry.yearsPlayed)}
-                    </td>
-                  )}
+                  <td className="py-2 pr-4 text-gray-400">
+                    {yearRange(entry.yearsPlayed)}
+                  </td>
                   <td className="py-2 pr-4 text-gray-300">{entry.totalShares}</td>
                   <td className="py-2 pr-4 font-bold text-[#39ff14]">
                     ${entry.totalWon.toLocaleString()}
@@ -330,14 +327,7 @@ function TeamTable({ data }: { data: TeamEntry[] }) {
           {sorted.map((entry, i) => (
             <tr key={entry.team} className="border-b border-gray-900 hover:bg-[#111]">
               <td className="py-2 pr-4 text-gray-600">{i + 1}</td>
-              <td className="py-2 pr-4 text-white font-semibold">
-                <Link
-                  href={`/teams/${entry.team.toLowerCase()}`}
-                  className="hover:text-[#39ff14] transition-colors underline decoration-dotted"
-                >
-                  {entry.team}
-                </Link>
-              </td>
+              <td className="py-2 pr-4 text-white font-semibold">{entry.team}</td>
               <td className="py-2 pr-4 text-[#39ff14] font-bold">{entry.thirteenRunWeeks}</td>
               <td className="py-2 text-gray-300">${entry.totalPaidOut.toLocaleString()}</td>
             </tr>
@@ -364,6 +354,8 @@ export default function RankingsTabs({
   year?: number
 }) {
   const [tab, setTab] = useState<'alltime' | 'teams' | 'log'>('alltime')
+
+  const playerLabel = year ? `${year} Season Rankings` : 'All-Time Rankings'
 
   const playerLabel = year ? `${year} Season Rankings` : 'All-Time Rankings'
 
@@ -405,14 +397,10 @@ export default function RankingsTabs({
         )}
       </div>
 
-      {tab === 'alltime' && (
+      {tab === 'alltime' ? (
         <AllTimeTable data={allTime} slug={slug} historicalRaw={historicalRaw} year={year} />
-      )}
-      {tab === 'teams' && (
+      ) : (
         <TeamTable data={teams} />
-      )}
-      {tab === 'log' && year && slug && (
-        <SeasonLog slug={slug} year={year} />
       )}
     </div>
   )

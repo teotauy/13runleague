@@ -26,9 +26,7 @@ export default function PreSeasonStatus({ leagueSlug, members: initialMembers }:
   const maybe = members.filter((m) => m.pre_season_returning === 'maybe').length
   const no = members.filter((m) => m.pre_season_returning === 'no').length
   const unset = members.filter((m) => !m.pre_season_returning).length
-  // True vacancies = only confirmed-out (no). Unset = haven't responded yet, not a vacancy.
-  const vacancies = no
-  const pending = unset
+  const vacancies = no + unset
   const paid = members.filter((m) => m.pre_season_returning === 'yes' && m.pre_season_paid).length
 
   async function updateMember(memberId: string, field: 'returning' | 'paid', value: unknown) {
@@ -74,28 +72,21 @@ export default function PreSeasonStatus({ leagueSlug, members: initialMembers }:
   return (
     <div className="space-y-6">
       {/* Summary bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <SummaryTile label="In" value={confirmed} color="text-[#39ff14]" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <SummaryTile label="Confirmed In" value={confirmed} color="text-[#39ff14]" />
         <SummaryTile label="Maybe" value={maybe} color="text-amber-400" />
-        <SummaryTile label="Out" value={no} color="text-red-400" />
-        <SummaryTile label="No Response" value={pending} color="text-gray-500" />
+        <SummaryTile label="Out / Unknown" value={vacancies} color="text-red-400" />
         <SummaryTile
-          label={`Paid`}
+          label={`Paid (${confirmed} confirmed)`}
           value={paid}
           color={paid === confirmed && confirmed > 0 ? 'text-[#39ff14]' : 'text-gray-400'}
         />
       </div>
 
-      {/* Only warn about confirmed-out members — unset just means they haven't replied */}
       {vacancies > 0 && (
         <div className="rounded border border-red-900 bg-red-950/30 px-4 py-3 text-sm text-red-300 font-mono">
-          ⚠ {vacancies} {vacancies === 1 ? 'member has' : 'members have'} said they&apos;re out — you need to find{' '}
+          ⚠ {vacancies} open {vacancies === 1 ? 'slot' : 'slots'} — you need to find{' '}
           {vacancies === 1 ? 'a replacement' : `${vacancies} replacements`} before the draft.
-        </div>
-      )}
-      {pending > 0 && (
-        <div className="rounded border border-gray-800 bg-gray-900/30 px-4 py-3 text-sm text-gray-500 font-mono">
-          ⏳ {pending} {pending === 1 ? 'member hasn\'t' : 'members haven\'t'} responded yet.
         </div>
       )}
 

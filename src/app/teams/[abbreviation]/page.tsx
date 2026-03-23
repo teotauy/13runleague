@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { createServiceClient } from '@/lib/supabase/server'
-import { TEAM_COLORS, getTeamColor } from '@/lib/teamColors'
+import { TEAM_COLORS, getTeamColor, franchiseAbbrs } from '@/lib/teamColors'
 import YearChart from '@/components/YearChart'
 import MiniBar from '@/components/MiniBar'
-import OpponentChart, { type OppEntry } from '@/components/OpponentChart'
+import SiteFooter from '@/components/SiteFooter'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -37,7 +37,6 @@ export async function generateMetadata({ params }: { params: Promise<{ abbreviat
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const
 const BASEBALL_MONTHS = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'] as const
-const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 
 export default async function TeamPage({ params }: Props) {
   const { abbreviation } = await params
@@ -49,21 +48,14 @@ export default async function TeamPage({ params }: Props) {
   const teamInfo = getTeamColor(abbr)
   const supabase = createServiceClient()
 
-  // All 13-run games for this team
+  // All games where this franchise scored exactly 13 runs (includes legacy abbrs e.g. OAK for ATH)
+  const abbrs = franchiseAbbrs(abbr)
   const { data: games } = await supabase
     .from('game_results')
     .select('game_date, home_team, away_team, winning_team, home_score, away_score')
     .eq('was_thirteen', true)
-    .eq('winning_team', abbr)
+    .in('winning_team', abbrs)
     .order('game_date', { ascending: false })
-
-  // Aggregated opponent game counts via RPC (bypasses row limits)
-  const { data: opponentCounts } = await supabase
-    .rpc('get_opponent_game_counts', { team_abbr: abbr })
-
-  // How many times each team has ever given up 13 (league-wide allowed counts)
-  const { data: allowedCounts } = await supabase
-    .rpc('get_all_allowed_counts')
 
   const allGames = games ?? []
   const total = allGames.length
@@ -74,12 +66,9 @@ export default async function TeamPage({ params }: Props) {
   let awayCount = 0
   const yearMap = new Map<number, number>()
   const monthMap = new Map<string, number>()
-  const dayMap = new Map<string, number>()
-  const oppMap = new Map<string, number>()
 
   for (const g of allGames) {
-    const isHome = g.home_team === abbr
-    if (isHome) homeCount++
+    if (abbrs.includes(g.home_team)) homeCount++
     else awayCount++
 
     const yr = parseInt(g.game_date.slice(0, 4), 10)
@@ -88,45 +77,17 @@ export default async function TeamPage({ params }: Props) {
     const mo = parseInt(g.game_date.slice(5, 7), 10) - 1
     const moName = MONTH_NAMES[mo]
     if (moName) monthMap.set(moName, (monthMap.get(moName) ?? 0) + 1)
-
-    const d = new Date(g.game_date + 'T12:00:00Z')
-    const dayName = DAY_NAMES[d.getUTCDay()]
-    dayMap.set(dayName, (dayMap.get(dayName) ?? 0) + 1)
-
-    const opp = isHome ? g.away_team : g.home_team
-    oppMap.set(opp, (oppMap.get(opp) ?? 0) + 1)
   }
 
   const yearOrdered = [...yearMap.entries()].sort((a, b) => a[0] - b[0])
   const monthOrdered = BASEBALL_MONTHS.map((m) => [m, monthMap.get(m) ?? 0] as [string, number])
-  const dayOrdered = DAY_NAMES.map((d) => [d, dayMap.get(d) ?? 0] as [string, number])
-  // Build allowed-count map: how many times each opponent has ever given up 13 to anyone
-  const allowedMap = new Map<string, number>()
-  for (const row of allowedCounts ?? []) {
-    allowedMap.set(row.team, Number(row.times_allowed))
-  }
-
-  const oppRanked = [...oppMap.entries()].sort((a, b) => b[1] - a[1])
-
-  // Build OppEntry array: count + share (% of opponent's all-time 13-run allowed games)
-  const oppEntries: OppEntry[] = oppRanked.map(([opp, count]) => {
-    const oppAllowed = allowedMap.get(opp) ?? 0
-    return {
-      opp,
-      count,
-      oppAllowed,
-      share: oppAllowed > 0 ? (count / oppAllowed) * 100 : 0,
-    }
-  })
 
   const firstYear = yearOrdered[0]?.[0]
   const lastYear = yearOrdered[yearOrdered.length - 1]?.[0]
   const maxYearCount = Math.max(...yearOrdered.map(([, v]) => v), 1)
   const maxMonthCount = Math.max(...monthOrdered.map(([, v]) => v), 1)
-  const maxDay = Math.max(...dayOrdered.map(([, v]) => v), 1)
   const peakYearEntry = yearOrdered.reduce((a, b) => (b[1] > a[1] ? b : a), [0, 0] as [number, number])
   const peakMonth = monthOrdered.reduce((a, b) => (b[1] > a[1] ? b : a))[0]
-  const peakDay = dayOrdered.reduce((a, b) => (b[1] > a[1] ? b : a))[0]
   const distinctSeasons = yearOrdered.length
 
   const hvTotal = homeCount + awayCount
@@ -135,7 +96,7 @@ export default async function TeamPage({ params }: Props) {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
 
       {/* Team color header banner */}
       <div style={{ backgroundColor: teamInfo.primaryColor }}>
@@ -177,7 +138,7 @@ export default async function TeamPage({ params }: Props) {
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
         {total === 0 ? (
-          <div className="rounded border border-gray-800 bg-[#111] px-6 py-16 text-center space-y-2">
+          <div className="rounded-xl bg-white/[0.025] border border-white/[0.07] px-6 py-16 text-center space-y-2">
             <div className="text-gray-500 font-mono text-lg">No 13-run games on record</div>
             <div className="text-gray-700 text-sm">
               Data sourced from Retrosheet — some historical records may be incomplete.
@@ -190,20 +151,20 @@ export default async function TeamPage({ params }: Props) {
           <>
             {/* Quick-stat pills */}
             <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1.5 rounded-full bg-[#111] border border-gray-800 text-xs font-mono">
+              <span className="px-3 py-1.5 rounded-full bg-white/[0.025] border border-white/[0.07] text-xs font-mono">
                 🏠 Home: <span className="text-white font-bold">{homeCount}</span>
               </span>
-              <span className="px-3 py-1.5 rounded-full bg-[#111] border border-gray-800 text-xs font-mono">
+              <span className="px-3 py-1.5 rounded-full bg-white/[0.025] border border-white/[0.07] text-xs font-mono">
                 ✈️ Away: <span className="text-white font-bold">{awayCount}</span>
               </span>
               {peakYearEntry[0] > 0 && (
-                <span className="px-3 py-1.5 rounded-full bg-[#111] border border-gray-800 text-xs font-mono">
+                <span className="px-3 py-1.5 rounded-full bg-white/[0.025] border border-white/[0.07] text-xs font-mono">
                   📈 Peak: <span className="text-[#39ff14] font-bold">{peakYearEntry[0]}</span>{' '}
                   ({peakYearEntry[1]} games)
                 </span>
               )}
               {peakMonth && (
-                <span className="px-3 py-1.5 rounded-full bg-[#111] border border-gray-800 text-xs font-mono">
+                <span className="px-3 py-1.5 rounded-full bg-white/[0.025] border border-white/[0.07] text-xs font-mono">
                   📅 Hot month: <span className="text-white font-bold">{peakMonth}</span>
                 </span>
               )}
@@ -211,7 +172,7 @@ export default async function TeamPage({ params }: Props) {
 
             {/* By Year chart */}
             {yearOrdered.length >= 2 && (
-              <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
+              <div className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-4">
                 <YearChart
                   yearData={yearOrdered}
                   minYr={firstYear!}
@@ -227,8 +188,8 @@ export default async function TeamPage({ params }: Props) {
             <div className="grid sm:grid-cols-2 gap-4">
 
               {/* By Month */}
-              <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
+              <div className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-4">
+                <h3 className="section-label mb-1">
                   By Month
                 </h3>
                 <p className="text-xs text-gray-600 mb-3">
@@ -250,8 +211,8 @@ export default async function TeamPage({ params }: Props) {
               </div>
 
               {/* Home vs Away */}
-              <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">
+              <div className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-4">
+                <h3 className="section-label mb-4">
                   Home vs. Away
                 </h3>
                 <div className="flex items-end gap-6 mb-4">
@@ -290,37 +251,6 @@ export default async function TeamPage({ params }: Props) {
               </div>
             </div>
 
-            {/* Day of Week + By Opponent */}
-            <div className="grid sm:grid-cols-2 gap-4">
-
-              {/* By Day of Week */}
-              <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                  By Day of Week
-                </h3>
-                <p className="text-xs text-gray-600 mb-3">
-                  {peakDay}s are dangerous
-                </p>
-                <div className="space-y-2.5">
-                  {dayOrdered.map(([day, count]) => (
-                    <div key={day} className="flex items-center gap-2">
-                      <span className={`text-xs font-mono w-7 ${day === peakDay ? 'text-[#39ff14]' : 'text-gray-500'}`}>
-                        {day}
-                      </span>
-                      <MiniBar value={count} max={maxDay} dim={count === 0} />
-                      <span className="text-xs font-mono text-gray-400 w-8 text-right shrink-0">
-                        {count > 0 ? count : '—'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* By Opponent — COUNT / RATE toggle */}
-              <OpponentChart entries={oppEntries} />
-
-            </div>
-
             {/* Full game log */}
             <section>
               <div className="flex items-center gap-3 mb-4">
@@ -345,7 +275,7 @@ export default async function TeamPage({ params }: Props) {
                       const myScore = isHome ? g.home_score : g.away_score
                       const oppScore = isHome ? g.away_score : g.home_score
                       return (
-                        <tr key={`${g.game_date}-${g.home_team}`} className="border-b border-gray-900 hover:bg-[#111]">
+                        <tr key={`${g.game_date}-${g.home_team}`} className="border-b border-gray-900 hover:bg-white/[0.03]">
                           <td className="py-2 pr-4 text-gray-400">{g.game_date}</td>
                           <td className="py-2 pr-4">
                             <Link
@@ -374,32 +304,13 @@ export default async function TeamPage({ params }: Props) {
         )}
 
         {/* Footer */}
-        <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs space-y-2">
-          <p>
-            The information used here was obtained free of charge from and is copyrighted by{' '}
-            <a
-              href="https://www.retrosheet.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-gray-500"
-            >
-              Retrosheet
-            </a>
-            . Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
-          </p>
-          <p className="text-gray-800">
-            Historical records may be incomplete for pre-1920 seasons.
-          </p>
-          <div className="flex flex-wrap gap-4 items-center">
-            <Link href="/history" className="hover:text-gray-500 transition-colors">
-              ← All Teams
-            </Link>
-            <span className="text-gray-800">·</span>
-            <Link href="/" className="hover:text-gray-500 transition-colors">
-              Live Dashboard
-            </Link>
-          </div>
-        </footer>
+        <SiteFooter
+          showHistoricalNote
+          extraLinks={[
+            { label: '← All Teams', href: '/history' },
+            { label: 'Live Dashboard', href: '/' },
+          ]}
+        />
       </div>
     </main>
   )

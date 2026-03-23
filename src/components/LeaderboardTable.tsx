@@ -34,8 +34,6 @@ export interface LeaderboardRow {
   todayProb: number | null
   seasonWins: number
   seasonWon: number
-  isRookie: boolean
-  isROTY: boolean
 }
 
 /** "2025-04-05" → "4/5" */
@@ -124,13 +122,14 @@ export default function LeaderboardTable({
             <th className="pb-2 pr-4">Team</th>
             <th className="pb-2 pr-4">Today</th>
             <SortTh label="P(13)" col="prob" explanation="Probability your team scores exactly 13 runs today. Pre-game Poisson model (season stats, park factors, pitcher). Updates live each inning during games." />
-            <SortTh label="Drought" col="streak" title="Current consecutive winning weeks this season" />
+            <SortTh label="Drought" col="streak" title="Weeks since last win — spans all seasons. A member who won the final week of 2025 carries a small offseason drought, not zero." />
             <SortTh label="Wins" col="wins" title="Winning weeks this season" />
             <SortTh label="$$$" col="won" title="Money won this season" />
+            <th className="pb-2">Closest Miss</th>
           </tr>
         </thead>
         <tbody>
-          {sorted.map(({ member, streak, todayGame, todayProb, seasonWins, seasonWon, isRookie, isROTY }) => (
+          {sorted.map(({ member, streak, todayGame, todayProb, seasonWins, seasonWon }) => (
             <tr key={member.id} className="border-b border-gray-900 hover:bg-[#111]">
               <td className="py-3 pr-4">
                 <Link
@@ -139,11 +138,6 @@ export default function LeaderboardTable({
                 >
                   {member.name}
                 </Link>
-                {isRookie && (
-                  <span title={isROTY ? 'Rookie of the Year leader' : 'Rookie'} className="ml-1 text-xs">
-                    {isROTY ? '🏅' : '🐣'}
-                  </span>
-                )}
               </td>
               <td className="py-3 pr-4">
                 <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-200">
@@ -187,6 +181,14 @@ export default function LeaderboardTable({
                   <span className="text-[#39ff14] font-bold">${seasonWon.toLocaleString()}</span>
                 ) : (
                   <span className="text-gray-600">—</span>
+                )}
+              </td>
+              <td className="py-3 text-gray-400">
+                {streak?.closest_miss_score !== null &&
+                streak?.closest_miss_score !== undefined ? (
+                  `${streak.closest_miss_date ? fmtMD(streak.closest_miss_date) + ' — ' : ''}${streak.closest_miss_score} runs`
+                ) : (
+                  '—'
                 )}
               </td>
             </tr>

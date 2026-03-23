@@ -5,15 +5,10 @@ import Link from 'next/link'
 import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/mlb'
 import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
 import { getWeekNumber, getSeasonYear, getWinnersForWeek } from '@/lib/pot'
-import { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
-import { computeRookies } from '@/lib/rookies'
+import RankingsTabs, { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
 import PotBreakdown from '@/components/PotBreakdown'
 import LeaderboardTable, { type LeaderboardRow } from '@/components/LeaderboardTable'
 import LeagueDashboardHeader from '@/components/LeagueDashboardHeader'
-import LeagueTabs from '@/components/LeagueTabs'
-import LeagueExplainer from '@/components/LeagueExplainer'
-import ThirteenRunLore from '@/components/ThirteenRunLore'
-import TodayStrip, { type TodayEntry } from '@/components/TodayStrip'
 import WinCelebration, { type WinCelebrationPayout } from '@/components/WinCelebration'
 
 export const dynamic = 'force-dynamic'
@@ -163,29 +158,13 @@ export default async function LeagueDashboard({ params }: Props) {
     seasonStatsMap.set(p.member_id, existing)
   }
 
-  // leaderboardRows built below after historicalRaw is fetched (needed for rookie detection)
-
-  // Today in the League strip — one row per member
-  const todayEntries: TodayEntry[] = enrichedMembers.map(({ member, todayGame, todayProb }) => {
-    const teamAbbr = member.assigned_team.toUpperCase()
-    const isHome = todayGame
-      ? todayGame.teams.home.team.abbreviation === teamAbbr
-      : null
-    return {
-      memberName: member.name,
-      memberId: member.id,
-      team: teamAbbr,
-      gamePk: todayGame?.gamePk ?? null,
-      gameStatus: todayGame?.status.abstractGameState ?? null,
-      awayTeam: todayGame?.teams.away.team.abbreviation ?? null,
-      homeTeam: todayGame?.teams.home.team.abbreviation ?? null,
-      awayScore: todayGame?.teams.away.score ?? null,
-      homeScore: todayGame?.teams.home.score ?? null,
-      gameDate: todayGame?.gameDate ?? null,
-      todayProb,
-      isHome,
+  // Combine enriched member data with season stats for the leaderboard
+  const leaderboardRows: LeaderboardRow[] = enrichedMembers.map(
+    ({ member, streak, todayGame, todayProb }) => {
+      const ss = seasonStatsMap.get(member.id) ?? { wins: 0, totalWon: 0 }
+      return { member, streak, todayGame, todayProb, seasonWins: ss.wins, seasonWon: ss.totalWon }
     }
-  })
+  )
 
   // Historical results for rankings tabs
   const { data: historicalRaw } = await supabase
@@ -243,32 +222,6 @@ export default async function LeagueDashboard({ params }: Props) {
   const teamRankings: TeamEntry[] = Array.from(teamMap.values())
     .sort((a, b) => b.thirteenRunWeeks - a.thirteenRunWeeks)
 
-  // Compute rookies for the current season (needs historicalRaw)
-  const rookies = computeRookies(
-    (historicalRaw ?? []) as { member_name: string; year: number; total_won: number; shares: number }[],
-    (members ?? []) as { name: string }[],
-    seasonYear
-  )
-  const rookieNames = new Set(rookies.map((r) => r.name))
-  const rotyName = rookies.find((r) => r.isROTY)?.name ?? null
-
-  // Combine enriched member data with season stats for the leaderboard
-  const leaderboardRows: LeaderboardRow[] = enrichedMembers.map(
-    ({ member, streak, todayGame, todayProb }) => {
-      const ss = seasonStatsMap.get(member.id) ?? { wins: 0, totalWon: 0 }
-      return {
-        member,
-        streak,
-        todayGame,
-        todayProb,
-        seasonWins: ss.wins,
-        seasonWon: ss.totalWon,
-        isRookie: rookieNames.has(member.name),
-        isROTY: member.name === rotyName,
-      }
-    }
-  )
-
   // Closest misses — primary: distance to 13; tie-break: most recent date first
   const closestMisses = streaks
     ?.filter((s) => s.closest_miss_score !== null)
@@ -287,11 +240,11 @@ export default async function LeagueDashboard({ params }: Props) {
   const mostRecentArchiveYear = archiveYears.length > 0 ? archiveYears[archiveYears.length - 1] : null
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
       {winCelebrationPayout && (
         <WinCelebration payout={winCelebrationPayout} />
       )}
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+      <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
 
         {/* Header */}
         <LeagueDashboardHeader
@@ -300,46 +253,69 @@ export default async function LeagueDashboard({ params }: Props) {
           role={role}
         />
 
-        {/* Tabbed content — spreadsheet-style horizontal nav */}
-        <LeagueTabs
-          historicalRaw={(historicalRaw ?? []) as { member_name: string; team: string; year: number; total_won: number; shares: number }[]}
-          allTimeRankings={allTimeRankings}
-          teamRankings={teamRankings}
-          slug={slug}
-          currentYear={2026}
-        >
-          {/* ── 2026 tab content (server-rendered) ── */}
+        {/* Pot Breakdown */}
+        <PotBreakdown
+          members={members ?? []}
+          payments={currentWeekPayments ?? []}
+          currentWeek={currentWeekNumber}
+          weeklyBuyIn={league.weekly_buy_in ?? 10}
+          potTotal={league.pot_total ?? 0}
+          weekWinners={thisWeekWinners}
+          settledPayouts={currentWeekPayouts?.map((p) => ({
+            member_id: p.member_id,
+            payout_amount: p.payout_amount,
+          })) ?? []}
+        />
 
-          {/* Today in the League */}
-          <TodayStrip entries={todayEntries} slug={slug} />
+        {/* Leaderboard */}
+        <section>
+          <h2 className="text-lg font-bold mb-4">Leaderboard</h2>
+          <LeaderboardTable rows={leaderboardRows} slug={slug} />
+        </section>
 
-          {/* Pot Breakdown */}
-          <PotBreakdown
-            members={members ?? []}
-            payments={currentWeekPayments ?? []}
-            currentWeek={currentWeekNumber}
-            weeklyBuyIn={league.weekly_buy_in ?? 10}
-            potTotal={league.pot_total ?? 0}
-            weekWinners={thisWeekWinners}
-            settledPayouts={currentWeekPayouts?.map((p) => ({
-              member_id: p.member_id,
-              payout_amount: p.payout_amount,
-            })) ?? []}
-          />
+        {/* 13-Run History */}
+        {thirteenHistory && thirteenHistory.length > 0 && (
+          <section>
+            <h2 className="text-lg font-bold mb-4">13-Run History in this League</h2>
+            <div className="space-y-2">
+              {thirteenHistory.map((result) => (
+                <div
+                  key={`${result.game_date}-${result.home_team}`}
+                  className="flex items-center gap-3 text-sm rounded bg-white/[0.03] border border-white/[0.05] px-4 py-2"
+                >
+                  <span className="text-[#39ff14] font-bold text-lg">13</span>
+                  <span className="text-gray-400 font-mono">{result.game_date}</span>
+                  <span className="text-white">
+                    <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
+                    {' scored 13 — '}
+                    {result.away_team} @ {result.home_team}{' '}
+                    ({result.away_score}–{result.home_score})
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
-          {/* Rookie Race */}
-          {rookies.length > 0 && (
-            <section>
-              <h2 className="text-lg font-bold mb-3">🐣 Rookie Race</h2>
-              <div className="space-y-1.5">
-                {rookies.map((r, i) => (
-                  <div key={r.name} className="flex items-center gap-3 bg-[#111] rounded px-3 py-2 border border-[#1e1e1e]">
-                    <span className="text-gray-600 font-mono text-xs w-4">{i + 1}</span>
-                    <span className="text-white font-semibold text-sm flex-1">{r.name}</span>
-                    {r.isROTY && <span title="Rookie of the Year leader" className="text-xs">🏅</span>}
-                    <span className="text-[#39ff14] font-mono text-xs font-bold">
-                      {r.shares > 0 ? `${r.shares}W · $${r.totalWon.toLocaleString()}` : '—'}
-                    </span>
+        {/* Closest Miss Board */}
+        {closestMisses && closestMisses.length > 0 && (
+          <section>
+            <h2 className="text-lg font-bold mb-4">Closest Miss Board 💔</h2>
+            <div className="space-y-2">
+              {closestMisses.map((s) => {
+                const member = members?.find((m) => m.id === s.member_id)
+                const diff = Math.abs((s.closest_miss_score ?? 0) - 13)
+                return (
+                  <div
+                    key={s.member_id}
+                    className="flex items-center gap-3 text-sm rounded bg-white/[0.03] border border-white/[0.05] px-4 py-2"
+                  >
+                    {s.closest_miss_date && (
+                      <span className="text-gray-500 font-mono">{fmtMD(s.closest_miss_date)}</span>
+                    )}
+                    <span className="text-amber-400 font-bold">{s.closest_miss_score} runs</span>
+                    <span className="text-white">{member?.name ?? '—'} ({member?.assigned_team})</span>
+                    <span className="text-gray-600 ml-auto">— {diff === 1 ? 'one run away!' : `${diff} runs away`}</span>
                   </div>
                 ))}
               </div>

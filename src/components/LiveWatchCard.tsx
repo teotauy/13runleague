@@ -167,8 +167,25 @@ export default function LiveWatchCard({
     homeRuns === 12 &&
     awayRuns > homeRuns
 
+  // 4.6 — On Deck Alert: team has 10+ runs after the 7th inning
+  const awayOnDeck = inning >= 8 && awayRuns >= 10 && awayRuns < 13
+  const homeOnDeck = inning >= 8 && homeRuns >= 10 && homeRuns < 13
+  const onDeckTeams = [
+    awayOnDeck ? `${awayTeam} (${awayRuns})` : null,
+    homeOnDeck ? `${homeTeam} (${homeRuns})` : null,
+  ].filter(Boolean).join(' & ')
+  const isOnDeck = awayOnDeck || homeOnDeck
+
   const highProb = Math.max(awayProb ?? 0, homeProb ?? 0)
-  const isPulsing = highProb > 0.7
+  const isPulsing = highProb > 0.7 || isOnDeck
+
+  // Helper to format time since last update
+  const getTimeSinceLastUpdate = () => {
+    const now = new Date()
+    const seconds = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000)
+    if (seconds < 60) return `${seconds}s ago`
+    return `${Math.floor(seconds / 60)}m ago`
+  }
 
   // Helper to format time since last update
   const getTimeSinceLastUpdate = () => {
@@ -188,6 +205,20 @@ export default function LiveWatchCard({
       {error && (
         <div className="text-xs text-red-400 bg-red-950/30 rounded px-2 py-1">
           ⚠ {error}
+        </div>
+      )}
+
+      {/* 4.6 — On Deck Alert */}
+      {isOnDeck && !isWalkOffAlert && (
+        <div className="flex items-center gap-2 rounded bg-amber-950/40 border border-amber-800/50 px-3 py-2">
+          <span className="text-lg leading-none">🔔</span>
+          <div>
+            <span className="text-amber-300 font-bold text-sm">On Deck — </span>
+            <span className="text-amber-200 text-sm">
+              {onDeckTeams} after {inning - 1}
+            </span>
+            <span className="text-amber-600 text-xs ml-2">need {13 - Math.max(awayOnDeck ? awayRuns : 0, homeOnDeck ? homeRuns : 0)} more</span>
+          </div>
         </div>
       )}
 

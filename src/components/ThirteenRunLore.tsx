@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import YearChart from './YearChart'
 import MiniBar from './MiniBar'
+import { normalizeTeamAbbr } from '@/lib/teamColors'
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const
@@ -24,7 +25,8 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
   const franchiseMap = new Map<string, number>()
   for (const g of games) {
     if (g.winning_team) {
-      franchiseMap.set(g.winning_team, (franchiseMap.get(g.winning_team) ?? 0) + 1)
+      const team = normalizeTeamAbbr(g.winning_team)
+      franchiseMap.set(team, (franchiseMap.get(team) ?? 0) + 1)
     }
   }
   const franchiseRanked = [...franchiseMap.entries()].sort((a, b) => b[1] - a[1])
@@ -153,66 +155,40 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
       <div className="grid sm:grid-cols-2 gap-4 mb-4">
 
         {/* ── Home vs. Visitor ── */}
-        <div className="rounded-lg border border-gray-800 bg-[#111] p-4 flex flex-col">
+        <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">
             Home vs. Visitor
           </h3>
-          {(() => {
-            const R = 80, r = 52, cx = 100, cy = 100
-            const homeFrac = hvTotal > 0 ? homeWins / hvTotal : 0.5
-            const startAngle = Math.PI // 9 o'clock — home sweeps counter-clockwise through the bottom
-            const angle = startAngle - homeFrac * 2 * Math.PI
-            const homeX1 = cx + R * Math.cos(startAngle), homeY1 = cy + R * Math.sin(startAngle)
-            const homeX2 = cx + R * Math.cos(angle),      homeY2 = cy + R * Math.sin(angle)
-            const iX1  = cx + r * Math.cos(startAngle),   iY1  = cy + r * Math.sin(startAngle)
-            const iX2  = cx + r * Math.cos(angle),        iY2  = cy + r * Math.sin(angle)
-            const large = homeFrac > 0.5 ? 1 : 0
-            return (
-              <div className="flex flex-col items-center gap-4 flex-1 justify-between">
-                {/* Donut */}
-                <svg viewBox="0 0 200 200" className="w-48 h-48">
-                  <circle cx={cx} cy={cy} r={R} fill="#92400e" />
-                  <circle cx={cx} cy={cy} r={r} fill="#111" />
-                  <path
-                    d={`M ${homeX1.toFixed(2)} ${homeY1.toFixed(2)} A ${R} ${R} 0 ${large} 0 ${homeX2.toFixed(2)} ${homeY2.toFixed(2)} L ${iX2.toFixed(2)} ${iY2.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${iX1.toFixed(2)} ${iY1.toFixed(2)} Z`}
-                    fill="#39ff14"
-                  />
-                  <text x={cx} y={cy - 8} textAnchor="middle" fill="white" fontSize="18" fontWeight="900" fontFamily="monospace">{homePct}%</text>
-                  <text x={cx} y={cy + 10} textAnchor="middle" fill="#6b7280" fontSize="11" fontFamily="monospace">HOME</text>
-                  <text x={cx} y={cy + 24} textAnchor="middle" fill="#374151" fontSize="9" fontFamily="monospace">{(100 - homePct)}% away</text>
-                </svg>
-
-                {/* Legend + copy */}
-                <div className="w-full space-y-3">
-                  <div className="flex justify-around text-center">
-                    <div>
-                      <div className="flex items-center gap-1.5 justify-center mb-0.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#39ff14] inline-block" />
-                        <span className="text-xs text-gray-400 font-mono">Home</span>
-                      </div>
-                      <div className="text-lg font-black text-[#39ff14]">{homeWins.toLocaleString()}</div>
-                    </div>
-                    <div className="w-px bg-gray-800" />
-                    <div>
-                      <div className="flex items-center gap-1.5 justify-center mb-0.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-800 inline-block" />
-                        <span className="text-xs text-gray-400 font-mono">Away</span>
-                      </div>
-                      <div className="text-lg font-black text-amber-600">{awayWins.toLocaleString()}</div>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-600 text-center">
-                    {homeWins > awayWins
-                      ? 'Home field advantage is real.'
-                      : homeWins < awayWins
-                      ? 'Road rage is real.'
-                      : 'Dead even.'}
-                    {' '}{hvTotal.toLocaleString()} games tracked.
-                  </p>
-                </div>
+          <div className="flex items-end gap-6 mb-4">
+            <div className="text-center flex-1">
+              <div className="text-4xl font-black text-[#39ff14] tabular-nums">
+                {homeWins.toLocaleString()}
               </div>
-            )
-          })()}
+              <div className="text-xs text-gray-500 mt-1">Home</div>
+            </div>
+            <div className="text-gray-700 text-base font-mono pb-3">vs</div>
+            <div className="text-center flex-1">
+              <div className="text-4xl font-black text-amber-400 tabular-nums">
+                {awayWins.toLocaleString()}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Visitor</div>
+            </div>
+          </div>
+          <div className="w-full h-2 rounded-full overflow-hidden flex">
+            <div className="bg-[#39ff14] h-full transition-all" style={{ width: `${homePct}%` }} />
+            <div className="bg-amber-900 h-full flex-1" />
+          </div>
+          <div className="flex justify-between text-xs text-gray-600 mt-1.5">
+            <span>{homePct}% home</span>
+            <span>{100 - homePct}% away</span>
+          </div>
+          {homeWins !== awayWins && (
+            <p className="text-xs text-gray-700 mt-3">
+              {homeWins > awayWins
+                ? 'Home teams score 13 more — home field is real'
+                : 'Visitors score 13 more — road rage is real'}
+            </p>
+          )}
         </div>
 
         {/* ── By Month ── */}

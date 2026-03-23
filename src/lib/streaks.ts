@@ -33,45 +33,40 @@ function globalWeek(year: number, week: number): number {
 /**
  * Recalculate streak data for all members of a league and write to the streaks table.
  *
- * Wins are sourced from historical_results (member_name, year, week_wins[]) which
- * is the authoritative record — payouts rows may not exist for older seasons.
- *
  * current_streak = weeks since the member's team last scored 13 — spans seasons.
+ *                  A member who won the final week of last season will have a small
+ *                  drought (just the offseason weeks), not a reset to zero.
  * longest_streak = longest consecutive winless run within the given season year.
  * closest_miss   = the game (in the given season year) where the member's team
- *                  came closest to 13 without actually hitting it (all games, not
- *                  just games where the opponent scored 13).
+ *                  came closest to 13 without hitting it.
+ *
+ * The `year` parameter is used only for the closest-miss window and the
+ * longest-drought-within-season calc.  The cross-season drought uses all years.
  */
 export async function recalculateStreaks(
   leagueId: string,
   year: number,
   supabase: SupabaseClient
 ): Promise<void> {
-  // 1. Members in this league (need both id and name)
+  // 1. Members in this league
   const { data: members } = await supabase
     .from('members')
-    .select('id, name, assigned_team')
+    .select('id, assigned_team')
     .eq('league_id', leagueId)
 
   if (!members || members.length === 0) return
 
-  // 2. ALL historical_results rows for this league (all years, all members)
-  //    historical_results has: member_name, year, week_wins (int[])
-  const { data: allHistory } = await supabase
-    .from('historical_results')
-    .select('member_name, year, week_wins')
+  // 2. ALL payouts across ALL years (for cross-season drought)
+  const { data: allPayouts } = await supabase
+    .from('payouts')
+    .select('member_id, week_number, year')
     .eq('league_id', leagueId)
 
-  // Build per-member-name win list: { year, week }[]
-  const winsByName = new Map<string, Array<{ year: number; week: number }>>()
-  for (const row of allHistory ?? []) {
-    const name = row.member_name as string
-    const rowYear = row.year as number
-    const weekWins = (row.week_wins as number[] | null) ?? []
-    if (!winsByName.has(name)) winsByName.set(name, [])
-    for (const w of weekWins) {
-      winsByName.get(name)!.push({ year: rowYear, week: w })
-    }
+  // Build per-member win list
+  const winsByMember = new Map<string, Array<{ year: number; week: number }>>()
+  for (const p of allPayouts ?? []) {
+    if (!winsByMember.has(p.member_id)) winsByMember.set(p.member_id, [])
+    winsByMember.get(p.member_id)!.push({ year: p.year, week: p.week_number })
   }
 
   // 3. Current position in time (handles preseason correctly)
@@ -86,13 +81,15 @@ export async function recalculateStreaks(
   const neverWonDrought = currentGlobal  // = weeks since the very beginning
 
   // Determine elapsed weeks in the given season year (for longest-drought-this-season)
-  const today2 = new Date()
-  const calYear           = today2.getFullYear()
-  const isOffseason       = today2 < new Date(calYear, 3, 1)  // before April 1 of this calendar year
-  const currentSeasonYear = getSeasonYear(today2)
+  const seasonStart       = new Date(year, 3, 1)  // April 1
+  const currentSeasonYear = getSeasonYear(today)
+  // If we're viewing a completed season (year < currentSeasonYear, or year === currentSeasonYear
+  // but we're already in the offseason), treat it as a full 28-week season.
+  const isPreseason       = today < seasonStart
+  const calYear           = today.getFullYear()
+  const isOffseason       = today < new Date(calYear, 3, 1)  // before April 1 of this calendar year
   const seasonIsComplete  = year < currentSeasonYear || (year === currentSeasonYear && isOffseason)
-  const weeksInYear       = seasonIsComplete ? SEASON_WEEKS : Math.min(getWeekNumber(today2), SEASON_WEEKS)
-  const isPreseason       = today2 < new Date(year, 3, 1)
+  const weeksInYear       = seasonIsComplete ? SEASON_WEEKS : Math.min(getWeekNumber(today), SEASON_WEEKS)
 
   // Season date window for closest-miss query
   const seasonStartStr = `${year}-04-01`
@@ -101,8 +98,7 @@ export async function recalculateStreaks(
   // 4. Compute per-member data
   const upserts: StreakUpsert[] = await Promise.all(
     members.map(async (member) => {
-      // Match wins by member name (historical_results doesn't have member_id)
-      const wins = winsByName.get(member.name) ?? []
+      const wins = winsByMember.get(member.id) ?? []
 
       // ── Cross-season drought ───────────────────────────────────────────────
       let drought: number
@@ -133,20 +129,17 @@ export async function recalculateStreaks(
       }
 
       // ── Closest miss (current season) ─────────────────────────────────────
-      // Query ALL games where the member's team played — find the score closest
-      // to 13 that wasn't actually 13 (i.e. they didn't win that week).
       const teamAbbr = member.assigned_team?.toUpperCase() ?? ''
-      const winWeeksThisYearSet = new Set(
-        wins.filter((w) => w.year === year).map((w) => w.week)
-      )
 
       const { data: teamGames } = teamAbbr
         ? await supabase
             .from('game_results')
-            .select('game_date, home_team, away_team, home_score, away_score')
+            .select('game_date, home_team, away_team, home_score, away_score, winning_team')
+            .eq('was_thirteen', true)
             .gte('game_date', seasonStartStr)
             .lte('game_date', seasonEndStr)
             .or(`home_team.eq.${teamAbbr},away_team.eq.${teamAbbr}`)
+            .neq('winning_team', teamAbbr)
         : { data: [] }
 
       let closestMissScore: number | null = null
@@ -159,7 +152,6 @@ export async function recalculateStreaks(
             ? (game.home_score as number | null)
             : (game.away_score as number | null)
         if (myScore === null || myScore === undefined) continue
-        if (myScore === 13) continue  // that's a win, not a miss
 
         const dist = Math.abs(myScore - 13)
         if (

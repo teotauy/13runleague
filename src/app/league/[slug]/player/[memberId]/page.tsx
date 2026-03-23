@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import { computeRookies } from '@/lib/rookies'
 
 interface Props {
   params: Promise<{ slug: string; memberId: string }>
@@ -187,28 +186,7 @@ export default async function PlayerPage({ params }: Props) {
   const isIronman =
     allLeagueYears.length > 0 && allLeagueYears.every((y) => yearsPlayed.includes(y))
 
-  // ── ROTY years ──────────────────────────────────────────────────────────────
-  const leagueStartYear = allLeagueYears.length > 0 ? Math.min(...allLeagueYears) : 0
-
-  const rotyYears: number[] = []
-  for (const yr of yearsPlayed) {
-    if (yr === leagueStartYear) continue
-    // Members who played that year
-    const membersThisYear = (allLeagueHistorical ?? [])
-      .filter((r) => r.year === yr)
-      .map((r) => ({ name: r.member_name }))
-    const rookiesThisYear = computeRookies(
-      allLeagueHistorical ?? [],
-      membersThisYear,
-      yr
-    )
-    const roty = rookiesThisYear.find((r) => r.isROTY)
-    if (roty?.name === member.name) rotyYears.push(yr)
-  }
-  rotyYears.sort((a, b) => a - b)
-  const isROTY = rotyYears.length > 0
-
-  const hasAchievements = ledInMoney.length > 0 || ledInWins.length > 0 || ledInWar.length > 0 || isIronman || isROTY
+  const hasAchievements = ledInMoney.length > 0 || ledInWins.length > 0 || ledInWar.length > 0 || isIronman
 
   // Season circles (chronological)
   const seasonCircles = [...deduped]
@@ -239,7 +217,7 @@ export default async function PlayerPage({ params }: Props) {
   }))
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
       <div className="max-w-4xl mx-auto px-4 py-8">
 
         {/* ── Header ─────────────────────────────────────────────────────────── */}
@@ -302,15 +280,9 @@ export default async function PlayerPage({ params }: Props) {
                     🏟️ Ironman
                   </span>
                 )}
-                {rotyYears.map((yr) => (
-                  <span key={`roty-${yr}`} className="px-2 py-1 rounded text-xs font-semibold bg-[#1a1a1a] border border-yellow-700/40 text-yellow-400" title={`Rookie of the Year ${yr}`}>
-                    🏅 Rookie of the Year {yr}
-                  </span>
-                ))}
               </div>
             )}
           </div>
-
 
           {/* Season circles — like BBRef jersey-number badges */}
           {seasonCircles.length > 0 && (
@@ -324,7 +296,7 @@ export default async function PlayerPage({ params }: Props) {
                           ? `${year} ${team}: ${wins}W — $${won.toLocaleString()}${ledMoney ? ' 💰 Led league in $$$' : ledWins ? ' 🏆 Led league in wins' : ''}`
                           : `${year} ${team}: no wins`
                       }
-                      className={`w-14 h-14 rounded-full flex items-center justify-center text-center text-[11px] font-bold font-mono border-2 transition-colors ${
+                      className={`w-14 h-14 rounded-full flex items-center justify-center text-[11px] font-bold font-mono border-2 transition-colors ${
                         ledMoney
                           ? 'border-[#39ff14] text-[#39ff14] bg-[#39ff14]/10'
                           : ledWins
@@ -352,7 +324,7 @@ export default async function PlayerPage({ params }: Props) {
         </header>
 
         {/* ── Career Stats ───────────────────────────────────────────────────── */}
-        <section className="rounded-lg border border-gray-800 bg-[#111] p-6 mb-8">
+        <section className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-6 mb-8">
           <h2 className="text-lg font-bold mb-4">Career Stats</h2>
           <div className="grid grid-cols-3 gap-6">
             <StatBlock label="Total Won" value={`$${careerStats.totalWon.toLocaleString()}`} />
@@ -361,28 +333,27 @@ export default async function PlayerPage({ params }: Props) {
           </div>
         </section>
 
-        {/* ── Drought Tracker ────────────────────────────────────────────────── */}
+        {/* ── Active Streak (2026) ───────────────────────────────────────────── */}
         {activeStreak && (
-          <section className="rounded-lg border border-gray-800 bg-[#111] p-6 mb-8">
-            <h2 className="text-lg font-bold mb-4">Drought Tracker</h2>
-            <div className="grid grid-cols-2 gap-6">
-              <StatBlock
-                label="Current Drought"
-                value={`${activeStreak.current_streak ?? 0}W`}
-                subtitle="weeks since last win"
-              />
-              <StatBlock
-                label="Longest Drought"
-                value={`${activeStreak.longest_streak ?? 0}W`}
-                subtitle="worst run in a season"
-              />
+          <section className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-6 mb-8">
+            <h2 className="text-lg font-bold mb-4">Current Season (2026)</h2>
+            <div className="grid grid-cols-3 gap-6">
+              <StatBlock label="Current Streak" value={String(activeStreak.current_streak ?? 0)} />
+              <StatBlock label="Longest Streak" value={String(activeStreak.longest_streak ?? 0)} />
+              {activeStreak.closest_miss_score !== null && (
+                <StatBlock
+                  label="Closest Miss"
+                  value={`${activeStreak.closest_miss_score} runs`}
+                  subtitle={activeStreak.closest_miss_date ? `(${activeStreak.closest_miss_date})` : undefined}
+                />
+              )}
             </div>
           </section>
         )}
 
         {/* ── By Season table ────────────────────────────────────────────────── */}
         {historicalByYear.length > 0 && (
-          <section className="rounded-lg border border-gray-800 bg-[#111] p-6">
+          <section className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-6">
             <h2 className="text-lg font-bold mb-4">By Season</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm font-mono">
@@ -398,7 +369,7 @@ export default async function PlayerPage({ params }: Props) {
                   {historicalByYear.map((row) => (
                     <tr
                       key={row.year}
-                      className={`border-b border-gray-900 hover:bg-[#0a0a0a] ${
+                      className={`border-b border-gray-900 hover:bg-white/[0.02] ${
                         row.ledMoney || row.ledWins ? 'bg-[#0d120a]' : ''
                       }`}
                     >
@@ -447,7 +418,7 @@ function StatBlock({
 }) {
   return (
     <div>
-      <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{label}</div>
+      <div className="section-label mb-1">{label}</div>
       <div className="text-3xl font-black text-[#39ff14]">{value}</div>
       {subtitle && <div className="text-xs text-gray-600 mt-1">{subtitle}</div>}
     </div>
