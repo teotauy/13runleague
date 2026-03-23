@@ -11,6 +11,7 @@ import {
   type LiveGameState,
   type AlertTier,
 } from '@/lib/probability'
+import Tooltip from './Tooltip'
 
 interface CollapsibleGameCardProps {
   gamePk: number
@@ -195,29 +196,45 @@ export default function CollapsibleGameCard(props: CollapsibleGameCardProps) {
 
           {/* 4.5 — live conditional probability badge */}
           {liveProb !== null && !hit13 && (
-            <span
-              className="text-xs font-mono font-bold px-1.5 py-0.5 rounded border"
-              style={{
-                color: liveProb > 0.65
-                  ? '#ef4444'
-                  : liveProb > 0.40 ? '#f97316' : '#eab308',
-                borderColor: liveProb > 0.65
-                  ? 'rgba(239,68,68,0.3)'
-                  : liveProb > 0.40 ? 'rgba(249,115,22,0.3)' : 'rgba(234,179,8,0.3)',
-                backgroundColor: liveProb > 0.65
-                  ? 'rgba(239,68,68,0.08)'
-                  : liveProb > 0.40 ? 'rgba(249,115,22,0.08)' : 'rgba(234,179,8,0.08)',
-              }}
+            <Tooltip
+              label="Live Probability"
+              explanation={`Given ${liveProbTeam}'s current score and inning, there's a ${(liveProb * 100).toFixed(0)}% chance they finish with exactly 13 runs. Updates every inning.`}
             >
-              {liveProbTeam} {(liveProb * 100).toFixed(0)}%
-            </span>
+              <span
+                className="text-xs font-mono font-bold px-1.5 py-0.5 rounded border"
+                style={{
+                  color: liveProb > 0.65
+                    ? '#ef4444'
+                    : liveProb > 0.40 ? '#f97316' : '#eab308',
+                  borderColor: liveProb > 0.65
+                    ? 'rgba(239,68,68,0.3)'
+                    : liveProb > 0.40 ? 'rgba(249,115,22,0.3)' : 'rgba(234,179,8,0.3)',
+                  backgroundColor: liveProb > 0.65
+                    ? 'rgba(239,68,68,0.08)'
+                    : liveProb > 0.40 ? 'rgba(249,115,22,0.08)' : 'rgba(234,179,8,0.08)',
+                }}
+              >
+                {liveProbTeam} {(liveProb * 100).toFixed(0)}%
+              </span>
+            </Tooltip>
           )}
 
-          {/* Pre-game probability (Preview games only) */}
-          {!hasScore && (
-            <span className="font-mono text-sm font-bold" style={{ color }}>
-              {pct}%
-            </span>
+          {/* Probability — show whenever no live conditional prob and game isn't over */}
+          {liveProb === null && !hit13 && !isFinal && (
+            <Tooltip
+              label="P(13)"
+              explanation={[
+                `${pct}% chance either team scores exactly 13 runs in this game.`,
+                'Based on recent scoring rates, pitcher ERA, and ballpark. 13 runs happens in roughly 1 in 200–500 games.',
+              ]}
+            >
+              <span
+                className="font-mono text-sm font-bold"
+                style={{ color: isLive ? 'rgba(255,255,255,0.45)' : color }}
+              >
+                {pct}%
+              </span>
+            </Tooltip>
           )}
         </div>
       </div>

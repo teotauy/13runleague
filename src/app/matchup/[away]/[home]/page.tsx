@@ -66,7 +66,7 @@ export default async function MatchupPage({ params }: Props) {
   const thirteenCount = thirteenGames?.length ?? 0
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
 
         {/* Header */}
@@ -124,7 +124,7 @@ export default async function MatchupPage({ params }: Props) {
               {thirteenGames!.map((g) => (
                 <div
                   key={g.id}
-                  className="flex items-center gap-3 text-sm rounded bg-[#111] border border-gray-900 px-4 py-2 font-mono"
+                  className="flex items-center gap-3 text-sm rounded bg-white/[0.03] border border-white/[0.05] px-4 py-2 font-mono"
                 >
                   <span className="text-[#39ff14] font-bold">13</span>
                   <span className="text-gray-400">{g.game_date}</span>
@@ -161,7 +161,7 @@ export default async function MatchupPage({ params }: Props) {
 
 function StatCard({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="rounded bg-[#111] border border-gray-900 p-4">
+    <div className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-4">
       <div className="text-xs text-gray-500 mb-1">{label}</div>
       <div className={`text-2xl font-black font-mono ${highlight ? 'text-[#39ff14]' : 'text-white'}`}>
         {value}

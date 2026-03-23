@@ -223,6 +223,75 @@ function normalizeGame(raw: Record<string, unknown>): MLBGame {
 }
 
 // ---------------------------------------------------------------------------
+// On This Day — historical 13-run games
+// ---------------------------------------------------------------------------
+
+export interface OnThisDayGame {
+  year: number
+  date: string // YYYY-MM-DD
+  awayTeam: string
+  homeTeam: string
+  awayScore: number
+  homeScore: number
+  thirteenTeam: string // which team(s) scored 13
+}
+
+/**
+ * Fetches all MLB games on today's calendar date (MM-DD) from 2000 through
+ * the previous completed season where any team scored exactly 13 runs.
+ * Results are cached indefinitely since historical data never changes.
+ */
+export async function fetchOnThisDayThirteens(monthDay: string): Promise<OnThisDayGame[]> {
+  const currentYear = new Date().getFullYear()
+  const years = Array.from({ length: currentYear - 2000 }, (_, i) => 2000 + i)
+
+  const results = await Promise.allSettled(
+    years.map(async (year) => {
+      const date = `${year}-${monthDay}`
+      const url = `${MLB_API}/api/v1/schedule?sportId=1&date=${date}&hydrate=linescore,team`
+      const res = await fetch(url, { cache: 'force-cache' })
+      if (!res.ok) return []
+
+      const data = await res.json()
+      const games: OnThisDayGame[] = []
+
+      for (const dateEntry of data.dates ?? []) {
+        for (const game of dateEntry.games ?? []) {
+          if (game.status?.abstractGameState !== 'Final') continue
+          const away = game.teams?.away
+          const home = game.teams?.home
+          const awayScore = away?.score ?? away?.linescore?.teams?.away?.runs
+          const homeScore = home?.score ?? home?.linescore?.teams?.home?.runs
+          if (awayScore == null || homeScore == null) continue
+          if (awayScore !== 13 && homeScore !== 13) continue
+
+          const thirteenTeams = [
+            awayScore === 13 ? away.team?.abbreviation : null,
+            homeScore === 13 ? home.team?.abbreviation : null,
+          ].filter(Boolean).join(' & ')
+
+          games.push({
+            year,
+            date,
+            awayTeam: away.team?.abbreviation ?? '???',
+            homeTeam: home.team?.abbreviation ?? '???',
+            awayScore,
+            homeScore,
+            thirteenTeam: thirteenTeams,
+          })
+        }
+      }
+
+      return games
+    })
+  )
+
+  return results
+    .flatMap((r) => (r.status === 'fulfilled' ? r.value : []))
+    .sort((a, b) => b.year - a.year)
+}
+
+// ---------------------------------------------------------------------------
 // Live feed
 // ---------------------------------------------------------------------------
 

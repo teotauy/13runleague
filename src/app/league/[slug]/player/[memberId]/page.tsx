@@ -217,7 +217,7 @@ export default async function PlayerPage({ params }: Props) {
   }))
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
       <div className="max-w-4xl mx-auto px-4 py-8">
 
         {/* ── Header ─────────────────────────────────────────────────────────── */}
@@ -324,7 +324,7 @@ export default async function PlayerPage({ params }: Props) {
         </header>
 
         {/* ── Career Stats ───────────────────────────────────────────────────── */}
-        <section className="rounded-lg border border-gray-800 bg-[#111] p-6 mb-8">
+        <section className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-6 mb-8">
           <h2 className="text-lg font-bold mb-4">Career Stats</h2>
           <div className="grid grid-cols-3 gap-6">
             <StatBlock label="Total Won" value={`$${careerStats.totalWon.toLocaleString()}`} />
@@ -335,7 +335,7 @@ export default async function PlayerPage({ params }: Props) {
 
         {/* ── Active Streak (2026) ───────────────────────────────────────────── */}
         {activeStreak && (
-          <section className="rounded-lg border border-gray-800 bg-[#111] p-6 mb-8">
+          <section className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-6 mb-8">
             <h2 className="text-lg font-bold mb-4">Current Season (2026)</h2>
             <div className="grid grid-cols-3 gap-6">
               <StatBlock label="Current Streak" value={String(activeStreak.current_streak ?? 0)} />
@@ -353,7 +353,7 @@ export default async function PlayerPage({ params }: Props) {
 
         {/* ── By Season table ────────────────────────────────────────────────── */}
         {historicalByYear.length > 0 && (
-          <section className="rounded-lg border border-gray-800 bg-[#111] p-6">
+          <section className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-6">
             <h2 className="text-lg font-bold mb-4">By Season</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm font-mono">
@@ -369,7 +369,7 @@ export default async function PlayerPage({ params }: Props) {
                   {historicalByYear.map((row) => (
                     <tr
                       key={row.year}
-                      className={`border-b border-gray-900 hover:bg-[#0a0a0a] ${
+                      className={`border-b border-gray-900 hover:bg-white/[0.02] ${
                         row.ledMoney || row.ledWins ? 'bg-[#0d120a]' : ''
                       }`}
                     >
@@ -418,7 +418,7 @@ function StatBlock({
 }) {
   return (
     <div>
-      <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{label}</div>
+      <div className="section-label mb-1">{label}</div>
       <div className="text-3xl font-black text-[#39ff14]">{value}</div>
       {subtitle && <div className="text-xs text-gray-600 mt-1">{subtitle}</div>}
     </div>

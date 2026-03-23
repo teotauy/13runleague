@@ -88,7 +88,7 @@ export default async function HistoryPage() {
     .sort((a, b) => b.year - a.year)
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         <header>
           <a href="/" className="text-gray-600 text-sm hover:text-gray-400 mb-4 inline-block">← Dashboard</a>
@@ -111,7 +111,7 @@ export default async function HistoryPage() {
           {teamsSorted.map(([team, teamGames]) => (
             <div
               key={team}
-              className="rounded bg-[#111] border border-gray-900 p-3 text-center"
+              className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-3 text-center"
             >
               <div className="text-xs text-gray-500 font-mono">{team}</div>
               <div className="text-2xl font-black text-[#39ff14] mt-1">
@@ -140,7 +140,7 @@ export default async function HistoryPage() {
               </thead>
               <tbody>
                 {(games ?? []).map((g) => (
-                  <tr key={g.id} className="border-b border-gray-900 hover:bg-[#111]">
+                  <tr key={g.id} className="border-b border-gray-900 hover:bg-white/[0.03]">
                     <td className="py-2 pr-4 text-gray-400">{g.game_date}</td>
                     <td className="py-2 pr-4 text-gray-300">
                       <a

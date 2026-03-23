@@ -96,7 +96,7 @@ export default async function TeamPage({ params }: Props) {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
 
       {/* Team color header banner */}
       <div style={{ backgroundColor: teamInfo.primaryColor }}>
@@ -138,7 +138,7 @@ export default async function TeamPage({ params }: Props) {
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
         {total === 0 ? (
-          <div className="rounded border border-gray-800 bg-[#111] px-6 py-16 text-center space-y-2">
+          <div className="rounded-xl bg-white/[0.025] border border-white/[0.07] px-6 py-16 text-center space-y-2">
             <div className="text-gray-500 font-mono text-lg">No 13-run games on record</div>
             <div className="text-gray-700 text-sm">
               Data sourced from Retrosheet — some historical records may be incomplete.
@@ -151,20 +151,20 @@ export default async function TeamPage({ params }: Props) {
           <>
             {/* Quick-stat pills */}
             <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1.5 rounded-full bg-[#111] border border-gray-800 text-xs font-mono">
+              <span className="px-3 py-1.5 rounded-full bg-white/[0.025] border border-white/[0.07] text-xs font-mono">
                 🏠 Home: <span className="text-white font-bold">{homeCount}</span>
               </span>
-              <span className="px-3 py-1.5 rounded-full bg-[#111] border border-gray-800 text-xs font-mono">
+              <span className="px-3 py-1.5 rounded-full bg-white/[0.025] border border-white/[0.07] text-xs font-mono">
                 ✈️ Away: <span className="text-white font-bold">{awayCount}</span>
               </span>
               {peakYearEntry[0] > 0 && (
-                <span className="px-3 py-1.5 rounded-full bg-[#111] border border-gray-800 text-xs font-mono">
+                <span className="px-3 py-1.5 rounded-full bg-white/[0.025] border border-white/[0.07] text-xs font-mono">
                   📈 Peak: <span className="text-[#39ff14] font-bold">{peakYearEntry[0]}</span>{' '}
                   ({peakYearEntry[1]} games)
                 </span>
               )}
               {peakMonth && (
-                <span className="px-3 py-1.5 rounded-full bg-[#111] border border-gray-800 text-xs font-mono">
+                <span className="px-3 py-1.5 rounded-full bg-white/[0.025] border border-white/[0.07] text-xs font-mono">
                   📅 Hot month: <span className="text-white font-bold">{peakMonth}</span>
                 </span>
               )}
@@ -172,7 +172,7 @@ export default async function TeamPage({ params }: Props) {
 
             {/* By Year chart */}
             {yearOrdered.length >= 2 && (
-              <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
+              <div className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-4">
                 <YearChart
                   yearData={yearOrdered}
                   minYr={firstYear!}
@@ -188,8 +188,8 @@ export default async function TeamPage({ params }: Props) {
             <div className="grid sm:grid-cols-2 gap-4">
 
               {/* By Month */}
-              <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
+              <div className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-4">
+                <h3 className="section-label mb-1">
                   By Month
                 </h3>
                 <p className="text-xs text-gray-600 mb-3">
@@ -211,8 +211,8 @@ export default async function TeamPage({ params }: Props) {
               </div>
 
               {/* Home vs Away */}
-              <div className="rounded-lg border border-gray-800 bg-[#111] p-4">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">
+              <div className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-4">
+                <h3 className="section-label mb-4">
                   Home vs. Away
                 </h3>
                 <div className="flex items-end gap-6 mb-4">
@@ -275,7 +275,7 @@ export default async function TeamPage({ params }: Props) {
                       const myScore = isHome ? g.home_score : g.away_score
                       const oppScore = isHome ? g.away_score : g.home_score
                       return (
-                        <tr key={`${g.game_date}-${g.home_team}`} className="border-b border-gray-900 hover:bg-[#111]">
+                        <tr key={`${g.game_date}-${g.home_team}`} className="border-b border-gray-900 hover:bg-white/[0.03]">
                           <td className="py-2 pr-4 text-gray-400">{g.game_date}</td>
                           <td className="py-2 pr-4">
                             <Link

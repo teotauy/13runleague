@@ -80,7 +80,7 @@ export default async function AdminDashboard({ params }: Props) {
   })) ?? []
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-10">
         {/* Header */}
         <header>

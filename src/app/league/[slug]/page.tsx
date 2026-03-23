@@ -225,7 +225,7 @@ export default async function LeagueDashboard({ params }: Props) {
     .slice(0, 5)
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
       {winCelebrationPayout && (
         <WinCelebration payout={winCelebrationPayout} />
       )}
@@ -266,7 +266,7 @@ export default async function LeagueDashboard({ params }: Props) {
               {thirteenHistory.map((result) => (
                 <div
                   key={`${result.game_date}-${result.home_team}`}
-                  className="flex items-center gap-3 text-sm rounded bg-[#111] border border-gray-900 px-4 py-2"
+                  className="flex items-center gap-3 text-sm rounded bg-white/[0.03] border border-white/[0.05] px-4 py-2"
                 >
                   <span className="text-[#39ff14] font-bold text-lg">13</span>
                   <span className="text-gray-400 font-mono">{result.game_date}</span>
@@ -293,7 +293,7 @@ export default async function LeagueDashboard({ params }: Props) {
                 return (
                   <div
                     key={s.member_id}
-                    className="flex items-center gap-3 text-sm rounded bg-[#111] border border-gray-900 px-4 py-2"
+                    className="flex items-center gap-3 text-sm rounded bg-white/[0.03] border border-white/[0.05] px-4 py-2"
                   >
                     {s.closest_miss_date && (
                       <span className="text-gray-500 font-mono">{fmtMD(s.closest_miss_date)}</span>

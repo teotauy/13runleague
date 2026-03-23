@@ -9,6 +9,7 @@ const MLB_TEAMS = [
   { abbr: 'BAL', name: 'Baltimore Orioles' },
   { abbr: 'BOS', name: 'Boston Red Sox' },
   { abbr: 'CHC', name: 'Chicago Cubs' },
+  { abbr: 'CIN', name: 'Cincinnati Reds' },
   { abbr: 'CWS', name: 'Chicago White Sox' },
   { abbr: 'CLE', name: 'Cleveland Guardians' },
   { abbr: 'COL', name: 'Colorado Rockies' },
