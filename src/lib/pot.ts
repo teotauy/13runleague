@@ -40,7 +40,7 @@ export function getWeekNumber(date: Date, seasonStartMonth: number = 4): number 
  * Get the current year for the season
  * If date is before April 1, return previous year
  */
-export function getSeasonYear(date: Date, seasonStartMonth: number = 4): number {
+export function getSeasonYear(date: Date, seasonStartMonth: number = 3): number {
   const year = date.getFullYear()
   const seasonStart = new Date(year, seasonStartMonth - 1, 1)
 
