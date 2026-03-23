@@ -32,6 +32,25 @@ export async function PATCH(
     const nameChanged = body.name && body.name.trim() !== current.name
 
     if (nameChanged) {
+      // Guard: reject if another member in this league already has the target name
+      const { data: duplicate } = await supabase
+        .from('members')
+        .select('id, name')
+        .eq('league_id', current.league_id)
+        .ilike('name', body.name.trim())
+        .neq('id', memberId)
+        .maybeSingle()
+
+      if (duplicate) {
+        return NextResponse.json(
+          {
+            error: `"${duplicate.name}" already exists in this league.`,
+            details: `To distinguish two people with the same name, use a nickname or middle initial — e.g. "Chris W." or "Chris Williams Jr."`,
+          },
+          { status: 409 }
+        )
+      }
+
       // Atomic rename — updates members + historical_results in one transaction
       const { error: renameError } = await supabase.rpc('rename_member', {
         p_member_id: memberId,

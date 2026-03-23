@@ -26,6 +26,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const body = await req.json()
 
   try {
+    // Guard: reject if a member with this name already exists in this league
+    const { data: duplicate } = await supabase
+      .from('members')
+      .select('id, name')
+      .eq('league_id', league.id)
+      .ilike('name', (body.name ?? '').trim())
+      .maybeSingle()
+
+    if (duplicate) {
+      return NextResponse.json(
+        {
+          error: `"${duplicate.name}" already exists in this league.`,
+          details: `To add a second person with the same name, use a nickname or middle initial — e.g. "Chris W." or "Chris Williams Jr."`,
+        },
+        { status: 409 }
+      )
+    }
+
     const { data, error } = await supabase
       .from('members')
       .insert({

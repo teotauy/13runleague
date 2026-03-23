@@ -72,9 +72,21 @@ export default async function AdminDashboard({ params }: Props) {
   // Base member fetch — always safe (uses original schema columns only)
   const { data: members } = await supabase
     .from('members')
-    .select('id, name, assigned_team, phone, email, is_active')
+    .select('id, name, assigned_team, phone, email')
     .eq('league_id', league.id)
     .order('name')
+
+  // Optional is_active column — added in migration 20260317000000
+  // Gracefully returns null if the migration hasn't been run in production yet
+  const { data: activeData } = await supabase
+    .from('members')
+    .select('id, is_active')
+    .eq('league_id', league.id)
+
+  const membersWithActive = (members ?? []).map((m) => ({
+    ...m,
+    is_active: (activeData?.find((a) => a.id === m.id)?.is_active as boolean | null) ?? null,
+  }))
 
   // Optional pre-season columns — added in migration 20260305000000
   // Gracefully returns null if the migration hasn't been run in production yet
@@ -84,7 +96,7 @@ export default async function AdminDashboard({ params }: Props) {
     .eq('league_id', league.id)
 
   // Merge pre-season data into members (defaults to null/false if migration not run)
-  const membersWithPreSeason = (members ?? []).map((m) => ({
+  const membersWithPreSeason = membersWithActive.map((m) => ({
     ...m,
     pre_season_returning: (preSeasonData?.find((p) => p.id === m.id)?.pre_season_returning as 'yes' | 'no' | 'maybe' | null) ?? null,
     pre_season_paid: (preSeasonData?.find((p) => p.id === m.id)?.pre_season_paid as boolean | null) ?? false,
@@ -159,7 +171,7 @@ export default async function AdminDashboard({ params }: Props) {
           <MemberRoster
             leagueId={league.id}
             leagueSlug={slug}
-            members={members ?? []}
+            members={membersWithActive}
             previousNames={previousNames}
             yearsPlayedByName={yearsPlayedByName}
           />
@@ -169,7 +181,7 @@ export default async function AdminDashboard({ params }: Props) {
         <section>
           <h2 className="text-xl font-bold mb-4">Team Assignment</h2>
           <TeamAssignment
-            members={members ?? []}
+            members={membersWithActive}
             leagueSlug={slug}
           />
         </section>
@@ -177,7 +189,7 @@ export default async function AdminDashboard({ params }: Props) {
         {/* Payment Board */}
         <section>
           <PaymentBoard
-            members={members ?? []}
+            members={membersWithActive}
             payments={payments ?? []}
             leagueSlug={slug}
             payouts={payoutInfo}
