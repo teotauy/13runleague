@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { createServiceClient } from '@/lib/supabase/server'
 import PastChampionsBanner, { type YearlyChampions } from '@/components/PastChampionsBanner'
 import HeartbreakBoard from '@/components/HeartbreakBoard'
@@ -111,6 +112,7 @@ export default async function HistoryPage() {
           {teamsSorted.map(([team, teamGames]) => (
             <Link
               key={team}
+              href={`/teams/${team.toLowerCase()}`}
               className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-3 text-center"
             >
               <div className="text-xs text-gray-500 font-mono">{team}</div>

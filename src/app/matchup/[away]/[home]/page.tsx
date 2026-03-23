@@ -320,13 +320,13 @@ export default async function MatchupPage({ params }: Props) {
         )}
 
         {/* 13-run game history */}
-        {thirteenCount > 0 && (
+        {thirteenGames.length > 0 && (
           <section>
             <h2 className="text-lg font-bold mb-4">13-Run Games in this Matchup</h2>
             <div className="space-y-2">
               {thirteenGames!.map((g) => (
                 <div
-                  key={g.id}
+                  key={`${g.game_date}-${g.home_team}`}
                   className="flex items-center gap-3 text-sm rounded bg-white/[0.03] border border-white/[0.05] px-4 py-2 font-mono"
                 >
                   <span className="text-[#39ff14] font-bold">13</span>

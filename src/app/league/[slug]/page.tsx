@@ -10,6 +10,9 @@ import PotBreakdown from '@/components/PotBreakdown'
 import LeaderboardTable, { type LeaderboardRow } from '@/components/LeaderboardTable'
 import LeagueDashboardHeader from '@/components/LeagueDashboardHeader'
 import WinCelebration, { type WinCelebrationPayout } from '@/components/WinCelebration'
+import LeagueTabs from '@/components/LeagueTabs'
+import LeagueExplainer from '@/components/LeagueExplainer'
+import ThirteenRunLore from '@/components/ThirteenRunLore'
 
 export const dynamic = 'force-dynamic'
 
@@ -267,61 +270,13 @@ export default async function LeagueDashboard({ params }: Props) {
           })) ?? []}
         />
 
-        {/* Leaderboard */}
-        <section>
-          <h2 className="text-lg font-bold mb-4">Leaderboard</h2>
-          <LeaderboardTable rows={leaderboardRows} slug={slug} />
-        </section>
-
-        {/* 13-Run History */}
-        {thirteenHistory && thirteenHistory.length > 0 && (
-          <section>
-            <h2 className="text-lg font-bold mb-4">13-Run History in this League</h2>
-            <div className="space-y-2">
-              {thirteenHistory.map((result) => (
-                <div
-                  key={`${result.game_date}-${result.home_team}`}
-                  className="flex items-center gap-3 text-sm rounded bg-white/[0.03] border border-white/[0.05] px-4 py-2"
-                >
-                  <span className="text-[#39ff14] font-bold text-lg">13</span>
-                  <span className="text-gray-400 font-mono">{result.game_date}</span>
-                  <span className="text-white">
-                    <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
-                    {' scored 13 — '}
-                    {result.away_team} @ {result.home_team}{' '}
-                    ({result.away_score}–{result.home_score})
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Closest Miss Board */}
-        {closestMisses && closestMisses.length > 0 && (
-          <section>
-            <h2 className="text-lg font-bold mb-4">Closest Miss Board 💔</h2>
-            <div className="space-y-2">
-              {closestMisses.map((s) => {
-                const member = members?.find((m) => m.id === s.member_id)
-                const diff = Math.abs((s.closest_miss_score ?? 0) - 13)
-                return (
-                  <div
-                    key={s.member_id}
-                    className="flex items-center gap-3 text-sm rounded bg-white/[0.03] border border-white/[0.05] px-4 py-2"
-                  >
-                    {s.closest_miss_date && (
-                      <span className="text-gray-500 font-mono">{fmtMD(s.closest_miss_date)}</span>
-                    )}
-                    <span className="text-amber-400 font-bold">{s.closest_miss_score} runs</span>
-                    <span className="text-white">{member?.name ?? '—'} ({member?.assigned_team})</span>
-                    <span className="text-gray-600 ml-auto">— {diff === 1 ? 'one run away!' : `${diff} runs away`}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
+        <LeagueTabs
+          historicalRaw={historicalRaw ?? []}
+          allTimeRankings={allTimeRankings}
+          teamRankings={teamRankings}
+          slug={slug}
+          currentYear={seasonYear}
+        >
           {/* Leaderboard */}
           <section>
             <h2 className="text-lg font-bold mb-4">Leaderboard</h2>

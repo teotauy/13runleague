@@ -357,8 +357,6 @@ export default function RankingsTabs({
 
   const playerLabel = year ? `${year} Season Rankings` : 'All-Time Rankings'
 
-  const playerLabel = year ? `${year} Season Rankings` : 'All-Time Rankings'
-
   return (
     <div>
       {/* Tab bar */}

@@ -155,9 +155,7 @@ export default async function AdminDashboard({ params }: Props) {
           <MemberRoster
             leagueId={league.id}
             leagueSlug={slug}
-            members={membersWithActive}
-            previousNames={previousNames}
-            yearsPlayedByName={yearsPlayedByName}
+            members={membersWithActive.map((m) => ({ ...m, is_active: m.is_active ?? undefined }))}
           />
         </section>
 

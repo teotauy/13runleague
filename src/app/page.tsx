@@ -15,8 +15,7 @@ import type { SeasonState } from '@/components/SeasonBanner'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { MLBGame, MLBLiveGame } from '@/lib/mlb'
 import type { LiveGameState } from "@/lib/probability"
-import { InstallAppLink } from "@/components/AddToHomeScreenBanner"
-import PushNotificationButton from "@/components/PushNotificationButton"
+import AddToHomeScreenBanner from "@/components/AddToHomeScreenBanner"
 
 export const revalidate = 60
 
@@ -278,7 +277,6 @@ export default async function HomePage({ searchParams }: PageProps) {
                 </a>
               ))}
             </div>
-          </div>
           </div>
         </header>
 

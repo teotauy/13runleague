@@ -187,14 +187,6 @@ export default function LiveWatchCard({
     return `${Math.floor(seconds / 60)}m ago`
   }
 
-  // Helper to format time since last update
-  const getTimeSinceLastUpdate = () => {
-    const now = new Date()
-    const seconds = Math.floor((now.getTime() - lastUpdate.getTime()) / 1000)
-    if (seconds < 60) return `${seconds}s ago`
-    return `${Math.floor(seconds / 60)}m ago`
-  }
-
   return (
     <div
       className={`rounded-lg border bg-[#0d0d0d] p-4 flex flex-col gap-3 ${
