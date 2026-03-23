@@ -68,6 +68,8 @@ export async function PATCH(
     if (body.phone !== undefined) updatePayload.phone = body.phone
     if (body.email !== undefined) updatePayload.email = body.email
     if (body.is_active !== undefined) updatePayload.is_active = body.is_active
+    // When marking as alumni, clear their team assignment so it becomes available
+    if (body.is_active === false) updatePayload.assigned_team = null
 
     const { data, error } = await supabase
       .from('members')
