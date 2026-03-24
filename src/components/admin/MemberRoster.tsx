@@ -192,8 +192,8 @@ export default function MemberRoster({ leagueId, leagueSlug, members, previousNa
               </div>
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Email (optional)</label>
-                <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full bg-[#0a0a0a] border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-[#39ff14]" placeholder="user@example.com" />
+                <input type="text" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full bg-[#0a0a0a] border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-[#39ff14]" placeholder="one@example.com, two@example.com" />
               </div>
               <div className="flex gap-2 pt-4">
                 <button type="submit" disabled={isLoading}
