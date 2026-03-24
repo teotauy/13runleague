@@ -136,6 +136,7 @@ export default async function AdminDashboard({ params }: Props) {
             <SendReceiptModal
               leagueSlug={slug}
               memberCount={membersWithActive.filter((m) => m.email && m.is_active !== false).length}
+              members={membersWithActive.map((m) => ({ id: m.id, name: m.name }))}
             />
           </div>
         </header>

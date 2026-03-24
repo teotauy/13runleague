@@ -174,6 +174,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       leaguePassword,
     })
 
+    // Stay under Resend's 5 req/sec rate limit
+    await new Promise((r) => setTimeout(r, 250))
+
     try {
       const { error: sendError } = await resend.emails.send({
         from: '13 Run League <hmfic@13runleague.com>',

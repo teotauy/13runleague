@@ -5,7 +5,7 @@
 export const TEAM_BLURBS: Record<string, [string, string, string]> = {
   ARI: [
     'Made the World Series in 2023 out of pure chaos energy.',
-    'Ketel Marte would like you to know he is very good at baseball.',
+    'Ketel Marte and now Nolan Arenado. They are collecting All-Stars like Pokémon.',
     'Arizona in July is 117°. Your team plays there. Embrace it.',
   ],
   ATH: [
@@ -96,11 +96,11 @@ export const TEAM_BLURBS: Record<string, [string, string, string]> = {
   NYM: [
     'Steve Cohen has spent more money than some sovereign wealth funds.',
     "They missed the playoffs with a $340M payroll. It's fine. Everything is fine.",
-    'Francisco Lindor is great. Everything around him has been less consistent.',
+    'Juan Soto signed the biggest contract in baseball history to come here. No pressure.',
   ],
   NYY: [
     'The most storied franchise in baseball, plus $300M in annual payroll.',
-    'Juan Soto is there now. He expects to win.',
+    'Juan Soto left for the Mets. They are processing this in therapy.',
     "The World Series drought is starting to feel like a personality trait.",
   ],
   PHI: [
@@ -130,7 +130,7 @@ export const TEAM_BLURBS: Record<string, [string, string, string]> = {
   ],
   STL: [
     'The Cardinals believe they are simply better than you. They are often right.',
-    'Nolan Arenado is locked in on a contract through 2027. He seems fine with it.',
+    'Nolan Arenado left for the desert. The Cardinals are still processing the breakup.',
     'Cardinal Nation will explain the Cardinal Way to you. At a Cardinals game. Unprompted.',
   ],
   TB: [
@@ -149,8 +149,8 @@ export const TEAM_BLURBS: Record<string, [string, string, string]> = {
     'All of Canada is rooting for you. All of Canada. No pressure.',
   ],
   WSH: [
-    'Won the World Series in 2019. Traded Juan Soto. Started the rebuild.',
-    "Patrick Corbin's contract was a cautionary tale. It expires soon. Celebrate.",
+    'Won the World Series in 2019. Traded Juan Soto. Still recovering emotionally.',
+    "Patrick Corbin's contract was a cautionary tale. It has finally, mercifully expired.",
     "They're going to be good again. Probably 2027.",
   ],
 }
