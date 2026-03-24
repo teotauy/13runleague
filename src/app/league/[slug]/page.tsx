@@ -172,7 +172,7 @@ export default async function LeagueDashboard({ params }: Props) {
   // Historical results for rankings tabs
   const { data: historicalRaw } = await supabase
     .from('historical_results')
-    .select('member_name, team, year, total_won, shares')
+    .select('member_name, team, year, total_won, shares, week_wins')
     .eq('league_id', league.id)
 
   // Build a case-insensitive name → member map for robust matching

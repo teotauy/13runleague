@@ -9,6 +9,7 @@ interface HistoricalRow {
   year: number
   total_won: number
   shares: number
+  week_wins?: number[]
 }
 
 interface LeagueTabsProps {

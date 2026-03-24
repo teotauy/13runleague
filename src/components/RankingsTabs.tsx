@@ -25,6 +25,7 @@ interface HistoricalRow {
   year: number
   total_won: number
   shares: number
+  week_wins?: number[]
 }
 
 type AllTimeSort = 'totalWon' | 'totalShares' | 'yearsPlayed'
@@ -401,32 +402,39 @@ export default function RankingsTabs({
       {tab === 'teams' && (
         <TeamTable data={teams} />
       )}
-      {tab === 'log' && historicalRaw && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm font-mono">
-            <thead>
-              <tr className="text-gray-500 border-b border-gray-800">
-                <th className="pb-2 pr-4 text-left">Player</th>
-                <th className="pb-2 pr-4 text-left">Team</th>
-                <th className="pb-2 pr-4 text-left">Wins</th>
-                <th className="pb-2 text-left">Total Won</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...historicalRaw]
-                .sort((a, b) => b.total_won - a.total_won)
-                .map((row) => (
-                  <tr key={`${row.member_name}-${row.team}`} className="border-b border-gray-900 hover:bg-[#111]">
-                    <td className="py-2 pr-4 text-white font-semibold">{row.member_name}</td>
-                    <td className="py-2 pr-4 text-gray-400">{row.team}</td>
-                    <td className="py-2 pr-4 text-[#39ff14] font-bold">{row.shares}</td>
-                    <td className="py-2 font-bold text-[#39ff14]">${row.total_won.toLocaleString()}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {tab === 'log' && historicalRaw && (() => {
+        // Build week-by-week win log sorted by week number
+        const wins: { week: number; member_name: string; team: string; total_won: number }[] = []
+        for (const row of historicalRaw) {
+          const weeks: number[] = Array.isArray(row.week_wins) ? row.week_wins : []
+          const perWin = weeks.length > 0 ? Math.round(row.total_won / weeks.length) : 0
+          for (const w of weeks) {
+            wins.push({ week: w, member_name: row.member_name, team: row.team, total_won: perWin })
+          }
+        }
+        wins.sort((a, b) => a.week - b.week)
+
+        return (
+          <div className="font-mono space-y-1 max-w-lg">
+            <p className="text-center text-gray-500 text-xs uppercase tracking-widest mb-6">
+              ★ {year} Season · South Brooklyn 13 Run League ★
+            </p>
+            {wins.length === 0 ? (
+              <p className="text-gray-600 text-sm text-center">No week-by-week data for this season.</p>
+            ) : (
+              wins.map((w, i) => (
+                <div key={i} className="flex items-center justify-between text-sm border-b border-gray-900 py-2">
+                  <span className="text-gray-600 w-16">WK {w.week}</span>
+                  <span className="text-white font-semibold flex-1">{w.member_name}</span>
+                  <span className="text-gray-500 mr-4">{w.team}</span>
+                  {w.total_won > 0 && <span className="text-[#39ff14] font-bold">${w.total_won.toLocaleString()}</span>}
+                </div>
+              ))
+            )}
+            <p className="text-center text-gray-700 text-xs pt-6">As always, no wagering, please.</p>
+          </div>
+        )
+      })()}
     </div>
   )
 }
