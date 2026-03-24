@@ -5,6 +5,7 @@ import { useMemo } from 'react'
 interface Member {
   id: string
   name: string
+  pre_season_paid?: boolean | null
 }
 
 interface Payment {
@@ -47,7 +48,7 @@ export default function PotBreakdown({
   settledPayouts,
 }: Props) {
   const analysis = useMemo(() => {
-    const paidThisWeek = payments.filter(
+    const weeklyPaid = payments.filter(
       (p) => p.week_number === currentWeek && p.payment_status === 'paid'
     ).length
 
@@ -55,10 +56,13 @@ export default function PotBreakdown({
       (p) => p.week_number === currentWeek && p.payment_status === '50%'
     ).length
 
+    // Before the season starts, fall back to pre-season paid status
+    const preSeasonPaid = members.filter((m) => m.pre_season_paid).length
+    const paidThisWeek = weeklyPaid > 0 ? weeklyPaid : preSeasonPaid
+    const isPreSeason = weeklyPaid === 0 && preSeasonPaid > 0
+
     const totalMembers = members.length
     const weeklyPot = weeklyBuyIn * totalMembers
-    // Pot is set at the start of the week (rollover + this week's buy-ins) and never
-    // changes mid-week. Payouts are only settled on Sunday.
     const displayPot = potTotal + weeklyPot
     const paymentPercentage =
       totalMembers > 0 ? Math.round((paidThisWeek / totalMembers) * 100) : 0
@@ -69,6 +73,7 @@ export default function PotBreakdown({
       halfPaidThisWeek,
       displayPot,
       paymentPercentage,
+      isPreSeason,
     }
   }, [members, payments, currentWeek, weeklyBuyIn, potTotal])
 

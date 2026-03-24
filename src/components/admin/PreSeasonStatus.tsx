@@ -83,12 +83,6 @@ export default function PreSeasonStatus({ leagueSlug, members: initialMembers }:
         />
       </div>
 
-      {vacancies > 0 && (
-        <div className="rounded border border-red-900 bg-red-950/30 px-4 py-3 text-sm text-red-300 font-mono">
-          ⚠ {vacancies} open {vacancies === 1 ? 'slot' : 'slots'} — you need to find{' '}
-          {vacancies === 1 ? 'a replacement' : `${vacancies} replacements`} before the draft.
-        </div>
-      )}
 
       {/* Member table */}
       <div className="overflow-x-auto">

@@ -8,6 +8,7 @@ import TeamAssignment from '@/components/admin/TeamAssignment'
 import PreSeasonStatus from '@/components/admin/PreSeasonStatus'
 import MemberPasswordForm from '@/components/admin/MemberPasswordForm'
 import RecalculateStreaksButton from '@/components/admin/RecalculateStreaksButton'
+import SendReceiptModal from '@/components/admin/SendReceiptModal'
 
 export const dynamic = 'force-dynamic'
 
@@ -128,6 +129,14 @@ export default async function AdminDashboard({ params }: Props) {
                 Log out
               </a>
             </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex gap-3 mt-4">
+            <SendReceiptModal
+              leagueSlug={slug}
+              memberCount={membersWithActive.filter((m) => m.email && m.is_active !== false).length}
+            />
           </div>
         </header>
 

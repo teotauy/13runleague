@@ -40,7 +40,7 @@ export default async function LeagueDashboard({ params }: Props) {
 
   const { data: members } = await supabase
     .from('members')
-    .select('id, name, assigned_team, phone, is_active')
+    .select('id, name, assigned_team, phone, is_active, pre_season_paid')
     .eq('league_id', league.id)
     .order('name')
 
