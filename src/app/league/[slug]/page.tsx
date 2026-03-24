@@ -227,7 +227,7 @@ export default async function LeagueDashboard({ params }: Props) {
 
   // Closest misses — primary: distance to 13; tie-break: most recent date first
   const closestMisses = streaks
-    ?.filter((s) => s.closest_miss_score !== null)
+    ?.filter((s) => s.closest_miss_score !== null && (s.closest_miss_score ?? 0) >= 8)
     .sort((a, b) => {
       const aDist = Math.abs((a.closest_miss_score ?? 0) - 13)
       const bDist = Math.abs((b.closest_miss_score ?? 0) - 13)

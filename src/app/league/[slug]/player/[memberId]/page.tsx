@@ -340,7 +340,7 @@ export default async function PlayerPage({ params }: Props) {
             <div className="grid grid-cols-3 gap-6">
               <StatBlock label="Current Streak" value={String(activeStreak.current_streak ?? 0)} />
               <StatBlock label="Longest Streak" value={String(activeStreak.longest_streak ?? 0)} />
-              {activeStreak.closest_miss_score !== null && (
+              {activeStreak.closest_miss_score !== null && (activeStreak.closest_miss_score ?? 0) >= 8 && (
                 <StatBlock
                   label="Closest Miss"
                   value={`${activeStreak.closest_miss_score} runs`}
