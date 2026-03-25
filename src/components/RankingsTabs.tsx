@@ -328,7 +328,7 @@ function TeamTable({ data }: { data: TeamEntry[] }) {
           {sorted.map((entry, i) => (
             <tr key={entry.team} className="border-b border-gray-900 hover:bg-[#111]">
               <td className="py-2 pr-4 text-gray-600">{i + 1}</td>
-              <td className="py-2 pr-4 text-white font-semibold">{entry.team}</td>
+              <td className="py-2 pr-4 font-semibold"><Link href={`/teams/${entry.team}`} className="text-white hover:text-[#39ff14] transition-colors">{entry.team}</Link></td>
               <td className="py-2 pr-4 text-[#39ff14] font-bold">{entry.thirteenRunWeeks}</td>
               <td className="py-2 text-gray-300">${entry.totalPaidOut.toLocaleString()}</td>
             </tr>
@@ -426,7 +426,7 @@ export default function RankingsTabs({
                 <div key={i} className="flex items-center justify-between text-sm border-b border-gray-900 py-2">
                   <span className="text-gray-600 w-16">WK {w.week}</span>
                   <span className="text-white font-semibold flex-1">{w.member_name}</span>
-                  <span className="text-gray-500 mr-4">{w.team}</span>
+                  <Link href={`/teams/${w.team}`} className="text-gray-500 hover:text-[#39ff14] mr-4 transition-colors">{w.team}</Link>
                   {w.total_won > 0 && <span className="text-[#39ff14] font-bold">${w.total_won.toLocaleString()}</span>}
                 </div>
               ))

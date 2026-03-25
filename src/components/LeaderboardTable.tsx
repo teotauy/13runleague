@@ -122,7 +122,7 @@ export default function LeaderboardTable({
             <th className="pb-2 pr-4">Team</th>
             <th className="pb-2 pr-4">Today</th>
             <SortTh label="P(13)" col="prob" explanation="Probability your team scores exactly 13 runs today. Pre-game Poisson model (season stats, park factors, pitcher). Updates live each inning during games." />
-            <SortTh label="Drought" col="streak" title="Weeks since last win — spans all seasons. A member who won the final week of 2025 carries a small offseason drought, not zero." />
+            <SortTh label="Drought" col="streak" title="Weeks since this player's last win" />
             <SortTh label="Wins" col="wins" title="Winning weeks this season" />
             <SortTh label="$$$" col="won" title="Money won this season" />
             <th className="pb-2">Closest Miss</th>
@@ -140,9 +140,9 @@ export default function LeaderboardTable({
                 </Link>
               </td>
               <td className="py-3 pr-4">
-                <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-200">
+                <Link href={`/teams/${member.assigned_team}`} className="px-2 py-0.5 rounded bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
                   {member.assigned_team}
-                </span>
+                </Link>
               </td>
               <td className="py-3 pr-4 text-gray-400">
                 {todayGame

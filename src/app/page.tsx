@@ -224,12 +224,19 @@ export default async function HomePage({ searchParams }: PageProps) {
   const isOffseason = (bMonth > 9) || (bMonth === 9 && bDay >= 5) || bMonth === 0 || (bMonth === 1 && bDay < 20)
   // Spring Training: ~Feb 20 → Opening Day
   const isSpring = !isOffseason && nowForBanner < openingDayDate
-  const seasonState: SeasonState = isOffseason ? 'offseason' : isSpring ? 'spring' : null
+  // Opening Day: March 25
+  const isOpeningDay = bMonth === 2 && bDay === 25
+  // Regular Season: Opening Day+1 → Oct 4
+  const isSeason = !isOffseason && !isSpring && !isOpeningDay
+  // Week number: days since Opening Day / 7, starting at 1
+  const openingDayThisYear = new Date(`${bY}-03-25T00:00:00-04:00`)
+  const weekNumber = isSeason ? Math.floor((nowForBanner.getTime() - openingDayThisYear.getTime()) / (1000 * 60 * 60 * 24 * 7)) + 1 : undefined
+  const seasonState: SeasonState = isOffseason ? 'offseason' : isSpring ? 'spring' : isOpeningDay ? 'opening-day' : isSeason ? 'season' : null
 
   return (
     <div className="min-h-screen bg-[#0f1115] stadium-texture text-white">
       {/* Season banner — sticky at top, dismissible */}
-      <SeasonBanner type={seasonState} daysToOpening={daysToOpening} openingDate={openingDateStr} />
+      <SeasonBanner type={seasonState} daysToOpening={daysToOpening} openingDate={openingDateStr} weekNumber={weekNumber} />
 
       {todayThirteens.length > 0 && (
         <ThirteenCelebration games={todayThirteens} />

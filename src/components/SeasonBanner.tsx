@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react'
 
-export type SeasonState = 'offseason' | 'spring' | null
+export type SeasonState = 'offseason' | 'spring' | 'opening-day' | 'season' | null
 
 interface Props {
   type: SeasonState
   daysToOpening: number
   openingDate: string // e.g. "March 25, 2026"
+  weekNumber?: number
 }
 
 // Key includes the type so dismissing offseason doesn't suppress spring
@@ -15,7 +16,7 @@ function storageKey(type: SeasonState) {
   return `season-banner-dismissed:${type}`
 }
 
-export default function SeasonBanner({ type, daysToOpening, openingDate }: Props) {
+export default function SeasonBanner({ type, daysToOpening, openingDate, weekNumber }: Props) {
   // Start true (hidden) to prevent flash-of-banner on load
   const [dismissed, setDismissed] = useState(true)
 
@@ -27,19 +28,31 @@ export default function SeasonBanner({ type, daysToOpening, openingDate }: Props
 
   if (!type || dismissed) return null
 
-  const isSpring = type === 'spring'
+  const styles: Record<NonNullable<SeasonState>, { bg: string; text: string; muted: string; btn: string }> = {
+    'offseason':    { bg: 'bg-[#1a1206] border-b border-amber-900/60',  text: 'text-amber-200', muted: 'text-amber-400', btn: 'text-amber-500 hover:text-amber-200' },
+    'spring':       { bg: 'bg-[#0a1628] border-b border-sky-900/60',    text: 'text-sky-200',   muted: 'text-sky-400',   btn: 'text-sky-500 hover:text-sky-200' },
+    'opening-day':  { bg: 'bg-[#0a1f0a] border-b border-green-700/60',  text: 'text-green-200', muted: 'text-[#39ff14]', btn: 'text-green-500 hover:text-green-200' },
+    'season':       { bg: 'bg-[#0f1115] border-b border-white/10',      text: 'text-gray-300',  muted: 'text-[#39ff14]', btn: 'text-gray-500 hover:text-gray-200' },
+  }
 
-  const bgClass = isSpring
-    ? 'bg-[#0a1628] border-b border-sky-900/60'
-    : 'bg-[#1a1206] border-b border-amber-900/60'
+  const { bg: bgClass, text: textClass, muted: mutedClass, btn: btnClass } = styles[type]
 
-  const textClass = isSpring ? 'text-sky-200' : 'text-amber-200'
-  const mutedClass = isSpring ? 'text-sky-400' : 'text-amber-400'
-  const btnClass = isSpring
-    ? 'text-sky-500 hover:text-sky-200'
-    : 'text-amber-500 hover:text-amber-200'
-
-  const message = isSpring
+  const message = type === 'opening-day'
+    ? <>
+        <span className={mutedClass}>⚾</span>
+        {' '}<span className="font-bold">Opening Day is here.</span>
+        <span className="mx-2 opacity-30">·</span>
+        The hunt for 13 begins today.
+      </>
+    : type === 'season'
+    ? <>
+        <span className={mutedClass}>⚾</span>
+        {' '}2026 Season is live
+        <span className="mx-2 opacity-30">·</span>
+        {weekNumber ? <>Week <span className="font-bold">{weekNumber}</span> — </> : ''}
+        Any team. Any day. Exactly 13.
+      </>
+    : type === 'spring'
     ? <>
         <span className={mutedClass}>🌵</span>
         {' '}Spring Training is live
