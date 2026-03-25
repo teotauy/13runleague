@@ -50,13 +50,13 @@ export const TEAM_BLURBS: Record<string, [string, string, string]> = {
   ],
   COL: [
     'Coors Field is a paradise for hitters, which is great news for P(13).',
-    'Their pitcher ERA numbers look like ZIP codes.',
+    'The thin air turns routine fly balls into moral victories.',
     "If anyone's scoring 13, there's a real chance it's in Denver.",
   ],
   DET: [
     'The rebuild has been ongoing since around the Obama administration.',
-    'Tarik Skubal is a legitimate ace, which makes you believe.',
-    'Detroit just needs one good thing to click. Tarik might be it.',
+    'Detroit hitters are starting to look dangerous. Emphasis on starting.',
+    'Motor City is due. Genuinely, mathematically due.',
   ],
   HOU: [
     "We are not going to talk about 2017.",
@@ -66,7 +66,7 @@ export const TEAM_BLURBS: Record<string, [string, string, string]> = {
   KC: [
     'Bobby Witt Jr. is genuinely one of the best players in baseball and gets zero credit.',
     'Won the World Series in 2015. People have largely forgotten this.',
-    'Kansas City has great barbecue. The bullpen, less so.',
+    'Kansas City has great barbecue. The offense is coming around too.',
   ],
   LAA: [
     "Mike Trout's career is the saddest story in baseball. You own part of it now.",
@@ -75,7 +75,7 @@ export const TEAM_BLURBS: Record<string, [string, string, string]> = {
   ],
   LAD: [
     "Ohtani. Freeman. Betts. You're welcome, and also I'm sorry.",
-    'They spend more on pitching depth than most teams spend on everything.',
+    'Their lineup has more All-Stars than most teams have players.',
     "If they score 13, it will not be surprising. That's literally the job.",
   ],
   MIA: [
@@ -90,7 +90,7 @@ export const TEAM_BLURBS: Record<string, [string, string, string]> = {
   ],
   MIN: [
     'Byron Buxton plays like a superstar and then something happens.',
-    "Carlos Correa is getting paid like it's 2022 forever.",
+    'Carlos Correa went back to Houston. Minnesota is still processing this.',
     "Target Field is cold until Father's Day. Games are won anyway.",
   ],
   NYM: [
@@ -109,8 +109,8 @@ export const TEAM_BLURBS: Record<string, [string, string, string]> = {
     'Red October energy. Trea Turner is a legitimate problem.',
   ],
   PIT: [
-    'Paul Skenes might be the best pitching prospect in a very long time.',
-    'PNC Park is gorgeous. The payroll is not.',
+    'PNC Park is one of the most beautiful ballparks in baseball. The lineup, less so.',
+    'Small payroll, big heart, and an offense that keeps you humble.',
     'Pittsburgh deserves a good team. Maybe this is finally the year.',
   ],
   SD: [
@@ -150,7 +150,7 @@ export const TEAM_BLURBS: Record<string, [string, string, string]> = {
   ],
   WSH: [
     'Won the World Series in 2019. Traded Juan Soto. Still recovering emotionally.',
-    "Patrick Corbin's contract was a cautionary tale. It has finally, mercifully expired.",
+    'A young lineup learning how to hit. Some of them are figuring it out.',
     "They're going to be good again. Probably 2027.",
   ],
 }

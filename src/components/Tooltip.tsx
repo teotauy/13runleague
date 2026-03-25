@@ -12,6 +12,7 @@ interface TooltipProps {
 export default function Tooltip({ children, label, explanation }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [position, setPosition] = useState<'below' | 'above'>('below')
+  const [hAlign, setHAlign] = useState<'center' | 'left' | 'right'>('center')
   const containerRef = useRef<HTMLDivElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
 
@@ -22,14 +23,26 @@ export default function Tooltip({ children, label, explanation }: TooltipProps) 
 
     const containerRect = containerRef.current.getBoundingClientRect()
     const tooltipRect = tooltipRef.current.getBoundingClientRect()
+    const MARGIN = 8
 
+    // Vertical
     const spaceBelow = window.innerHeight - containerRect.bottom
     const spaceAbove = containerRect.top
-
-    if (spaceBelow < tooltipRect.height + 8 && spaceAbove > tooltipRect.height + 8) {
+    if (spaceBelow < tooltipRect.height + MARGIN && spaceAbove > tooltipRect.height + MARGIN) {
       setPosition('above')
     } else {
       setPosition('below')
+    }
+
+    // Horizontal — check if centered tooltip bleeds off either edge
+    const centeredLeft = containerRect.left + containerRect.width / 2 - tooltipRect.width / 2
+    const centeredRight = centeredLeft + tooltipRect.width
+    if (centeredLeft < MARGIN) {
+      setHAlign('left')
+    } else if (centeredRight > window.innerWidth - MARGIN) {
+      setHAlign('right')
+    } else {
+      setHAlign('center')
     }
   }, [isVisible])
 
@@ -64,7 +77,11 @@ export default function Tooltip({ children, label, explanation }: TooltipProps) 
           role="tooltip"
           className={`absolute z-50 w-52 px-3 py-2.5 rounded bg-[#111] border border-[#39ff14] text-white text-xs shadow-lg ${
             position === 'below' ? 'top-full mt-2' : 'bottom-full mb-2'
-          } left-1/2 -translate-x-1/2`}
+          } ${
+            hAlign === 'center' ? 'left-1/2 -translate-x-1/2' :
+            hAlign === 'left'   ? 'left-0' :
+                                  'right-0'
+          }`}
         >
           <div className="font-bold text-[#39ff14] mb-1.5 text-[11px] tracking-wide uppercase">{label}</div>
           <ul className="space-y-1">
@@ -74,9 +91,13 @@ export default function Tooltip({ children, label, explanation }: TooltipProps) 
               </li>
             ))}
           </ul>
-          {/* Arrow */}
+          {/* Arrow — tracks horizontal alignment */}
           <div
-            className={`absolute w-2 h-2 bg-[#111] border-r border-b border-[#39ff14] left-1/2 -translate-x-1/2 ${
+            className={`absolute w-2 h-2 bg-[#111] border-r border-b border-[#39ff14] ${
+              hAlign === 'center' ? 'left-1/2 -translate-x-1/2' :
+              hAlign === 'left'   ? 'left-3' :
+                                    'right-3'
+            } ${
               position === 'below' ? '-top-1 rotate-45' : '-bottom-1 -rotate-45'
             }`}
           />

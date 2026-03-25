@@ -119,7 +119,7 @@ export default async function TeamPage({ params }: Props) {
               </h1>
               {total > 0 && firstYear && lastYear && (
                 <p className="mt-1 text-sm" style={{ color: teamInfo.textColor + 'bb' }}>
-                  {firstYear === lastYear ? `${firstYear}` : `${firstYear}–${lastYear}`} · {distinctSeasons} season{distinctSeasons !== 1 ? 's' : ''}
+                  {firstYear === lastYear ? `${firstYear}` : `${firstYear}–${lastYear}`} · {distinctSeasons} season{distinctSeasons !== 1 ? 's' : ''} with a 13
                 </p>
               )}
             </div>
