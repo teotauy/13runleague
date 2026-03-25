@@ -12,6 +12,7 @@ import ThirteenRunHistoryCard from '@/components/ThirteenRunHistoryCard'
 import SiteFooter from '@/components/SiteFooter'
 import SeasonBanner from '@/components/SeasonBanner'
 import type { SeasonState } from '@/components/SeasonBanner'
+import { getFestiveTheme } from '@/lib/festiveThemes'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { MLBGame, MLBLiveGame } from '@/lib/mlb'
 import type { LiveGameState } from "@/lib/probability"
@@ -232,11 +233,16 @@ export default async function HomePage({ searchParams }: PageProps) {
   const openingDayThisYear = new Date(`${bY}-03-25T00:00:00-04:00`)
   const weekNumber = isSeason ? Math.floor((nowForBanner.getTime() - openingDayThisYear.getTime()) / (1000 * 60 * 60 * 24 * 7)) + 1 : undefined
   const seasonState: SeasonState = isOffseason ? 'offseason' : isSpring ? 'spring' : isOpeningDay ? 'opening-day' : isSeason ? 'season' : null
+  const festiveTheme = getFestiveTheme(nowForBanner)
 
   return (
     <div className="min-h-screen bg-[#0f1115] stadium-texture text-white">
+      {/* Bunting strip — pinned top edge on patriotic days */}
+      {festiveTheme?.bodyClass === 'festive-bunting' && (
+        <div className="festive-bunting-strip" aria-hidden="true" />
+      )}
       {/* Season banner — sticky at top, dismissible */}
-      <SeasonBanner type={seasonState} daysToOpening={daysToOpening} openingDate={openingDateStr} weekNumber={weekNumber} />
+      <SeasonBanner type={seasonState} daysToOpening={daysToOpening} openingDate={openingDateStr} weekNumber={weekNumber} festiveTheme={festiveTheme} />
 
       {todayThirteens.length > 0 && (
         <ThirteenCelebration games={todayThirteens} />

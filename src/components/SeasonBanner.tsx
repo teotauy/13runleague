@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import type { FestiveTheme } from '@/lib/festiveThemes'
 
 export type SeasonState = 'offseason' | 'spring' | 'opening-day' | 'season' | null
 
@@ -9,6 +10,7 @@ interface Props {
   daysToOpening: number
   openingDate: string // e.g. "March 25, 2026"
   weekNumber?: number
+  festiveTheme?: FestiveTheme | null
 }
 
 // Key includes the type so dismissing offseason doesn't suppress spring
@@ -16,7 +18,7 @@ function storageKey(type: SeasonState) {
   return `season-banner-dismissed:${type}`
 }
 
-export default function SeasonBanner({ type, daysToOpening, openingDate, weekNumber }: Props) {
+export default function SeasonBanner({ type, daysToOpening, openingDate, weekNumber, festiveTheme }: Props) {
   // Start true (hidden) to prevent flash-of-banner on load
   const [dismissed, setDismissed] = useState(true)
 
@@ -28,52 +30,67 @@ export default function SeasonBanner({ type, daysToOpening, openingDate, weekNum
 
   if (!type || dismissed) return null
 
-  const styles: Record<NonNullable<SeasonState>, { bg: string; text: string; muted: string; btn: string }> = {
-    'offseason':    { bg: 'bg-[#1a1206] border-b border-amber-900/60',  text: 'text-amber-200', muted: 'text-amber-400', btn: 'text-amber-500 hover:text-amber-200' },
-    'spring':       { bg: 'bg-[#0a1628] border-b border-sky-900/60',    text: 'text-sky-200',   muted: 'text-sky-400',   btn: 'text-sky-500 hover:text-sky-200' },
-    'opening-day':  { bg: 'bg-[#0a1f0a] border-b border-green-700/60',  text: 'text-green-200', muted: 'text-[#39ff14]', btn: 'text-green-500 hover:text-green-200' },
-    'season':       { bg: 'bg-[#0f1115] border-b border-white/10',      text: 'text-gray-300',  muted: 'text-[#39ff14]', btn: 'text-gray-500 hover:text-gray-200' },
+  const defaultStyles: Record<NonNullable<SeasonState>, { bg: string; text: string; muted: string; btn: string }> = {
+    'offseason':   { bg: 'bg-[#1a1206] border-b border-amber-900/60', text: 'text-amber-200', muted: 'text-amber-400', btn: 'text-amber-500 hover:text-amber-200' },
+    'spring':      { bg: 'bg-[#0a1628] border-b border-sky-900/60',   text: 'text-sky-200',   muted: 'text-sky-400',   btn: 'text-sky-500 hover:text-sky-200' },
+    'opening-day': { bg: 'bg-[#061a06] border-b border-[#39ff14]/30', text: 'text-green-200', muted: 'text-[#39ff14]', btn: 'text-green-600 hover:text-green-200' },
+    'season':      { bg: 'bg-[#0f1115] border-b border-white/10',     text: 'text-gray-300',  muted: 'text-[#39ff14]', btn: 'text-gray-500 hover:text-gray-200' },
   }
 
-  const { bg: bgClass, text: textClass, muted: mutedClass, btn: btnClass } = styles[type]
+  // Festive theme overrides default styles when present
+  const bgClass   = festiveTheme?.bannerBg   ?? defaultStyles[type].bg
+  const textClass = festiveTheme?.bannerText  ?? defaultStyles[type].text
+  const mutedClass = festiveTheme?.bannerAccent ?? defaultStyles[type].muted
+  const btnClass  = festiveTheme?.bannerBtn   ?? defaultStyles[type].btn
+  const isAnimated = festiveTheme?.animate ?? false
+  const isJackie = festiveTheme?.name === 'jackie-robinson'
 
-  const message = type === 'opening-day'
+  const emojiNode = festiveTheme
+    ? <span className={`${isAnimated ? (festiveTheme.name === 'july-4' ? 'festive-animate-firework' : 'festive-animate-float') : ''} ${mutedClass}`}>{festiveTheme.emoji}</span>
+    : null
+
+  const message = festiveTheme
     ? <>
-        <span className={mutedClass}>⚾</span>
-        {' '}<span className="font-bold">Opening Day is here.</span>
+        {emojiNode}
+        {' '}<span className={`font-bold ${isAnimated ? 'festive-animate-glow' : ''}`}>{festiveTheme.message}</span>
+      </>
+    : type === 'opening-day'
+    ? <>
+        <span className={`festive-animate-float ${mutedClass}`}>⚾</span>
+        {' '}<span className={`font-bold festive-animate-glow ${textClass}`}>Opening Day is here.</span>
         <span className="mx-2 opacity-30">·</span>
-        The hunt for 13 begins today.
+        <span className={textClass}>The hunt for 13 begins today.</span>
       </>
     : type === 'season'
     ? <>
         <span className={mutedClass}>⚾</span>
-        {' '}2026 Season is live
+        {' '}<span className={textClass}>2026 Season is live</span>
         <span className="mx-2 opacity-30">·</span>
-        {weekNumber ? <>Week <span className="font-bold">{weekNumber}</span> — </> : ''}
-        Any team. Any day. Exactly 13.
+        {weekNumber ? <><span className={textClass}>Week </span><span className="font-bold">{weekNumber}</span><span className={textClass}> — </span></> : ''}
+        <span className={textClass}>Any team. Any day. Exactly 13.</span>
       </>
     : type === 'spring'
     ? <>
         <span className={mutedClass}>🌵</span>
-        {' '}Spring Training is live
+        {' '}<span className={textClass}>Spring Training is live</span>
         <span className="mx-2 opacity-30">·</span>
-        Opening Day in{' '}
+        <span className={textClass}>Opening Day in{' '}
         <span className="font-bold">{daysToOpening} {daysToOpening === 1 ? 'day' : 'days'}</span>
         {' '}—{' '}
-        <span className="font-bold">{openingDate}</span>
+        <span className="font-bold">{openingDate}</span></span>
       </>
     : <>
         <span className={mutedClass}>⚾</span>
-        {' '}MLB Offseason
+        {' '}<span className={textClass}>MLB Offseason</span>
         <span className="mx-2 opacity-30">·</span>
-        Opening Day in{' '}
+        <span className={textClass}>Opening Day in{' '}
         <span className="font-bold">{daysToOpening} {daysToOpening === 1 ? 'day' : 'days'}</span>
         {' '}—{' '}
-        <span className="font-bold">{openingDate}</span>
+        <span className="font-bold">{openingDate}</span></span>
       </>
 
   return (
-    <div className={`w-full sticky top-0 z-50 ${bgClass}`}>
+    <div className={`w-full sticky top-0 z-50 ${bgClass} ${isJackie ? 'festive-jackie-banner' : ''}`}>
       <div className="max-w-6xl mx-auto px-4 h-10 flex items-center justify-between gap-4">
         <div className="flex-1" />
         <p className={`text-xs sm:text-sm ${textClass} text-center`}>
