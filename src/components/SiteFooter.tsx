@@ -77,6 +77,8 @@ export default function SiteFooter({ extraLinks, showHistoricalNote }: SiteFoote
         </a>
         <span className="text-gray-800">·</span>
         <span className="text-gray-700">South Brooklyn · Est. 2018</span>
+        <span className="text-gray-800">·</span>
+        <span className="text-gray-700">© 2025–2026 Red Crow Labs. All rights reserved.</span>
       </div>
     </footer>
   )
