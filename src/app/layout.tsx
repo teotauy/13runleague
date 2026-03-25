@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist_Mono } from 'next/font/google'
 import './globals.css'
 import AddToHomeScreenBanner from '@/components/AddToHomeScreenBanner'
+import GlobalSeasonBanner from '@/components/GlobalSeasonBanner'
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
@@ -54,8 +55,12 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="13 Run League" />
       </head>
       <body className={`${geistMono.variable} antialiased bg-[#0a0a0a] text-white`}>
+        <GlobalSeasonBanner />
         {children}
         <AddToHomeScreenBanner />
+        <footer className="w-full border-t border-white/5 py-4 px-4 text-center text-xs text-gray-600">
+          © 2025–2026 Red Crow Labs. All rights reserved.
+        </footer>
       </body>
     </html>
   )

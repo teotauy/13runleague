@@ -10,7 +10,6 @@ import ThirteenCelebration from '@/components/ThirteenCelebration'
 import OnThisDayMLB from '@/components/OnThisDayMLB'
 import ThirteenRunHistoryCard from '@/components/ThirteenRunHistoryCard'
 import SiteFooter from '@/components/SiteFooter'
-import SeasonBanner from '@/components/SeasonBanner'
 import type { SeasonState } from '@/components/SeasonBanner'
 import { getFestiveTheme } from '@/lib/festiveThemes'
 import { createServiceClient } from '@/lib/supabase/server'
@@ -239,12 +238,6 @@ export default async function HomePage({ searchParams }: PageProps) {
 
   return (
     <div className="min-h-screen bg-[#0f1115] stadium-texture text-white">
-      {/* Bunting strip — pinned top edge on patriotic days */}
-      {festiveTheme?.bodyClass === 'festive-bunting' && (
-        <div className="festive-bunting-strip" aria-hidden="true" />
-      )}
-      {/* Season banner — sticky at top, dismissible */}
-      <SeasonBanner type={seasonState} daysToOpening={daysToOpening} openingDate={openingDateStr} weekNumber={weekNumber} festiveTheme={festiveTheme} />
 
       {todayThirteens.length > 0 && (
         <ThirteenCelebration games={todayThirteens} />
