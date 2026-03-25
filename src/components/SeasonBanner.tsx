@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { FestiveTheme } from '@/lib/festiveThemes'
 
-export type SeasonState = 'offseason' | 'spring' | 'opening-day' | 'season' | null
+export type SeasonState = 'offseason' | 'spring' | 'opening-day' | 'opening-week' | 'season' | null
 
 interface Props {
   type: SeasonState
@@ -33,8 +33,9 @@ export default function SeasonBanner({ type, daysToOpening, openingDate, weekNum
   const defaultStyles: Record<NonNullable<SeasonState>, { bg: string; text: string; muted: string; btn: string }> = {
     'offseason':   { bg: 'bg-[#1a1206] border-b border-amber-900/60', text: 'text-amber-200', muted: 'text-amber-400', btn: 'text-amber-500 hover:text-amber-200' },
     'spring':      { bg: 'bg-[#0a1628] border-b border-sky-900/60',   text: 'text-sky-200',   muted: 'text-sky-400',   btn: 'text-sky-500 hover:text-sky-200' },
-    'opening-day': { bg: 'bg-[#061a06] border-b border-[#39ff14]/30', text: 'text-green-200', muted: 'text-[#39ff14]', btn: 'text-green-600 hover:text-green-200' },
-    'season':      { bg: 'bg-[#0f1115] border-b border-white/10',     text: 'text-gray-300',  muted: 'text-[#39ff14]', btn: 'text-gray-500 hover:text-gray-200' },
+    'opening-day':  { bg: 'bg-[#061a06] border-b border-[#39ff14]/30', text: 'text-green-200', muted: 'text-[#39ff14]', btn: 'text-green-600 hover:text-green-200' },
+    'opening-week': { bg: 'bg-[#071a07] border-b border-[#39ff14]/20', text: 'text-green-300', muted: 'text-[#39ff14]', btn: 'text-green-700 hover:text-green-200' },
+    'season':       { bg: 'bg-[#0f1115] border-b border-white/10',     text: 'text-gray-300',  muted: 'text-[#39ff14]', btn: 'text-gray-500 hover:text-gray-200' },
   }
 
   // Festive theme overrides default styles when present
@@ -60,6 +61,13 @@ export default function SeasonBanner({ type, daysToOpening, openingDate, weekNum
         {' '}<span className={`font-bold festive-animate-glow ${textClass}`}>Opening Day is here.</span>
         <span className="mx-2 opacity-30">·</span>
         <span className={textClass}>The hunt for 13 begins today.</span>
+      </>
+    : type === 'opening-week'
+    ? <>
+        <span className={`festive-animate-float ${mutedClass}`}>⚾</span>
+        {' '}<span className={`font-bold ${textClass}`}>Opening Week</span>
+        <span className="mx-2 opacity-30">·</span>
+        <span className={textClass}>The hunt is on. First 13 pays out Sunday.</span>
       </>
     : type === 'season'
     ? <>
