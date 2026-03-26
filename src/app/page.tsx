@@ -2,7 +2,6 @@ import { fetchTodaySchedule, fetchTeamSeasonStats, fetchPitcherEra, fetchLiveFee
 import { buildLambda, gameThirteenProbability, getConditionalProbability } from '@/lib/probability'
 import CollapsibleGameCard from '@/components/CollapsibleGameCard'
 import LiveWatchCard from '@/components/LiveWatchCard'
-import LiveScoreboard from '@/components/LiveScoreboard'
 import ScorigramiGrid from '@/components/ScorigramiGrid'
 import LeagueExplainer from '@/components/LeagueExplainer'
 import ThirteenRunLore from '@/components/ThirteenRunLore'
@@ -294,9 +293,6 @@ export default async function HomePage({ searchParams }: PageProps) {
             ⚠ MLB Stats API unavailable: {fetchError}. Showing fallback Poisson estimates.
           </div>
         )}
-
-        {/* ── Live Scoreboard ── */}
-        <LiveScoreboard games={scoreboardGames} />
 
         {/* ── Live 13-Watch ── */}
         {watchGames.length > 0 && (

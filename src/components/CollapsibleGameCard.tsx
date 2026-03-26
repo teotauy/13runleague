@@ -112,6 +112,10 @@ export default function CollapsibleGameCard(props: CollapsibleGameCardProps) {
   const alertTier: AlertTier = !isFinal && !hit13 ? getAlertTier(displayProb) : null
   const aEmoji = alertEmoji(alertTier)
 
+  // ── Hot game detection (P(13) >= 70% OR score >= 9) ──────────────────────
+  const isHotGame = displayProb >= 0.70 || (hasScore && ((awayScore ?? 0) >= 9 || (homeScore ?? 0) >= 9))
+  const isClose9Plus = hasScore && ((awayScore ?? 0) >= 9 || (homeScore ?? 0) >= 9)
+
   const tier     = getProbabilityTier(combinedProbability)
   const color    = getProbabilityColor(tier)
   const pct      = (combinedProbability * 100).toFixed(2)
@@ -119,17 +123,19 @@ export default function CollapsibleGameCard(props: CollapsibleGameCardProps) {
 
   const borderColor = hit13
     ? '#39ff14'
+    : isHotGame ? '#ff6b35'              // hot orange for 70%+ or 9+ runs
     : isOnDeck ? 'rgba(217,119,6,0.7)'    // amber for on-deck
     : alertTier ? alertBorderColor(alertTier)
     : isFinal ? '#4b5563' : '#374151'
-  const bgColor = hit13 ? '#071007' : '#1a1a1a'
+  const bgColor = hit13 ? '#071007' : isHotGame ? 'rgba(255,107,53,0.04)' : '#1a1a1a'
+  const hotGlow = isHotGame && !open ? '0 0 24px rgba(255,107,53,0.20), inset 0 0 16px rgba(255,107,53,0.08)' : undefined
 
   const toggleRow = (
     <button
       onClick={() => setOpen(o => !o)}
       className={`w-full text-left overflow-hidden transition-colors group ${
         open ? '' : 'rounded-lg'
-      } ${isFinal && !hit13 ? 'opacity-50' : ''}`}
+      } ${isFinal && !hit13 ? 'opacity-50' : ''} ${isHotGame && !open ? 'hot-game-glow' : ''}`}
       style={{
         borderWidth: 1,
         borderStyle: 'solid',
@@ -139,6 +145,7 @@ export default function CollapsibleGameCard(props: CollapsibleGameCardProps) {
         backgroundColor: bgColor,
         boxShadow: hit13 && !open
           ? '0 0 16px rgba(57,255,20,0.10)'
+          : hotGlow
           : !open ? alertGlow(alertTier) : undefined,
       }}
     >
@@ -165,9 +172,11 @@ export default function CollapsibleGameCard(props: CollapsibleGameCardProps) {
           </span>
         )}
 
-        {/* 13 flash or alert emoji or on-deck bell */}
+        {/* 13 flash or hot game flame or alert emoji or on-deck bell */}
         {hit13 ? (
           <span className="text-[#39ff14] text-sm shrink-0">⚡</span>
+        ) : isHotGame ? (
+          <span className="text-orange-500 text-sm shrink-0 animate-pulse">🔥</span>
         ) : aEmoji ? (
           <span className="text-sm shrink-0">{aEmoji}</span>
         ) : isOnDeck ? (
@@ -217,6 +226,13 @@ export default function CollapsibleGameCard(props: CollapsibleGameCardProps) {
                 {liveProbTeam} {(liveProb * 100).toFixed(0)}%
               </span>
             </Tooltip>
+          )}
+
+          {/* Hot badge (70%+ or 9+ runs) */}
+          {isHotGame && !hit13 && (
+            <span className="text-xs font-bold px-2 py-0.5 rounded border border-orange-500/40 bg-orange-500/10 text-orange-400 animate-pulse">
+              🔥 HOT
+            </span>
           )}
 
           {/* Probability — show whenever no live conditional prob and game isn't over */}

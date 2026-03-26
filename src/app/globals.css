@@ -76,6 +76,11 @@ body {
   100%      { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
+@keyframes hot-game-pulse {
+  0%, 100%  { box-shadow: 0 0 24px rgba(255,107,53,0.20), inset 0 0 16px rgba(255,107,53,0.08); }
+  50%       { box-shadow: 0 0 40px rgba(255,107,53,0.35), inset 0 0 24px rgba(255,107,53,0.12); }
+}
+
 .festive-animate-glow {
   animation: opening-glow 2.4s ease-in-out infinite;
 }
@@ -118,6 +123,11 @@ body {
 
 .festive-jackie-banner {
   animation: jackie-pulse 3s ease-in-out infinite;
+}
+
+/* ── Hot game glow animation (P(13) >= 70% or 9+ runs) ── */
+.hot-game-glow {
+  animation: hot-game-pulse 2s ease-in-out infinite;
 }
 
 /* ── Small-caps section label ── */
