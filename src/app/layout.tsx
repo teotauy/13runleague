@@ -53,6 +53,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="13 Run League" />
+        <meta name='impact-site-verification' value='b1aaba6e-2bb6-4334-a9d3-162e3fcbecbf' />
       </head>
       <body className={`${geistMono.variable} antialiased bg-[#0a0a0a] text-white`}>
         <GlobalSeasonBanner />
