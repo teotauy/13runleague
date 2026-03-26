@@ -223,8 +223,8 @@ export default function GameCard({
         </div>
       </div>
 
-      {/* Lambda breakdown */}
-      {!isFinal && (
+      {/* Lambda breakdown — only for Preview games, not Live */}
+      {gameStatus === 'Preview' && (
         <div className="space-y-2">
           <div className="grid grid-cols-3 gap-2 text-[10px] font-mono text-gray-600 uppercase tracking-wider px-1">
             <Tooltip label="Base λ" explanation={['Expected runs based on season averages.', 'Both teams\' offensive & pitching numbers, blended with league baseline.']}>
