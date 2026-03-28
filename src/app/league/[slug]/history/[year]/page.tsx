@@ -226,20 +226,41 @@ export default async function HistoryYearPage({ params }: Props) {
   for (const row of histRows) {
     const weekWins: number[] = Array.isArray(row.week_wins) ? row.week_wins : []
     const team = normalizeTeamAbbr((row.team ?? '').toUpperCase())
+    const shares = row.shares ?? weekWins.length
+
+    // If shares > week_wins.length, there are hidden duplicates
+    // (e.g. team hit 13 twice in one week but week_wins only has [1])
+    // We can't know which weeks have dupes, but we can distribute
+    // the extra shares proportionally — for now, mark them
+    const extraShares = Math.max(0, shares - weekWins.length)
+    let extrasAdded = 0
+
     for (const wk of weekWins) {
       const existing = weekMap.get(wk) ?? []
-      const alreadyHas = existing.some(
+      const countForTeam = existing.filter(
         (w) => w.memberName === row.member_name && w.team === team
-      )
-      if (!alreadyHas) {
-        const shares = row.shares ?? weekWins.length
-        const perWeek = shares > 0 ? Math.round((row.total_won ?? 0) / shares) : null
+      ).length
+
+      if (countForTeam === 0) {
+        // No entry yet — add one (no estimated payout, only payouts table has real amounts)
         addToWeek(wk, {
           memberName: row.member_name,
           team,
-          payoutAmount: perWeek && perWeek > 0 ? perWeek : null,
+          payoutAmount: null,
           gameDate: null,
         })
+      }
+
+      // If we have extra shares to distribute, add a duplicate entry
+      // This is a best-effort heuristic for missing game_results data
+      if (extrasAdded < extraShares && countForTeam <= 1) {
+        addToWeek(wk, {
+          memberName: row.member_name,
+          team,
+          payoutAmount: null,
+          gameDate: null,
+        })
+        extrasAdded++
       }
     }
   }
