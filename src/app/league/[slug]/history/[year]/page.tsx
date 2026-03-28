@@ -24,8 +24,15 @@ interface GameScore {
 }
 
 function weekStart(year: number, week: number): Date {
-  const d = new Date(year, 3, 1) // April 1 (month is 0-indexed)
+  // MLB seasons can start as early as late March
+  const d = new Date(year, 2, 25) // March 25 (month is 0-indexed)
   d.setDate(d.getDate() + (week - 1) * 7)
+  return d
+}
+
+function weekEnd(year: number, week: number): Date {
+  const d = weekStart(year, week)
+  d.setDate(d.getDate() + 6)
   return d
 }
 
@@ -33,6 +40,14 @@ function formatWeekDate(d: Date): string {
   return d
     .toLocaleDateString('en-US', { month: 'short', day: '2-digit' })
     .toUpperCase()
+}
+
+function formatWeekRange(year: number, week: number): string {
+  const ws = weekStart(year, week)
+  const we = weekEnd(year, week)
+  const startStr = ws.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
+  const endStr = we.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
+  return `${startStr}–${endStr}`
 }
 
 function formatGameDate(dateStr: string): string {
@@ -109,7 +124,7 @@ export default async function HistoryYearPage({ params }: Props) {
     .eq('year', year)
 
   // 5. Game results (was_thirteen=true) for this season date range
-  const seasonStart = `${year}-04-01`
+  const seasonStart = `${year}-03-20`
   const seasonEnd = `${year}-10-15`
   const { data: seasonGames } = await supabase
     .from('game_results')
@@ -126,17 +141,22 @@ export default async function HistoryYearPage({ params }: Props) {
     .gte('game_date', seasonStart)
     .lte('game_date', seasonEnd)
 
-  // ── Build week map ─────────────────────────────────────────────────────────
+  // ── Build week map (multiple winners per week) ────────────────────────────
 
-  const weekMap = new Map<number, WeekWin>()
+  const weekMap = new Map<number, WeekWin[]>()
+
+  function addToWeek(wk: number, win: WeekWin) {
+    const existing = weekMap.get(wk) ?? []
+    existing.push(win)
+    weekMap.set(wk, existing)
+  }
 
   // First: populate from payouts (more precise)
   for (const p of payoutRows ?? []) {
     if (!p.week_number) continue
-    const name =
-      memberNameById.get(p.member_id) ?? p.member_id
+    const name = memberNameById.get(p.member_id) ?? p.member_id
     const team = normalizeTeamAbbr((p.winning_team ?? '').toUpperCase())
-    weekMap.set(p.week_number, {
+    addToWeek(p.week_number, {
       memberName: name,
       team,
       payoutAmount: p.payout_amount ?? null,
@@ -149,11 +169,16 @@ export default async function HistoryYearPage({ params }: Props) {
     const weekWins: number[] = Array.isArray(row.week_wins) ? row.week_wins : []
     const team = normalizeTeamAbbr((row.team ?? '').toUpperCase())
     for (const wk of weekWins) {
-      if (!weekMap.has(wk)) {
-        // Estimate per-week payout from season total ÷ shares (weeks won)
+      const existing = weekMap.get(wk) ?? []
+      // Don't add if this member+team combo already exists for this week
+      const alreadyHas = existing.some(
+        (w) => w.memberName === row.member_name && w.team === team
+      )
+      if (!alreadyHas) {
+        // Estimate per-week payout from season total ÷ shares
         const shares = row.shares ?? weekWins.length
         const perWeek = shares > 0 ? Math.round((row.total_won ?? 0) / shares) : null
-        weekMap.set(wk, {
+        addToWeek(wk, {
           memberName: row.member_name,
           team,
           payoutAmount: perWeek && perWeek > 0 ? perWeek : null,
@@ -165,69 +190,82 @@ export default async function HistoryYearPage({ params }: Props) {
 
   // ── Game score matching (in memory) ───────────────────────────────────────
 
-  const scoreMap = new Map<number, GameScore>()
+  // Map: week → array of GameScore (one per win in that week)
+  const scoreMap = new Map<number, Map<string, GameScore>>()
 
-  for (const [wk, win] of weekMap.entries()) {
-    const team = win.team
-    let found: GameScore | null = null
+  for (const [wk, wins] of weekMap.entries()) {
+    const weekScores = new Map<string, GameScore>()
 
-    // Helper: does this game match our team AND did our team score 13?
-    const isTeamThirteen = (sg: typeof seasonGames extends (infer T)[] | null ? T : never) => {
-      const home = normalizeTeamAbbr(sg.home_team.toUpperCase())
-      const away = normalizeTeamAbbr(sg.away_team.toUpperCase())
-      return (
-        (home === team && sg.home_score === 13) ||
-        (away === team && sg.away_score === 13)
-      )
-    }
+    for (const win of wins) {
+      const team = win.team
 
-    if (win.gameDate) {
-      // Match by exact game date + team scored 13
-      const g = (seasonGames ?? []).find(
-        (sg) => sg.game_date === win.gameDate && isTeamThirteen(sg)
-      )
-      if (g) {
-        found = {
-          homeTeam: normalizeTeamAbbr(g.home_team.toUpperCase()),
-          awayTeam: normalizeTeamAbbr(g.away_team.toUpperCase()),
-          homeScore: g.home_score,
-          awayScore: g.away_score,
-          gameDate: g.game_date,
+      // Helper: does this game match our team AND did our team score 13?
+      const isTeamThirteen = (sg: NonNullable<typeof seasonGames>[number]) => {
+        const home = normalizeTeamAbbr(sg.home_team.toUpperCase())
+        const away = normalizeTeamAbbr(sg.away_team.toUpperCase())
+        return (
+          (home === team && sg.home_score === 13) ||
+          (away === team && sg.away_score === 13)
+        )
+      }
+
+      let found: GameScore | null = null
+
+      if (win.gameDate) {
+        // Match by exact game date + team scored 13
+        const g = (seasonGames ?? []).find(
+          (sg) => sg.game_date === win.gameDate && isTeamThirteen(sg)
+        )
+        if (g) {
+          found = {
+            homeTeam: normalizeTeamAbbr(g.home_team.toUpperCase()),
+            awayTeam: normalizeTeamAbbr(g.away_team.toUpperCase()),
+            homeScore: g.home_score,
+            awayScore: g.away_score,
+            gameDate: g.game_date,
+          }
+        }
+      } else {
+        // Match by week window + team scored 13
+        const ws = weekStart(year, wk)
+        const we = weekEnd(year, wk)
+        const wsStr = ws.toISOString().slice(0, 10)
+        const weStr = we.toISOString().slice(0, 10)
+
+        const g = (seasonGames ?? []).find(
+          (sg) =>
+            sg.game_date >= wsStr &&
+            sg.game_date <= weStr &&
+            isTeamThirteen(sg)
+        )
+        if (g) {
+          found = {
+            homeTeam: normalizeTeamAbbr(g.home_team.toUpperCase()),
+            awayTeam: normalizeTeamAbbr(g.away_team.toUpperCase()),
+            homeScore: g.home_score,
+            awayScore: g.away_score,
+            gameDate: g.game_date,
+          }
         }
       }
-    } else {
-      // Match by week window + team scored 13
-      const ws = weekStart(year, wk)
-      const we = new Date(ws)
-      we.setDate(we.getDate() + 6)
-      const wsStr = ws.toISOString().slice(0, 10)
-      const weStr = we.toISOString().slice(0, 10)
 
-      const g = (seasonGames ?? []).find(
-        (sg) =>
-          sg.game_date >= wsStr &&
-          sg.game_date <= weStr &&
-          isTeamThirteen(sg)
-      )
-      if (g) {
-        found = {
-          homeTeam: normalizeTeamAbbr(g.home_team.toUpperCase()),
-          awayTeam: normalizeTeamAbbr(g.away_team.toUpperCase()),
-          homeScore: g.home_score,
-          awayScore: g.away_score,
-          gameDate: g.game_date,
-        }
+      if (found) {
+        const key = `${team}-${found.gameDate}`
+        weekScores.set(key, found)
       }
     }
 
-    if (found) scoreMap.set(wk, found)
+    if (weekScores.size > 0) scoreMap.set(wk, weekScores)
   }
 
   // ── Stats ──────────────────────────────────────────────────────────────────
 
-  // Champion: most wins in weekMap
+  // Flatten all wins for stats
+  const allWins = [...weekMap.values()].flat()
+
+  // Champion: most wins
   const winsByMember = new Map<string, number>()
-  for (const win of weekMap.values()) {
+  for (const win of allWins) {
     winsByMember.set(win.memberName, (winsByMember.get(win.memberName) ?? 0) + 1)
   }
   let champion = ''
@@ -264,7 +302,7 @@ export default async function HistoryYearPage({ params }: Props) {
 
   // Hottest team
   const winsByTeam = new Map<string, number>()
-  for (const win of weekMap.values()) {
+  for (const win of allWins) {
     winsByTeam.set(win.team, (winsByTeam.get(win.team) ?? 0) + 1)
   }
   let hottestTeam = ''
@@ -276,35 +314,53 @@ export default async function HistoryYearPage({ params }: Props) {
     }
   }
 
-  // Longest streak
+  // Longest streak (consecutive weeks with at least one win by same member)
   let longestStreak = 0
   let longestStreakMember = ''
-  let currentStreakMember = ''
-  let currentStreakLen = 0
+  // Track per-member streaks
+  const memberStreaks = new Map<string, number>()
   for (let wk = 1; wk <= SEASON_WEEKS; wk++) {
-    const win = weekMap.get(wk)
-    if (win) {
-      if (win.memberName === currentStreakMember) {
-        currentStreakLen += 1
-      } else {
-        currentStreakMember = win.memberName
-        currentStreakLen = 1
+    const wins = weekMap.get(wk) ?? []
+    const winnersThisWeek = new Set(wins.map((w) => w.memberName))
+    const nextStreaks = new Map<string, number>()
+
+    for (const name of winnersThisWeek) {
+      const prev = memberStreaks.get(name) ?? 0
+      const streak = prev + 1
+      nextStreaks.set(name, streak)
+      if (streak > longestStreak) {
+        longestStreak = streak
+        longestStreakMember = name
       }
-      if (currentStreakLen > longestStreak) {
-        longestStreak = currentStreakLen
-        longestStreakMember = win.memberName
-      }
-    } else {
-      currentStreakMember = ''
-      currentStreakLen = 0
+    }
+
+    memberStreaks.clear()
+    for (const [k, v] of nextStreaks) {
+      memberStreaks.set(k, v)
     }
   }
 
   // ── Score string helper ────────────────────────────────────────────────────
 
-  function buildScoreStr(wk: number, team: string): string | null {
-    const gs = scoreMap.get(wk)
+  function buildScoreStr(wk: number, team: string, gameDate: string | null): string | null {
+    const weekScores = scoreMap.get(wk)
+    if (!weekScores) return null
+
+    // Try exact match by team+date, then fall back to any match for this team
+    let gs: GameScore | undefined
+    if (gameDate) {
+      gs = weekScores.get(`${team}-${gameDate}`)
+    }
+    if (!gs) {
+      for (const score of weekScores.values()) {
+        if (score.homeTeam === team || score.awayTeam === team) {
+          gs = score
+          break
+        }
+      }
+    }
     if (!gs) return null
+
     const isHome = gs.homeTeam === team
     const myScore = isHome ? gs.homeScore : gs.awayScore
     const oppScore = isHome ? gs.awayScore : gs.homeScore
@@ -397,12 +453,12 @@ export default async function HistoryYearPage({ params }: Props) {
         {/* Week list */}
         <div className="space-y-0.5">
           {Array.from({ length: SEASON_WEEKS }, (_, i) => i + 1).map((wk) => {
-            const win = weekMap.get(wk)
-            const ws = weekStart(year, wk)
-            const weekLabel = formatWeekDate(ws)
+            const wins = weekMap.get(wk) ?? []
+            const weekLabel = formatWeekDate(weekStart(year, wk))
+            const weekRange = formatWeekRange(year, wk)
             const weekNumStr = String(wk).padStart(2, '0')
 
-            if (!win) {
+            if (wins.length === 0) {
               return (
                 <div
                   key={wk}
@@ -415,35 +471,44 @@ export default async function HistoryYearPage({ params }: Props) {
               )
             }
 
-            const teamColors = getTeamColor(win.team)
-            const displayDate = win.gameDate ? formatGameDate(win.gameDate) : weekLabel
-            const scoreStr = buildScoreStr(wk, win.team)
-
             return (
-              <div
-                key={wk}
-                className="flex items-center gap-3 py-2.5 px-3 hover:bg-[#0f0f0f] rounded border-l-2 border-[#39ff14]/20 hover:border-[#39ff14]/60"
-              >
-                <span className="font-mono text-xs w-6 text-right text-gray-500">{weekNumStr}</span>
-                <span className="text-xs w-16 text-gray-500">{displayDate}</span>
-                <span className="font-semibold text-white text-sm flex-1">{win.memberName}</span>
-                <span
-                  className="text-xs font-bold px-1.5 py-0.5 rounded"
-                  style={{
-                    backgroundColor: teamColors.primaryColor,
-                    color: teamColors.textColor,
-                  }}
-                >
-                  {win.team}
-                </span>
-                {scoreStr && (
-                  <span className="text-gray-400 text-xs font-mono">{scoreStr}</span>
-                )}
-                {win.payoutAmount != null && (
-                  <span className="text-[#39ff14] text-xs font-mono font-bold">
-                    ${win.payoutAmount.toFixed(0)}
-                  </span>
-                )}
+              <div key={wk} className="space-y-0">
+                {wins.map((win, idx) => {
+                  const teamColors = getTeamColor(win.team)
+                  const displayDate = win.gameDate ? formatGameDate(win.gameDate) : weekLabel
+                  const scoreStr = buildScoreStr(wk, win.team, win.gameDate)
+
+                  return (
+                    <div
+                      key={`${wk}-${idx}`}
+                      className="flex items-center gap-3 py-2.5 px-3 hover:bg-[#0f0f0f] rounded border-l-2 border-[#39ff14]/20 hover:border-[#39ff14]/60"
+                    >
+                      {/* Show week number only on first entry */}
+                      <span className="font-mono text-xs w-6 text-right text-gray-500">
+                        {idx === 0 ? weekNumStr : ''}
+                      </span>
+                      <span className="text-xs w-16 text-gray-500">{displayDate}</span>
+                      <span className="font-semibold text-white text-sm flex-1">{win.memberName}</span>
+                      <span
+                        className="text-xs font-bold px-1.5 py-0.5 rounded"
+                        style={{
+                          backgroundColor: teamColors.primaryColor,
+                          color: teamColors.textColor,
+                        }}
+                      >
+                        {win.team}
+                      </span>
+                      {scoreStr && (
+                        <span className="text-gray-400 text-xs font-mono">{scoreStr}</span>
+                      )}
+                      {win.payoutAmount != null && (
+                        <span className="text-[#39ff14] text-xs font-mono font-bold">
+                          ${win.payoutAmount.toFixed(0)}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )
           })}
