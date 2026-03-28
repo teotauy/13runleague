@@ -141,6 +141,25 @@ export default async function HistoryYearPage({ params }: Props) {
     .gte('game_date', seasonStart)
     .lte('game_date', seasonEnd)
 
+  // ── Build team ownership map from historical_results ────────────────────
+
+  const teamOwner = new Map<string, string>() // normalized team abbr → member name
+  for (const row of histRows) {
+    const team = normalizeTeamAbbr((row.team ?? '').toUpperCase())
+    teamOwner.set(team, row.member_name)
+  }
+
+  // Helper: which week does a game date fall in?
+  function dateToWeek(dateStr: string): number | null {
+    const d = new Date(dateStr + 'T12:00:00') // noon to avoid TZ issues
+    const seasonStartDate = weekStart(year, 1)
+    const diffMs = d.getTime() - seasonStartDate.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    if (diffDays < 0) return null
+    const wk = Math.floor(diffDays / 7) + 1
+    return wk >= 1 && wk <= SEASON_WEEKS ? wk : null
+  }
+
   // ── Build week map (multiple winners per week) ────────────────────────────
 
   const weekMap = new Map<number, WeekWin[]>()
@@ -151,7 +170,10 @@ export default async function HistoryYearPage({ params }: Props) {
     weekMap.set(wk, existing)
   }
 
-  // First: populate from payouts (more precise)
+  // Track which game+team combos we've already added (to avoid duplicates)
+  const addedGames = new Set<string>() // "wk-team-gameDate"
+
+  // First: populate from payouts (most precise — has member, team, amount, date)
   for (const p of payoutRows ?? []) {
     if (!p.week_number) continue
     const name = memberNameById.get(p.member_id) ?? p.member_id
@@ -162,20 +184,54 @@ export default async function HistoryYearPage({ params }: Props) {
       payoutAmount: p.payout_amount ?? null,
       gameDate: p.game_date ?? null,
     })
+    if (p.game_date) {
+      addedGames.add(`${p.week_number}-${team}-${p.game_date}`)
+    }
   }
 
-  // Then: fill any missing weeks from historical_results.week_wins[]
+  // Second: scan game_results to find ALL 13-run games for owned teams
+  // This catches multiple 13s by the same team in one week
+  for (const g of seasonGames ?? []) {
+    const homeTeam = normalizeTeamAbbr(g.home_team.toUpperCase())
+    const awayTeam = normalizeTeamAbbr(g.away_team.toUpperCase())
+
+    // Check each side — did they score 13 and do we have an owner?
+    const candidates: { team: string; score: number }[] = []
+    if (g.home_score === 13 && teamOwner.has(homeTeam)) {
+      candidates.push({ team: homeTeam, score: 13 })
+    }
+    if (g.away_score === 13 && teamOwner.has(awayTeam)) {
+      candidates.push({ team: awayTeam, score: 13 })
+    }
+
+    for (const { team } of candidates) {
+      const wk = dateToWeek(g.game_date)
+      if (!wk) continue
+      const key = `${wk}-${team}-${g.game_date}`
+      if (addedGames.has(key)) continue
+      addedGames.add(key)
+
+      const owner = teamOwner.get(team)!
+      addToWeek(wk, {
+        memberName: owner,
+        team,
+        payoutAmount: null, // no payout data from game_results
+        gameDate: g.game_date,
+      })
+    }
+  }
+
+  // Third: fill any remaining weeks from historical_results.week_wins[]
+  // (catches weeks where game_results might be missing)
   for (const row of histRows) {
     const weekWins: number[] = Array.isArray(row.week_wins) ? row.week_wins : []
     const team = normalizeTeamAbbr((row.team ?? '').toUpperCase())
     for (const wk of weekWins) {
       const existing = weekMap.get(wk) ?? []
-      // Don't add if this member+team combo already exists for this week
       const alreadyHas = existing.some(
         (w) => w.memberName === row.member_name && w.team === team
       )
       if (!alreadyHas) {
-        // Estimate per-week payout from season total ÷ shares
         const shares = row.shares ?? weekWins.length
         const perWeek = shares > 0 ? Math.round((row.total_won ?? 0) / shares) : null
         addToWeek(wk, {
