@@ -150,11 +150,13 @@ export default async function HistoryYearPage({ params }: Props) {
     const team = normalizeTeamAbbr((row.team ?? '').toUpperCase())
     for (const wk of weekWins) {
       if (!weekMap.has(wk)) {
+        // Estimate per-week payout from season total ÷ shares (weeks won)
+        const shares = row.shares ?? weekWins.length
+        const perWeek = shares > 0 ? Math.round((row.total_won ?? 0) / shares) : null
         weekMap.set(wk, {
           memberName: row.member_name,
           team,
-          payoutAmount:
-            (row.shares ?? 0) > 0 ? (row.total_won ?? null) : null,
+          payoutAmount: perWeek && perWeek > 0 ? perWeek : null,
           gameDate: null,
         })
       }
@@ -169,13 +171,20 @@ export default async function HistoryYearPage({ params }: Props) {
     const team = win.team
     let found: GameScore | null = null
 
+    // Helper: does this game match our team AND did our team score 13?
+    const isTeamThirteen = (sg: typeof seasonGames extends (infer T)[] | null ? T : never) => {
+      const home = normalizeTeamAbbr(sg.home_team.toUpperCase())
+      const away = normalizeTeamAbbr(sg.away_team.toUpperCase())
+      return (
+        (home === team && sg.home_score === 13) ||
+        (away === team && sg.away_score === 13)
+      )
+    }
+
     if (win.gameDate) {
-      // Match by exact game date + team
+      // Match by exact game date + team scored 13
       const g = (seasonGames ?? []).find(
-        (sg) =>
-          sg.game_date === win.gameDate &&
-          (normalizeTeamAbbr(sg.home_team.toUpperCase()) === team ||
-            normalizeTeamAbbr(sg.away_team.toUpperCase()) === team)
+        (sg) => sg.game_date === win.gameDate && isTeamThirteen(sg)
       )
       if (g) {
         found = {
@@ -187,7 +196,7 @@ export default async function HistoryYearPage({ params }: Props) {
         }
       }
     } else {
-      // Match by week window + team
+      // Match by week window + team scored 13
       const ws = weekStart(year, wk)
       const we = new Date(ws)
       we.setDate(we.getDate() + 6)
@@ -198,8 +207,7 @@ export default async function HistoryYearPage({ params }: Props) {
         (sg) =>
           sg.game_date >= wsStr &&
           sg.game_date <= weStr &&
-          (normalizeTeamAbbr(sg.home_team.toUpperCase()) === team ||
-            normalizeTeamAbbr(sg.away_team.toUpperCase()) === team)
+          isTeamThirteen(sg)
       )
       if (g) {
         found = {
