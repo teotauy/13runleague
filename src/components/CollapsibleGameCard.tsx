@@ -145,8 +145,7 @@ export default function CollapsibleGameCard(props: CollapsibleGameCardProps) {
         backgroundColor: bgColor,
         boxShadow: hit13 && !open
           ? '0 0 16px rgba(57,255,20,0.10)'
-          : hotGlow
-          : !open ? alertGlow(alertTier) : undefined,
+          : hotGlow ?? (!open ? alertGlow(alertTier) : undefined),
       }}
     >
       <div className="flex items-center gap-2 px-3 py-3">

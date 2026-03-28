@@ -1,6 +1,7 @@
 import { fetchTodaySchedule, fetchTeamSeasonStats, fetchPitcherEra, fetchLiveFeed, fetchTeamGameLog, currentSeason, fetchLastSeasonRunsPerGame, baseballToday, fetchOnThisDayThirteens } from '@/lib/mlb'
 import { buildLambda, gameThirteenProbability, getConditionalProbability } from '@/lib/probability'
 import CollapsibleGameCard from '@/components/CollapsibleGameCard'
+import LiveRankTable from '@/components/LiveRankTable'
 import LiveWatchCard from '@/components/LiveWatchCard'
 import ScorigramiGrid from '@/components/ScorigramiGrid'
 import LeagueExplainer from '@/components/LeagueExplainer'
@@ -365,59 +366,37 @@ export default async function HomePage({ searchParams }: PageProps) {
           </section>
         )}
 
-        {/* ── Today's Games ── */}
-        <section className="module-card">
-          <div className="flex items-baseline justify-between mb-4">
-            <div>
-              <p className="section-label mb-1">Today&apos;s Hunt</p>
-              <h2 className="text-xl font-bold text-white">Today&apos;s Games</h2>
-            </div>
-            <span className="text-xs text-gray-700">sorted by P(13) · tap to expand</span>
-          </div>
-          {enrichedGames.length === 0 ? (
+        {/* ── Live Rankings ── */}
+        {enrichedGames.length === 0 ? (
+          <section className="module-card">
             <div className="px-6 py-16 text-center space-y-2">
               <div className="text-gray-500 font-mono text-lg">No games scheduled today</div>
               <div className="text-gray-700 text-sm">
                 Check back during the MLB season (March–October)
               </div>
-              <div className="text-gray-700 text-xs mt-4">
-                <a href="/history" className="underline hover:text-gray-500">View historical 13-run games →</a>
-              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {enrichedGames.map(
-                ({ game, awayLambda, homeLambda, combinedProb, isBlended, awayPitcherName, homePitcherName }) => {
-                  const liveFeed = activeLiveFeeds.find(f => f.gamePk === game.gamePk)
-                  const liveInning = liveFeed?.liveData.linescore.currentInning
-                  const liveIsTop = liveFeed?.liveData.linescore.isTopInning
-
-                  return (
-                    <CollapsibleGameCard
-                      key={game.gamePk}
-                      gamePk={game.gamePk}
-                      awayTeam={game.teams.away.team.abbreviation}
-                      homeTeam={game.teams.home.team.abbreviation}
-                      venueName={game.venue.name}
-                      venueId={String(game.venue.id)}
-                      awayPitcher={awayPitcherName}
-                      homePitcher={homePitcherName}
-                      awayLambda={awayLambda}
-                      homeLambda={homeLambda}
-                      combinedProbability={combinedProb}
-                      isBlended={isBlended}
-                      gameStatus={game.status.abstractGameState}
-                      awayScore={game.teams.away.score}
-                      homeScore={game.teams.home.score}
-                      inning={liveInning}
-                      isTopInning={liveIsTop}
-                    />
-                  )
-                }
-              )}
-            </div>
-          )}
-        </section>
+          </section>
+        ) : (
+          <LiveRankTable
+            games={enrichedGames.map(({ game, awayLambda, homeLambda, combinedProb }) => {
+              const liveFeed = activeLiveFeeds.find(f => f.gamePk === game.gamePk)
+              // Split combined probability proportionally by lambda
+              const awayShare = awayLambda.pitcherAdjusted / (awayLambda.pitcherAdjusted + homeLambda.pitcherAdjusted)
+              return {
+                gamePk: game.gamePk,
+                awayTeam: game.teams.away.team.abbreviation,
+                homeTeam: game.teams.home.team.abbreviation,
+                awayScore: game.teams.away.score,
+                homeScore: game.teams.home.score,
+                gameStatus: game.status.abstractGameState,
+                inning: liveFeed?.liveData.linescore.currentInning,
+                isTopInning: liveFeed?.liveData.linescore.isTopInning,
+                awayProb: combinedProb * awayShare,
+                homeProb: combinedProb * (1 - awayShare),
+              }
+            })}
+          />
+        )}
 
         {/* ── On This Day in MLB History ── */}
         <section className="module-card">
