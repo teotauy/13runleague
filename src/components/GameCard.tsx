@@ -211,17 +211,19 @@ export default function GameCard({
         )}
       </div>
 
-      {/* Pitchers */}
-      <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-        <div>
-          <span className="text-gray-600">SP: </span>
-          <span className="text-gray-300">{awayPitcher ?? 'TBD'}</span>
+      {/* Pitchers — only show for pre-game (Preview); hidden for Live/Final */}
+      {gameStatus !== 'Live' && gameStatus !== 'Final' && (
+        <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+          <div>
+            <span className="text-gray-600">SP: </span>
+            <span className="text-gray-300">{awayPitcher ?? 'TBD'}</span>
+          </div>
+          <div>
+            <span className="text-gray-600">SP: </span>
+            <span className="text-gray-300">{homePitcher ?? 'TBD'}</span>
+          </div>
         </div>
-        <div>
-          <span className="text-gray-600">SP: </span>
-          <span className="text-gray-300">{homePitcher ?? 'TBD'}</span>
-        </div>
-      </div>
+      )}
 
       {/* Lambda breakdown — only for Preview games, not Live */}
       {gameStatus === 'Preview' && (

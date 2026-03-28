@@ -137,9 +137,41 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
         </span>
       </div>
 
+      {/* Hover tooltip — rendered outside overflow container so it isn't clipped */}
+      <div className="relative">
+        {hovered && (
+          <div
+            className="absolute bottom-full mb-1.5 pointer-events-none z-20"
+            style={{ left: tooltipLeft, transform: tooltipTranslate }}
+          >
+            <div className="bg-[#0a0a0a] border border-gray-700 rounded px-3 py-2 text-xs min-w-[160px] max-w-[240px]">
+              <div className="flex items-center justify-between gap-4 mb-0.5">
+                <span className="font-bold text-white font-mono">{hovered.yr}</span>
+                {isLeagueEra && (
+                  <span className="text-[10px] text-[#39ff14] font-mono">SBK era</span>
+                )}
+              </div>
+              <div className={`font-mono ${isLeagueEra ? 'text-[#39ff14]' : 'text-gray-300'}`}>
+                {hoveredCount > 0
+                  ? `${hoveredCount} thirteen-run game${hoveredCount !== 1 ? 's' : ''}`
+                  : <span className="text-gray-600">no data</span>
+                }
+              </div>
+              {nearestMilestoneYr !== null && MILESTONES[nearestMilestoneYr] && (
+                <div className="mt-1.5 pt-1.5 border-t border-gray-800 text-gray-500 leading-snug">
+                  {nearestMilestoneYr !== hovered.yr && (
+                    <span className="text-gray-600 mr-1">{nearestMilestoneYr}:</span>
+                  )}
+                  {MILESTONES[nearestMilestoneYr]}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
       {/* Chart area — horizontally scrollable */}
       <div className="overflow-x-auto pb-1">
-      <div className="relative" style={{ minWidth: `${chartPxWidth}px` }}>
+      <div style={{ minWidth: `${chartPxWidth}px` }}>
         <svg
           viewBox={`0 0 ${SVG_W} ${SVG_H}`}
           preserveAspectRatio="none"
@@ -232,36 +264,6 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
           />
         </svg>
 
-        {/* Hover tooltip */}
-        {hovered && (
-          <div
-            className="absolute bottom-full mb-1.5 pointer-events-none z-20"
-            style={{ left: tooltipLeft, transform: tooltipTranslate }}
-          >
-            <div className="bg-[#0a0a0a] border border-gray-700 rounded px-3 py-2 text-xs min-w-[160px] max-w-[240px]">
-              <div className="flex items-center justify-between gap-4 mb-0.5">
-                <span className="font-bold text-white font-mono">{hovered.yr}</span>
-                {isLeagueEra && (
-                  <span className="text-[10px] text-[#39ff14] font-mono">SBK era</span>
-                )}
-              </div>
-              <div className={`font-mono ${isLeagueEra ? 'text-[#39ff14]' : 'text-gray-300'}`}>
-                {hoveredCount > 0
-                  ? `${hoveredCount} thirteen-run game${hoveredCount !== 1 ? 's' : ''}`
-                  : <span className="text-gray-600">no data</span>
-                }
-              </div>
-              {nearestMilestoneYr !== null && MILESTONES[nearestMilestoneYr] && (
-                <div className="mt-1.5 pt-1.5 border-t border-gray-800 text-gray-500 leading-snug">
-                  {nearestMilestoneYr !== hovered.yr && (
-                    <span className="text-gray-600 mr-1">{nearestMilestoneYr}:</span>
-                  )}
-                  {MILESTONES[nearestMilestoneYr]}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Axis labels — scrolls with chart */}
@@ -275,6 +277,7 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
             {yr}
           </span>
         ))}
+      </div>
       </div>
       </div>
 
