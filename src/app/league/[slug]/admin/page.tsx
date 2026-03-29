@@ -3,12 +3,12 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { getWeekNumber, getSeasonYear } from '@/lib/pot'
 import MemberRoster from '@/components/admin/MemberRoster'
-import PaymentBoard from '@/components/admin/PaymentBoard'
 import TeamAssignment from '@/components/admin/TeamAssignment'
 import PreSeasonStatus from '@/components/admin/PreSeasonStatus'
 import MemberPasswordForm from '@/components/admin/MemberPasswordForm'
 import RecalculateStreaksButton from '@/components/admin/RecalculateStreaksButton'
 import SendReceiptModal from '@/components/admin/SendReceiptModal'
+import WeeklyRecapSection from '@/components/admin/WeeklyRecapSection'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,30 +81,10 @@ export default async function AdminDashboard({ params }: Props) {
     pre_season_paid: (preSeasonData?.find((p) => p.id === m.id)?.pre_season_paid as boolean | null) ?? false,
   }))
 
-  const { data: payments } = await supabase
-    .from('weekly_payments')
-    .select('id, member_id, week_number, payment_status, override_note')
-    .in('member_id', (members ?? []).map((m) => m.id))
-    .order('week_number', { ascending: false })
-
-  // Get current week and year for payout tracking
+  // Get current week and year
   const today = new Date()
   const currentWeekNumber = getWeekNumber(today)
   const seasonYear = getSeasonYear(today)
-
-  // Fetch payout status for all weeks
-  const { data: payoutLedger } = await supabase
-    .from('weekly_pot_ledger')
-    .select('week_number, number_of_winners, pot_amount, calculated_at')
-    .eq('league_id', league.id)
-    .eq('year', seasonYear)
-
-  const payoutInfo = payoutLedger?.map((entry) => ({
-    week_number: entry.week_number,
-    calculated: entry.calculated_at !== null,
-    total_distributed: entry.number_of_winners > 0 ? Math.floor((entry.pot_amount || 0) / entry.number_of_winners) * entry.number_of_winners : 0,
-    number_of_winners: entry.number_of_winners,
-  })) ?? []
 
   return (
     <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
@@ -139,7 +119,20 @@ export default async function AdminDashboard({ params }: Props) {
               members={membersWithActive.map((m) => ({ id: m.id, name: m.name }))}
             />
           </div>
+          {/* Nav */}
+          <div className="flex gap-4 mt-3 text-xs text-gray-600 font-mono border-t border-gray-900 pt-3">
+            <a href="#recap" className="hover:text-[#39ff14] transition-colors">Weekly Recap Email</a>
+            <a href="#roster" className="hover:text-gray-400 transition-colors">Roster</a>
+            <a href="#teams" className="hover:text-gray-400 transition-colors">Teams</a>
+            <a href="#settings" className="hover:text-gray-400 transition-colors">Settings</a>
+          </div>
         </header>
+
+        {/* Weekly Recap Email */}
+        <section id="recap">
+          <h2 className="text-xl font-bold mb-4">Weekly Recap Email</h2>
+          <WeeklyRecapSection leagueSlug={slug} />
+        </section>
 
         {/* Pre-Season Status */}
         <section>
@@ -160,7 +153,7 @@ export default async function AdminDashboard({ params }: Props) {
         </section>
 
         {/* Member Roster Management */}
-        <section>
+        <section id="roster">
           <h2 className="text-xl font-bold mb-4">Roster</h2>
           <MemberRoster
             leagueId={league.id}
@@ -170,22 +163,11 @@ export default async function AdminDashboard({ params }: Props) {
         </section>
 
         {/* Team Assignment */}
-        <section>
+        <section id="teams">
           <h2 className="text-xl font-bold mb-4">Team Assignment</h2>
           <TeamAssignment
             members={(members ?? []).filter((m) => m.is_active !== false)}
             leagueSlug={slug}
-          />
-        </section>
-
-        {/* Payment Board */}
-        <section>
-          <PaymentBoard
-            members={membersWithActive}
-            payments={payments ?? []}
-            leagueSlug={slug}
-            payouts={payoutInfo}
-            year={seasonYear}
           />
         </section>
 
@@ -199,7 +181,7 @@ export default async function AdminDashboard({ params }: Props) {
         </section>
 
         {/* League Settings */}
-        <section>
+        <section id="settings">
           <h2 className="text-xl font-bold mb-4">League Settings</h2>
           <div className="space-y-4">
             <MemberPasswordForm
