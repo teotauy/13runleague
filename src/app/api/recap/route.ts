@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 import WeeklyRecap from '../../../../emails/WeeklyRecap'
+import { getWeekNumber } from '@/lib/pot'
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY)
@@ -64,23 +65,25 @@ export async function POST(request: Request) {
     }
   }
 
-  // Calculate week number (approximate: weeks since April 1)
-  const seasonStart = new Date(new Date().getFullYear(), 3, 1)
-  const weekNumber = Math.ceil(
-    (Date.now() - seasonStart.getTime()) / (7 * 24 * 60 * 60 * 1000)
-  )
+  const weekNumber = getWeekNumber(new Date())
 
   // For each league, get member emails and send recap
   const results = await Promise.allSettled(
     (leagues ?? []).map(async (league) => {
       const { data: members } = await supabase
         .from('members')
-        .select('name, phone, email')
+        .select('name, phone, email, is_active')
         .eq('league_id', league.id)
+        .neq('is_active', false)
 
+      // Support comma-separated emails (e.g. joint memberships)
       const emails = (members ?? [])
-        .map((m) => m.email)
-        .filter((e): e is string => !!e)
+        .flatMap((m) =>
+          m.email
+            ? m.email.split(',').map((e: string) => e.trim()).filter(Boolean)
+            : []
+        )
+        .filter((e: string): e is string => !!e)
 
       if (emails.length === 0) return { league: league.name, sent: 0 }
 

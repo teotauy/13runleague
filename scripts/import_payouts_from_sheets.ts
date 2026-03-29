@@ -469,18 +469,18 @@ async function main() {
               .eq('league_id', league.id)
               .eq('name', p.memberName)
               .single()
-            if (existing) {
+            if (existing?.id) {
               memberId = existing.id
-              memberIdByName.set(p.memberName, memberId)
-              memberIdByName.set(p.memberName.toLowerCase(), memberId)
+              memberIdByName.set(p.memberName, existing.id)
+              memberIdByName.set(p.memberName.toLowerCase(), existing.id)
             } else {
               unmatchedMembers.add(p.memberName)
               continue
             }
-          } else if (newMember) {
+          } else if (newMember?.id) {
             memberId = newMember.id
-            memberIdByName.set(p.memberName, memberId)
-            memberIdByName.set(p.memberName.toLowerCase(), memberId)
+            memberIdByName.set(p.memberName, newMember.id)
+            memberIdByName.set(p.memberName.toLowerCase(), newMember.id)
           }
         }
         if (!memberId) {
