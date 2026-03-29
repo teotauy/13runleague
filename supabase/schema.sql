@@ -81,7 +81,7 @@ create table streaks (
   member_id uuid references members(id) on delete cascade,
   current_streak integer default 0,
   longest_streak integer default 0,
-  closest_miss_score integer, -- e.g. 12 or 14
+  closest_miss_score integer,
   closest_miss_date date,
   updated_at timestamptz default now()
 );

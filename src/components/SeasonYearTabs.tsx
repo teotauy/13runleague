@@ -16,7 +16,7 @@ interface HistoricalRow {
 
 interface EnrichedMember {
   member: { id: string; name: string; assigned_team: string }
-  streak?: { longest_streak: number; closest_miss_score: number | null; closest_miss_date: string | null }
+  streak?: { longest_streak: number }
   todayGame?: unknown
   todayProb: number | null
   weeksSinceWin: number | null
@@ -224,11 +224,6 @@ export default function SeasonYearTabs({
                       Best Run
                     </Tooltip>
                   </th>
-                  <th className="pb-2">
-                    <Tooltip label="Closest Miss" explanation="Highest-scoring game without reaching 13 runs">
-                      Closest Miss
-                    </Tooltip>
-                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -268,11 +263,6 @@ export default function SeasonYearTabs({
                       {weeksSinceWin !== null ? `${weeksSinceWin}w` : '—'}
                     </td>
                     <td className="py-3 pr-4 text-gray-400">{streak?.longest_streak ?? 0}W</td>
-                    <td className="py-3 text-gray-400">
-                      {streak?.closest_miss_score !== null && streak?.closest_miss_score !== undefined
-                        ? `${streak.closest_miss_score} runs${streak.closest_miss_date ? ` (${streak.closest_miss_date})` : ''}`
-                        : '—'}
-                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -7,8 +7,8 @@ import { recalculateStreaks } from '@/lib/streaks'
 /**
  * POST /api/league/[slug]/recalculate-streaks
  *
- * Commissioner-only endpoint to recompute drought streaks and closest misses
- * for every member in the league.  Call this after importing historical payouts
+ * Commissioner-only endpoint to recompute drought streaks for every member in the league.
+ * Call this after importing historical payouts
  * or whenever the streaks table looks stale.
  *
  * Body (all optional):

@@ -36,29 +36,6 @@ async function buildRecapData(slug: string) {
     )
     .filter((e): e is string => !!e)
 
-  // Closest misses (12 or 14 run games) from the past 7 days
-  const oneWeekAgo = new Date()
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-  const weekAgoStr = oneWeekAgo.toISOString().split('T')[0]
-
-  const { data: recentGames } = await supabase
-    .from('game_results')
-    .select('winning_team, home_score, away_score, game_date, home_team, away_team')
-    .gte('game_date', weekAgoStr)
-    .eq('final', true)
-
-  const closestMisses: Array<{ playerName: string; teamAbbr: string; score: number; date: string }> = []
-  for (const game of recentGames ?? []) {
-    for (const [score, team] of [
-      [game.home_score, game.home_team],
-      [game.away_score, game.away_team],
-    ] as [number, string][]) {
-      if (score === 12 || score === 14) {
-        closestMisses.push({ playerName: team, teamAbbr: team, score, date: game.game_date })
-      }
-    }
-  }
-
   // Active member count × weekly buy-in = this week's pot
   const activeMemberCount = (members ?? []).length
   const weeklyPot = (league.weekly_buy_in ?? 10) * activeMemberCount
@@ -67,7 +44,6 @@ async function buildRecapData(slug: string) {
 
   const props = {
     weekNumber,
-    closestMisses: closestMisses.slice(0, 5),
     upcomingGames: [],
     leagues: [{
       leagueName: league.name,

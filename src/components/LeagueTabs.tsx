@@ -20,6 +20,10 @@ interface LeagueTabsProps {
   teamRankings: TeamEntry[]
   slug: string
   currentYear: number
+  /** Calendar year (e.g. new Date().getFullYear()). Used to hide alumni from that year's historical tab during preseason. */
+  calendarYear: number
+  /** Lowercased member names with `is_active === false` — excluded from `calendarYear` historical standings only. */
+  alumniNamesLower: string[]
 }
 
 export default function LeagueTabs({
@@ -29,6 +33,8 @@ export default function LeagueTabs({
   teamRankings,
   slug,
   currentYear,
+  calendarYear,
+  alumniNamesLower,
 }: LeagueTabsProps) {
   const [tab, setTab] = useState<number | 'alltime'>(currentYear)
 
@@ -44,8 +50,19 @@ export default function LeagueTabs({
     return String(t)
   }
 
+  /** During preseason, `getSeasonYear` is still the prior season while seeded rows may exist for the real calendar year — omit alumni from that slice. */
+  function rowsForHistoricalYear(year: number): HistoricalRow[] {
+    const stripAlumni = year === calendarYear && alumniNamesLower.length > 0
+    const alumniSet = stripAlumni ? new Set(alumniNamesLower) : null
+    return historicalRaw.filter((r) => {
+      if (r.year !== year) return false
+      if (alumniSet?.has(r.member_name.trim().toLowerCase())) return false
+      return true
+    })
+  }
+
   function getYearData(year: number) {
-    const yearRows = historicalRaw.filter((r) => r.year === year)
+    const yearRows = rowsForHistoricalYear(year)
 
     const playerMap = new Map<string, AllTimeEntry>()
     for (const row of yearRows) {
@@ -127,7 +144,7 @@ export default function LeagueTabs({
 
         {typeof tab === 'number' && tab !== currentYear && (() => {
           const { players, teams } = getYearData(tab)
-          const yearRaw = historicalRaw.filter((r) => r.year === tab)
+          const yearRaw = rowsForHistoricalYear(tab)
           return (
             <div className="space-y-2">
               <RankingsTabs allTime={players} teams={teams} slug={slug} year={tab} historicalRaw={yearRaw} />

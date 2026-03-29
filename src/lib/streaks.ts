@@ -5,8 +5,8 @@ interface StreakUpsert {
   member_id: string
   current_streak: number
   longest_streak: number
-  closest_miss_score: number | null
-  closest_miss_date: string | null
+  closest_miss_score: null
+  closest_miss_date: null
   updated_at: string
 }
 
@@ -37,11 +37,9 @@ function globalWeek(year: number, week: number): number {
  *                  A member who won the final week of last season will have a small
  *                  drought (just the offseason weeks), not a reset to zero.
  * longest_streak = longest consecutive winless run within the given season year.
- * closest_miss   = the game (in the given season year) where the member's team
- *                  came closest to 13 without hitting it.
  *
- * The `year` parameter is used only for the closest-miss window and the
- * longest-drought-within-season calc.  The cross-season drought uses all years.
+ * The `year` parameter is used for the longest-drought-within-season calc.
+ * The cross-season drought uses all years.
  */
 export async function recalculateStreaks(
   leagueId: string,
@@ -71,7 +69,7 @@ export async function recalculateStreaks(
 
   // 3. Current position in time (handles preseason correctly)
   const today             = new Date()
-  const currentYear       = getSeasonYear(today)   // e.g. 2025 in March 2026
+  const currentYear       = getSeasonYear(today)
   const rawWeek           = getWeekNumber(today)
   // Cap at SEASON_WEEKS so offseason weeks (Nov–Mar) don't inflate the drought counter
   const currentWeek       = Math.min(rawWeek, SEASON_WEEKS)
@@ -90,10 +88,6 @@ export async function recalculateStreaks(
   const isOffseason       = today < new Date(calYear, 3, 1)  // before April 1 of this calendar year
   const seasonIsComplete  = year < currentSeasonYear || (year === currentSeasonYear && isOffseason)
   const weeksInYear       = seasonIsComplete ? SEASON_WEEKS : Math.min(getWeekNumber(today), SEASON_WEEKS)
-
-  // Season date window for closest-miss query
-  const seasonStartStr = `${year}-04-01`
-  const seasonEndStr   = `${year}-10-15`
 
   // 4. Compute per-member data
   const upserts: StreakUpsert[] = await Promise.all(
@@ -128,49 +122,13 @@ export async function recalculateStreaks(
         }
       }
 
-      // ── Closest miss (current season) ─────────────────────────────────────
-      const teamAbbr = member.assigned_team?.toUpperCase() ?? ''
-
-      const { data: teamGames } = teamAbbr
-        ? await supabase
-            .from('game_results')
-            .select('game_date, home_team, away_team, home_score, away_score, winning_team')
-            .eq('was_thirteen', true)
-            .gte('game_date', seasonStartStr)
-            .lte('game_date', seasonEndStr)
-            .or(`home_team.eq.${teamAbbr},away_team.eq.${teamAbbr}`)
-            .neq('winning_team', teamAbbr)
-        : { data: [] }
-
-      let closestMissScore: number | null = null
-      let closestMissDate: string | null  = null
-      let minDist = Infinity
-
-      for (const game of teamGames ?? []) {
-        const myScore =
-          game.home_team === teamAbbr
-            ? (game.home_score as number | null)
-            : (game.away_score as number | null)
-        if (myScore === null || myScore === undefined) continue
-
-        const dist = Math.abs(myScore - 13)
-        if (
-          dist < minDist ||
-          (dist === minDist && game.game_date > (closestMissDate ?? ''))
-        ) {
-          minDist          = dist
-          closestMissScore = myScore
-          closestMissDate  = game.game_date
-        }
-      }
-
       return {
-        member_id:          member.id,
-        current_streak:     drought,
-        longest_streak:     longestDrought,
-        closest_miss_score: closestMissScore,
-        closest_miss_date:  closestMissDate,
-        updated_at:         new Date().toISOString(),
+        member_id:            member.id,
+        current_streak:       drought,
+        longest_streak:       longestDrought,
+        closest_miss_score:   null,
+        closest_miss_date:    null,
+        updated_at:           new Date().toISOString(),
       }
     })
   )

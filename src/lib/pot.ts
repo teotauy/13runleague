@@ -16,34 +16,47 @@ interface PayoutRecord {
   team: string
 }
 
+const MS_PER_DAY = 1000 * 60 * 60 * 24
+
+/** Sunday 00:00 local on or before the given calendar day (for Sunday-based playing weeks). */
+function sundayOnOrBefore(d: Date): Date {
+  const out = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  out.setDate(out.getDate() - out.getDay())
+  return out
+}
+
 /**
- * Calculate week number based on date and season start
- * Week 1 = March 25-31, Week 2 = April 1-7, etc.
- * Season starts March 25 each year (MLB Opening Day)
+ * Playing week number within the season year.
+ *
+ * On/after March 25: week 1 is the Sunday-through-Saturday span that contains Opening Week
+ * (Sunday on or before March 25 → the following Saturday). Week 2 starts the next Sunday.
+ * Example 2026: March 22–28 = week 1, March 29+ = week 2.
+ *
+ * Before March 25 in a calendar year: still the prior season year’s grid (weeks since previous
+ * March 25 anchor), same as historical behavior.
  */
 export function getWeekNumber(date: Date, seasonStartMonth: number = 3, seasonStartDay: number = 25): number {
   const year = date.getFullYear()
   const seasonStart = new Date(year, seasonStartMonth - 1, seasonStartDay)
 
-  // If date is before season start, use previous year's season
   if (date < seasonStart) {
     const prevYearStart = new Date(year - 1, seasonStartMonth - 1, seasonStartDay)
-    const daysDiff = Math.floor((date.getTime() - prevYearStart.getTime()) / (1000 * 60 * 60 * 24))
+    const daysDiff = Math.floor((date.getTime() - prevYearStart.getTime()) / MS_PER_DAY)
     return Math.ceil((daysDiff + 1) / 7)
   }
 
-  const daysDiff = Math.floor((date.getTime() - seasonStart.getTime()) / (1000 * 60 * 60 * 24))
-  return Math.ceil((daysDiff + 1) / 7)
+  const week1Sunday = sundayOnOrBefore(seasonStart)
+  const daysDiff = Math.floor((date.getTime() - week1Sunday.getTime()) / MS_PER_DAY)
+  return Math.floor(daysDiff / 7) + 1
 }
 
 /**
- * Get the current year for the season
- * If date is before April 1, return previous year
+ * Season year for league data (payouts, tabs, pot). Uses the same March 25 anchor as
+ * {@link getWeekNumber} — not April 1 — so late-March games count in the new season.
  */
-export function getSeasonYear(date: Date, seasonStartMonth: number = 3): number {
+export function getSeasonYear(date: Date, seasonStartMonth: number = 3, seasonStartDay: number = 25): number {
   const year = date.getFullYear()
-  const seasonStart = new Date(year, seasonStartMonth - 1, 1)
-
+  const seasonStart = new Date(year, seasonStartMonth - 1, seasonStartDay)
   if (date < seasonStart) {
     return year - 1
   }

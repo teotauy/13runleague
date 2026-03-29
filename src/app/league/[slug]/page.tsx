@@ -46,7 +46,7 @@ export default async function LeagueDashboard({ params }: Props) {
 
   const { data: streaks } = await supabase
     .from('streaks')
-    .select('member_id, current_streak, longest_streak, closest_miss_score, closest_miss_date')
+    .select('member_id, current_streak, longest_streak')
 
   // Fetch ALL 13-run games — small dataset, used for both the recent list and lore stats
   const { data: thirteenHistory } = await supabase
@@ -57,9 +57,11 @@ export default async function LeagueDashboard({ params }: Props) {
 
   const games = await fetchTodaySchedule()
 
-  // Enrich each member with today's game info and probability
+  const activeMembers = (members ?? []).filter((m) => m.is_active !== false)
+
+  // Enrich each active member with today's game info and probability
   const enrichedMembers = await Promise.all(
-    (members ?? []).map(async (member) => {
+    activeMembers.map(async (member) => {
       const teamAbbr = member.assigned_team.toUpperCase()
 
       const todayGame = games.find(
@@ -95,6 +97,10 @@ export default async function LeagueDashboard({ params }: Props) {
   const today = new Date()
   const currentWeekNumber = getWeekNumber(today)
   const seasonYear = getSeasonYear(today)
+  const calendarYear = today.getFullYear()
+  const alumniNamesLower = (members ?? [])
+    .filter((m) => m.is_active === false)
+    .map((m) => m.name.trim().toLowerCase())
 
   // Fetch weekly payments for current week
   const { data: currentWeekPayments } = await supabase
@@ -176,27 +182,34 @@ export default async function LeagueDashboard({ params }: Props) {
     .eq('league_id', league.id)
 
   // Build a case-insensitive name → member map for robust matching
-  const memberByName = new Map<string, { id: string; name: string }>()
+  const memberByName = new Map<string, { id: string; name: string; isActive: boolean }>()
   for (const m of members ?? []) {
-    memberByName.set(m.name.trim().toLowerCase(), { id: m.id, name: m.name })
+    memberByName.set(m.name.trim().toLowerCase(), {
+      id: m.id,
+      name: m.name,
+      isActive: m.is_active !== false,
+    })
   }
 
   // Aggregate all-time rankings by member
   const allTimeMap = new Map<string, AllTimeEntry>()
   for (const row of historicalRaw ?? []) {
+    const matched = memberByName.get(row.member_name.trim().toLowerCase())
+    const isActive = matched?.isActive ?? false
     const existing = allTimeMap.get(row.member_name)
     if (existing) {
       existing.totalWon += row.total_won ?? 0
       existing.totalShares += row.shares ?? 0
       existing.yearsPlayed.push(row.year)
+      existing.isActive = isActive
+      if (matched?.id) existing.id = matched.id
     } else {
-      const matched = memberByName.get(row.member_name.trim().toLowerCase())
       allTimeMap.set(row.member_name, {
         name: row.member_name,
         totalWon: row.total_won ?? 0,
         totalShares: row.shares ?? 0,
         yearsPlayed: [row.year],
-        isActive: !!matched,
+        isActive,
         id: matched?.id,
       })
     }
@@ -224,17 +237,6 @@ export default async function LeagueDashboard({ params }: Props) {
   }
   const teamRankings: TeamEntry[] = Array.from(teamMap.values())
     .sort((a, b) => b.thirteenRunWeeks - a.thirteenRunWeeks)
-
-  // Closest misses — primary: distance to 13; tie-break: most recent date first
-  const closestMisses = streaks
-    ?.filter((s) => s.closest_miss_score !== null && (s.closest_miss_score ?? 0) >= 8)
-    .sort((a, b) => {
-      const aDist = Math.abs((a.closest_miss_score ?? 0) - 13)
-      const bDist = Math.abs((b.closest_miss_score ?? 0) - 13)
-      if (aDist !== bDist) return aDist - bDist
-      return (b.closest_miss_date ?? '').localeCompare(a.closest_miss_date ?? '')
-    })
-    .slice(0, 5)
 
   // Season Archive years derived from historicalRaw (already fetched above)
   const archiveYears = [...new Set((historicalRaw ?? []).map((r) => r.year))].sort(
@@ -276,6 +278,8 @@ export default async function LeagueDashboard({ params }: Props) {
           teamRankings={teamRankings}
           slug={slug}
           currentYear={seasonYear}
+          calendarYear={calendarYear}
+          alumniNamesLower={alumniNamesLower}
         >
           {/* Leaderboard */}
           <section>
@@ -286,67 +290,33 @@ export default async function LeagueDashboard({ params }: Props) {
           {/* ── Explainer Zone — between live dashboard and lore ── */}
           <LeagueExplainer />
 
-          {/* 13-Run History + Closest Miss Board — side by side */}
+          {/* 13-Run History — recent 10 games */}
           {thirteenHistory && thirteenHistory.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-              {/* 13-Run History — recent 10 games */}
-              <section>
-                <div className="flex items-center gap-3 mb-4">
-                  <h2 className="text-lg font-bold"><span className="text-[#39ff14]">13</span>-Run History</h2>
-                  <span className="text-xs text-gray-600 font-mono">most recent</span>
-                </div>
-                <div className="space-y-1.5">
-                  {thirteenHistory.slice(0, 10).map((result) => (
-                    <div
-                      key={`${result.game_date}-${result.home_team}`}
-                      className="flex items-center gap-2 text-xs rounded bg-[#111] border border-gray-900 px-3 py-2"
-                    >
-                      <span className="text-[#39ff14] font-bold font-mono shrink-0">13</span>
-                      <span className="text-gray-600 font-mono shrink-0">{result.game_date}</span>
-                      <span className="text-white truncate">
-                        <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
-                        {' scored '}
-                        <span className="text-[#39ff14] font-bold">13</span>
-                        {' — '}
-                        {result.away_team}@{result.home_team}{' '}
-                        ({result.away_score}–{result.home_score})
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* Closest Miss Board */}
-              <section>
-                <h2 className="text-lg font-bold mb-4">Closest Miss Board 💔</h2>
-                {closestMisses && closestMisses.length > 0 ? (
-                  <div className="space-y-1.5">
-                    {closestMisses.map((s) => {
-                      const member = members?.find((m) => m.id === s.member_id)
-                      const diff = Math.abs((s.closest_miss_score ?? 0) - 13)
-                      return (
-                        <div
-                          key={s.member_id}
-                          className="flex items-center gap-2 text-xs rounded bg-[#111] border border-gray-900 px-3 py-2"
-                        >
-                          {s.closest_miss_date && (
-                            <span className="text-gray-500 font-mono shrink-0">{fmtMD(s.closest_miss_date)}</span>
-                          )}
-                          <span className="text-amber-400 font-bold shrink-0">{s.closest_miss_score} runs</span>
-                          <span className="text-white truncate">{member?.name ?? '—'} ({member?.assigned_team})</span>
-                          <span className="text-gray-600 ml-auto shrink-0 text-[10px]">
-                            {diff === 1 ? '1 away!' : `${diff} away`}
-                          </span>
-                        </div>
-                      )
-                    })}
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-lg font-bold"><span className="text-[#39ff14]">13</span>-Run History</h2>
+                <span className="text-xs text-gray-600 font-mono">most recent</span>
+              </div>
+              <div className="space-y-1.5 max-w-3xl">
+                {thirteenHistory.slice(0, 10).map((result) => (
+                  <div
+                    key={`${result.game_date}-${result.home_team}`}
+                    className="flex items-center gap-2 text-xs rounded bg-[#111] border border-gray-900 px-3 py-2"
+                  >
+                    <span className="text-[#39ff14] font-bold font-mono shrink-0">13</span>
+                    <span className="text-gray-600 font-mono shrink-0">{result.game_date}</span>
+                    <span className="text-white truncate">
+                      <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
+                      {' scored '}
+                      <span className="text-[#39ff14] font-bold">13</span>
+                      {' — '}
+                      {result.away_team}@{result.home_team}{' '}
+                      ({result.away_score}–{result.home_score})
+                    </span>
                   </div>
-                ) : (
-                  <div className="text-gray-700 text-xs">No near-misses recorded yet.</div>
-                )}
-              </section>
-            </div>
+                ))}
+              </div>
+            </section>
           )}
 
           {/* 13-Run Lore — franchise / day / home-away / month breakdowns */}
@@ -393,10 +363,4 @@ export default async function LeagueDashboard({ params }: Props) {
       </div>
     </main>
   )
-}
-
-/** "2025-04-05" → "4/5" */
-function fmtMD(dateStr: string): string {
-  const parts = dateStr.split('-')
-  return `${parseInt(parts[1])}/${parseInt(parts[2])}`
 }

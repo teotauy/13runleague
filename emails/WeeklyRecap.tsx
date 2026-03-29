@@ -12,13 +12,6 @@ import {
   Column,
 } from '@react-email/components'
 
-interface ClosestMiss {
-  playerName: string
-  teamAbbr: string
-  score: number
-  date: string
-}
-
 interface HighProbGame {
   away: string
   home: string
@@ -34,14 +27,12 @@ interface LeagueSummary {
 
 interface WeeklyRecapProps {
   weekNumber: number
-  closestMisses: ClosestMiss[]
   upcomingGames: HighProbGame[]
   leagues: LeagueSummary[]
 }
 
 export default function WeeklyRecap({
   weekNumber,
-  closestMisses,
   upcomingGames,
   leagues,
 }: WeeklyRecapProps) {
@@ -60,28 +51,6 @@ export default function WeeklyRecap({
               Week {weekNumber} Recap
             </Text>
           </Section>
-
-          {/* Closest misses */}
-          {closestMisses.length > 0 && (
-            <Section>
-              <Heading as="h2" style={{ color: '#f59e0b', fontSize: '18px', marginBottom: '12px' }}>
-                💔 Closest Misses This Week
-              </Heading>
-              {closestMisses.map((miss, i) => (
-                <Row key={i} style={{ marginBottom: '8px' }}>
-                  <Column>
-                    <Text style={{ color: '#d1d5db', margin: '0', fontSize: '14px' }}>
-                      <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>{miss.score} runs</span>
-                      {' — '}
-                      {miss.playerName} ({miss.teamAbbr})
-                      <span style={{ color: '#4b5563', fontSize: '12px' }}> · {miss.date}</span>
-                    </Text>
-                  </Column>
-                </Row>
-              ))}
-              <Hr style={{ borderColor: '#1f2937', margin: '24px 0' }} />
-            </Section>
-          )}
 
           {/* Upcoming high-probability games */}
           {upcomingGames.length > 0 && (
@@ -160,10 +129,6 @@ export default function WeeklyRecap({
 
 WeeklyRecap.PreviewProps = {
   weekNumber: 12,
-  closestMisses: [
-    { playerName: 'Alex', teamAbbr: 'BOS', score: 12, date: 'Apr 14' },
-    { playerName: 'Jordan', teamAbbr: 'NYY', score: 14, date: 'Apr 16' },
-  ],
   upcomingGames: [
     { away: 'COL', home: 'CIN', date: 'Mon Apr 22', probability: 0.047 },
   ],

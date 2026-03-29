@@ -31,41 +31,6 @@ export async function POST(request: Request) {
     .from('leagues')
     .select('id, name, pot_total, weekly_buy_in')
 
-  // Fetch closest misses from this week
-  const oneWeekAgo = new Date()
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-  const weekAgoStr = oneWeekAgo.toISOString().split('T')[0]
-
-  const { data: recentGames } = await supabase
-    .from('game_results')
-    .select('winning_team, home_score, away_score, game_date, home_team, away_team')
-    .gte('game_date', weekAgoStr)
-    .eq('final', true)
-
-  // Find closest misses (scores of 12 or 14)
-  const closestMisses: Array<{
-    playerName: string
-    teamAbbr: string
-    score: number
-    date: string
-  }> = []
-
-  for (const game of recentGames ?? []) {
-    for (const [score, team] of [
-      [game.home_score, game.home_team],
-      [game.away_score, game.away_team],
-    ] as [number, string][]) {
-      if (score === 12 || score === 14) {
-        closestMisses.push({
-          playerName: team,
-          teamAbbr: team,
-          score,
-          date: game.game_date,
-        })
-      }
-    }
-  }
-
   const weekNumber = getWeekNumber(new Date())
 
   // For each league, get member emails and send recap
@@ -90,7 +55,6 @@ export async function POST(request: Request) {
 
       const emailHtml = await render(WeeklyRecap({
         weekNumber,
-        closestMisses: closestMisses.slice(0, 5),
         upcomingGames: [],
         leagues: [
           {
