@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
+import { render } from '@react-email/components'
 import WeeklyRecap from '../../../../emails/WeeklyRecap'
 import { getWeekNumber } from '@/lib/pot'
 
@@ -87,27 +88,38 @@ export async function POST(request: Request) {
 
       if (emails.length === 0) return { league: league.name, sent: 0 }
 
-      await getResend().emails.send({
+      const emailHtml = await render(WeeklyRecap({
+        weekNumber,
+        closestMisses: closestMisses.slice(0, 5),
+        upcomingGames: [],
+        leagues: [
+          {
+            leagueName: league.name,
+            potTotal: league.pot_total ?? 0,
+            weeklyBuyIn: league.weekly_buy_in ?? 10,
+          },
+        ],
+      }))
+
+      const { error: sendError } = await getResend().emails.send({
         from: '13 Run League <recap@13runleague.com>',
         to: emails,
         subject: `13 Run League — Week ${weekNumber} Recap`,
-        react: WeeklyRecap({
-          weekNumber,
-          closestMisses: closestMisses.slice(0, 5),
-          upcomingGames: [],
-          leagues: [
-            {
-              leagueName: league.name,
-              potTotal: league.pot_total ?? 0,
-              weeklyBuyIn: league.weekly_buy_in ?? 10,
-            },
-          ],
-        }),
+        html: emailHtml,
       })
+
+      if (sendError) {
+        throw new Error(`Resend error: ${sendError.message}`)
+      }
 
       return { league: league.name, sent: emails.length }
     })
   )
 
-  return NextResponse.json({ ok: true, results })
+  const serialized = results.map((r) =>
+    r.status === 'fulfilled'
+      ? { status: 'fulfilled', value: r.value }
+      : { status: 'rejected', reason: r.reason instanceof Error ? r.reason.message : String(r.reason) }
+  )
+  return NextResponse.json({ ok: true, results: serialized })
 }
