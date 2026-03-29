@@ -17,17 +17,17 @@ interface PayoutRecord {
 }
 
 /**
- * Calculate week number based on date and season start month
- * Week 1 = April 1-7, Week 2 = April 8-14, etc.
- * Season starts April 1 each year
+ * Calculate week number based on date and season start
+ * Week 1 = March 25-31, Week 2 = April 1-7, etc.
+ * Season starts March 25 each year (MLB Opening Day)
  */
-export function getWeekNumber(date: Date, seasonStartMonth: number = 4): number {
+export function getWeekNumber(date: Date, seasonStartMonth: number = 3, seasonStartDay: number = 25): number {
   const year = date.getFullYear()
-  const seasonStart = new Date(year, seasonStartMonth - 1, 1) // Month is 0-indexed
+  const seasonStart = new Date(year, seasonStartMonth - 1, seasonStartDay)
 
   // If date is before season start, use previous year's season
   if (date < seasonStart) {
-    const prevYearStart = new Date(year - 1, seasonStartMonth - 1, 1)
+    const prevYearStart = new Date(year - 1, seasonStartMonth - 1, seasonStartDay)
     const daysDiff = Math.floor((date.getTime() - prevYearStart.getTime()) / (1000 * 60 * 60 * 24))
     return Math.ceil((daysDiff + 1) / 7)
   }
@@ -123,7 +123,7 @@ export async function getWinnersForWeek(
   supabase: SupabaseClient
 ): Promise<Winner[]> {
   // Get the week boundaries
-  const seasonStart = new Date(year, 3, 1) // April 1
+  const seasonStart = new Date(year, 2, 25) // March 25 (MLB Opening Day)
   const weekStart = new Date(seasonStart)
   weekStart.setDate(weekStart.getDate() + (week_number - 1) * 7)
   const weekEnd = new Date(weekStart)
