@@ -2,6 +2,34 @@
 
 import { useMemo } from 'react'
 
+/**
+ * Headline pot size: scales up from ~half a weekly pool toward a ceiling at $1200;
+ * above $1200 size stays max and the wrapper gets a wobble (see globals.css).
+ */
+function getPotDisplayMetrics(amount: number, weeklyPot: number): {
+  fontSizeRem: number
+  isJackpot: boolean
+} {
+  const n = Math.max(0, amount)
+  const floor = Math.max(weeklyPot * 0.5, 150)
+  const cap = 1200
+  const baseRem = 2.25
+  const maxRem = 3.2
+
+  if (n > cap) {
+    return { fontSizeRem: maxRem, isJackpot: true }
+  }
+
+  if (n <= floor) {
+    const t = floor > 0 ? n / floor : 1
+    return { fontSizeRem: 1.9 + (baseRem - 1.9) * Math.min(1, t), isJackpot: false }
+  }
+
+  const t = (n - floor) / (cap - floor)
+  const rem = baseRem + (maxRem - baseRem) * Math.min(1, Math.max(0, t))
+  return { fontSizeRem: rem, isJackpot: false }
+}
+
 interface Member {
   id: string
   name: string
@@ -67,6 +95,8 @@ export default function PotBreakdown({
     const paymentPercentage =
       totalMembers > 0 ? Math.round((paidThisWeek / totalMembers) * 100) : 0
 
+    const potMetrics = getPotDisplayMetrics(displayPot, weeklyPot)
+
     return {
       totalMembers,
       paidThisWeek,
@@ -74,6 +104,7 @@ export default function PotBreakdown({
       displayPot,
       paymentPercentage,
       isPreSeason,
+      potMetrics,
     }
   }, [members, payments, currentWeek, weeklyBuyIn, potTotal])
 
@@ -109,11 +140,16 @@ export default function PotBreakdown({
           )}
         </div>
 
-        <div className="text-right shrink-0">
+        <div className="text-right shrink-0 min-h-[3.5rem] flex flex-col items-end justify-start">
           <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Pot</div>
-          <div className="text-4xl font-black font-mono text-[#39ff14]">
-            ${analysis.displayPot}
-          </div>
+          <span className={analysis.potMetrics.isJackpot ? 'pot-jackpot-bounce' : ''}>
+            <span
+              className="font-black font-mono text-[#39ff14] leading-none tracking-tight transition-[font-size] duration-500 ease-out tabular-nums"
+              style={{ fontSize: `${analysis.potMetrics.fontSizeRem.toFixed(2)}rem` }}
+            >
+              ${analysis.displayPot.toLocaleString()}
+            </span>
+          </span>
           <div className="text-xs text-gray-600 mt-1">Week {currentWeek}</div>
         </div>
       </div>

@@ -1,12 +1,15 @@
 'use client'
 
 import { useState } from 'react'
+import { previewWeeklyRecapEmail, sendWeeklyRecapEmail } from '@/lib/weeklyRecapActions'
 
 interface Props {
   leagueSlug: string
+  /** HMAC token from admin RSC — server actions cannot rely on league cookies in all Next.js builds */
+  recapCapabilityToken: string
 }
 
-export default function WeeklyRecapSection({ leagueSlug }: Props) {
+export default function WeeklyRecapSection({ leagueSlug, recapCapabilityToken }: Props) {
   const [previewHtml, setPreviewHtml] = useState<string | null>(null)
   const [weekNumber, setWeekNumber] = useState<number | null>(null)
   const [recipientCount, setRecipientCount] = useState<number | null>(null)
@@ -17,9 +20,8 @@ export default function WeeklyRecapSection({ leagueSlug }: Props) {
   async function loadPreview() {
     setLoadStatus('loading')
     try {
-      const res = await fetch(`/api/league/${leagueSlug}/weekly-recap`)
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Failed to load preview')
+      const data = await previewWeeklyRecapEmail(leagueSlug, recapCapabilityToken)
+      if (!data.ok) throw new Error(data.error)
       setPreviewHtml(data.html)
       setWeekNumber(data.weekNumber)
       setRecipientCount(data.recipientCount)
@@ -34,9 +36,8 @@ export default function WeeklyRecapSection({ leagueSlug }: Props) {
     if (!confirm(`Send Week ${weekNumber} recap to ${recipientCount} members? This cannot be undone.`)) return
     setSendStatus('sending')
     try {
-      const res = await fetch(`/api/league/${leagueSlug}/weekly-recap`, { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Send failed')
+      const data = await sendWeeklyRecapEmail(leagueSlug, recapCapabilityToken)
+      if (!data.ok) throw new Error(data.error)
       setSendStatus('sent')
     } catch (e) {
       setSendStatus('error')

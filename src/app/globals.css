@@ -130,6 +130,26 @@ body {
   animation: hot-game-pulse 2s ease-in-out infinite;
 }
 
+/* ── Pot display: gentle wobble when the pot blows past $1200 ── */
+@keyframes pot-jackpot-wobble {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  25%       { transform: scale(1.06) rotate(-0.8deg); }
+  50%       { transform: scale(1.04) rotate(0.6deg); }
+  75%       { transform: scale(1.07) rotate(-0.4deg); }
+}
+
+.pot-jackpot-bounce {
+  display: inline-block;
+  transform-origin: center right;
+  animation: pot-jackpot-wobble 1.35s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pot-jackpot-bounce {
+    animation: none;
+  }
+}
+
 /* ── Small-caps section label ── */
 .section-label {
   font-size: 0.65rem;

@@ -4,7 +4,12 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/mlb'
 import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
-import { getWeekNumber, getSeasonYear, getWinnersForWeek } from '@/lib/pot'
+import {
+  getWeekNumber,
+  getSeasonYear,
+  getWinnersForWeek,
+  getEffectiveRolloverPotForDashboard,
+} from '@/lib/pot'
 import RankingsTabs, { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
 import PotBreakdown from '@/components/PotBreakdown'
 import LeaderboardTable, { type LeaderboardRow } from '@/components/LeaderboardTable'
@@ -121,6 +126,14 @@ export default async function LeagueDashboard({ params }: Props) {
     league.id,
     currentWeekNumber,
     seasonYear,
+    supabase
+  )
+
+  const potTotalForDisplay = await getEffectiveRolloverPotForDashboard(
+    league.id,
+    league.pot_total,
+    seasonYear,
+    currentWeekNumber,
     supabase
   )
 
@@ -264,7 +277,7 @@ export default async function LeagueDashboard({ params }: Props) {
           payments={currentWeekPayments ?? []}
           currentWeek={currentWeekNumber}
           weeklyBuyIn={league.weekly_buy_in ?? 10}
-          potTotal={league.pot_total ?? 0}
+          potTotal={potTotalForDisplay}
           weekWinners={thisWeekWinners}
           settledPayouts={currentWeekPayouts?.map((p) => ({
             member_id: p.member_id,

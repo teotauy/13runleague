@@ -9,6 +9,8 @@ import MemberPasswordForm from '@/components/admin/MemberPasswordForm'
 import RecalculateStreaksButton from '@/components/admin/RecalculateStreaksButton'
 import SendReceiptModal from '@/components/admin/SendReceiptModal'
 import WeeklyRecapSection from '@/components/admin/WeeklyRecapSection'
+import PaymentBoard from '@/components/admin/PaymentBoard'
+import { signRecapCapability } from '@/lib/recapCapability'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,6 +41,8 @@ export default async function AdminDashboard({ params }: Props) {
     .single()
 
   if (error || !league) notFound()
+
+  const recapCapabilityToken = signRecapCapability(league.id, slug)
 
   // Optional query — member_password_hash column added in migration 20260305010000
   // Gracefully handles the case where the migration hasn't run yet
@@ -81,10 +85,39 @@ export default async function AdminDashboard({ params }: Props) {
     pre_season_paid: (preSeasonData?.find((p) => p.id === m.id)?.pre_season_paid as boolean | null) ?? false,
   }))
 
-  // Get current week and year
   const today = new Date()
   const currentWeekNumber = getWeekNumber(today)
   const seasonYear = getSeasonYear(today)
+
+  const memberIds = (members ?? []).map((m) => m.id)
+  let weeklyPaymentsRows: {
+    id: string
+    member_id: string
+    week_number: number
+    payment_status: string
+    override_note?: string | null
+  }[] = []
+  if (memberIds.length > 0) {
+    const { data } = await supabase
+      .from('weekly_payments')
+      .select('id, member_id, week_number, payment_status, override_note')
+      .in('member_id', memberIds)
+    weeklyPaymentsRows = data ?? []
+  }
+
+  const { data: ledgerRows } = await supabase
+    .from('weekly_pot_ledger')
+    .select('week_number, number_of_winners, pot_amount')
+    .eq('league_id', league.id)
+    .eq('year', seasonYear)
+
+  const payoutSummaries =
+    ledgerRows?.map((row) => ({
+      week_number: row.week_number,
+      calculated: true,
+      number_of_winners: row.number_of_winners ?? 0,
+      total_distributed: row.pot_amount,
+    })) ?? []
 
   return (
     <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
@@ -98,14 +131,17 @@ export default async function AdminDashboard({ params }: Props) {
               </h1>
               <p className="text-gray-400 text-lg mt-1">{league.name}</p>
             </div>
-            <div className="flex gap-3 items-center">
-              <a href={`/league/${slug}/draft`} className="text-gray-600 text-sm hover:text-gray-400">
+            <div className="flex flex-wrap gap-2 items-center justify-end">
+              <a href={`/league/${slug}/draft`} className="text-gray-500 text-sm hover:text-gray-300">
                 Draft Room →
               </a>
-              <a href={`/league/${slug}`} className="text-gray-600 text-sm hover:text-gray-400">
+              <a href={`/league/${slug}`} className="text-gray-500 text-sm hover:text-gray-300">
                 League Dashboard →
               </a>
-              <a href={`/api/league/${slug}/logout`} className="text-gray-600 text-xs hover:text-red-400 transition-colors">
+              <a
+                href={`/api/league/${slug}/logout`}
+                className="text-sm font-semibold text-red-400/90 hover:text-red-300 border border-red-900/80 hover:border-red-700 rounded-md px-3 py-1.5 transition-colors"
+              >
                 Log out
               </a>
             </div>
@@ -120,8 +156,9 @@ export default async function AdminDashboard({ params }: Props) {
             />
           </div>
           {/* Nav */}
-          <div className="flex gap-4 mt-3 text-xs text-gray-600 font-mono border-t border-gray-900 pt-3">
+          <div className="flex gap-4 mt-3 text-xs text-gray-600 font-mono border-t border-gray-900 pt-3 flex-wrap">
             <a href="#recap" className="hover:text-[#39ff14] transition-colors">Weekly Recap Email</a>
+            <a href="#payments" className="hover:text-[#39ff14] transition-colors">Settle week &amp; payments</a>
             <a href="#roster" className="hover:text-gray-400 transition-colors">Roster</a>
             <a href="#teams" className="hover:text-gray-400 transition-colors">Teams</a>
             <a href="#settings" className="hover:text-gray-400 transition-colors">Settings</a>
@@ -131,7 +168,33 @@ export default async function AdminDashboard({ params }: Props) {
         {/* Weekly Recap Email */}
         <section id="recap">
           <h2 className="text-xl font-bold mb-4">Weekly Recap Email</h2>
-          <WeeklyRecapSection leagueSlug={slug} />
+          <WeeklyRecapSection leagueSlug={slug} recapCapabilityToken={recapCapabilityToken} />
+        </section>
+
+        {/* Payments grid + settle week (payouts API) */}
+        <section id="payments">
+          <h2 className="text-xl font-bold mb-1">Payments &amp; settle week</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Track Venmo/cash per member per week. When a week is done, use <strong className="text-gray-400">Settle week</strong>{' '}
+            below — that records the pot ledger, payouts (if any 13-run winners), rollover, and refreshes droughts.{' '}
+            <span className="text-gray-600 font-mono">Season {seasonYear} · playing week {currentWeekNumber}</span>
+          </p>
+          <PaymentBoard
+            members={(members ?? [])
+              .filter((m) => m.is_active !== false)
+              .map((m) => ({
+                id: m.id,
+                name: m.name,
+                assigned_team: m.assigned_team,
+              }))}
+            payments={weeklyPaymentsRows.map((p) => ({
+              ...p,
+              override_note: p.override_note ?? undefined,
+            }))}
+            leagueSlug={slug}
+            payouts={payoutSummaries}
+            year={seasonYear}
+          />
         </section>
 
         {/* Pre-Season Status */}

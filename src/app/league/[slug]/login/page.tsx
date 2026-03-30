@@ -32,12 +32,18 @@ export default async function LeagueLoginPage({ params, searchParams }: Props) {
     const isAdmin = await bcrypt.compare(password, league.password_hash)
     if (isAdmin) {
       const cookieStore = await cookies()
+      // Drop legacy cookie scoped to /league/[slug] only — it is not sent to /api/league/...
+      cookieStore.set(`league_auth_${slug}`, '', {
+        maxAge: 0,
+        path: `/league/${slug}`,
+      })
       cookieStore.set(`league_auth_${slug}`, 'admin', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 7,
-        path: `/league/${slug}`,
+        // `/` so the cookie is sent to `/api/league/...` routes (fetch from admin UI)
+        path: '/',
       })
       redirect(`/league/${slug}/admin`)
     }
@@ -47,12 +53,16 @@ export default async function LeagueLoginPage({ params, searchParams }: Props) {
       const isMember = await bcrypt.compare(password, league.member_password_hash)
       if (isMember) {
         const cookieStore = await cookies()
+        cookieStore.set(`league_auth_${slug}`, '', {
+          maxAge: 0,
+          path: `/league/${slug}`,
+        })
         cookieStore.set(`league_auth_${slug}`, 'member', {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
           maxAge: 60 * 60 * 24 * 7,
-          path: `/league/${slug}`,
+          path: '/',
         })
         redirect(`/league/${slug}`)
       }

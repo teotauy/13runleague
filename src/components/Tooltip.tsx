@@ -1,6 +1,14 @@
 'use client'
 
-import { useState, ReactNode, useRef, useEffect } from 'react'
+import {
+  useState,
+  ReactNode,
+  useRef,
+  useLayoutEffect,
+  useEffect,
+  useCallback,
+} from 'react'
+import { createPortal } from 'react-dom'
 
 interface TooltipProps {
   children: ReactNode
@@ -9,54 +17,139 @@ interface TooltipProps {
   explanation: string | string[]
 }
 
+const GAP = 10
+const VIEW_MARGIN = 12
+/** Max tooltip width — enough for Poisson / park-factor copy without clipping */
+const MAX_TOOLTIP_W = 320
+
 export default function Tooltip({ children, label, explanation }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false)
-  const [position, setPosition] = useState<'below' | 'above'>('below')
-  const [hAlign, setHAlign] = useState<'center' | 'left' | 'right'>('center')
+  const [mounted, setMounted] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
+  const [box, setBox] = useState<{
+    top: number
+    left: number
+    arrowX: number
+    placeAbove: boolean
+  } | null>(null)
 
   const lines = Array.isArray(explanation) ? explanation : [explanation]
 
-  useEffect(() => {
-    if (!isVisible || !containerRef.current || !tooltipRef.current) return
+  const updatePosition = useCallback(() => {
+    const trigger = containerRef.current
+    const tip = tooltipRef.current
+    if (!trigger || !tip || !isVisible) return
 
-    const containerRect = containerRef.current.getBoundingClientRect()
-    const tooltipRect = tooltipRef.current.getBoundingClientRect()
-    const MARGIN = 8
+    const tr = trigger.getBoundingClientRect()
+    const tw = tip.offsetWidth
+    const th = tip.offsetHeight
 
-    // Vertical
-    const spaceBelow = window.innerHeight - containerRect.bottom
-    const spaceAbove = containerRect.top
-    if (spaceBelow < tooltipRect.height + MARGIN && spaceAbove > tooltipRect.height + MARGIN) {
-      setPosition('above')
-    } else {
-      setPosition('below')
+    let placeAbove =
+      tr.bottom + th + GAP > window.innerHeight - VIEW_MARGIN &&
+      tr.top > th + GAP + VIEW_MARGIN
+
+    let top = placeAbove ? tr.top - th - GAP : tr.bottom + GAP
+    let left = tr.left + tr.width / 2 - tw / 2
+    left = Math.max(VIEW_MARGIN, Math.min(left, window.innerWidth - tw - VIEW_MARGIN))
+
+    if (top < VIEW_MARGIN) {
+      top = VIEW_MARGIN
+      placeAbove = false
+    }
+    if (top + th > window.innerHeight - VIEW_MARGIN) {
+      top = Math.max(VIEW_MARGIN, window.innerHeight - th - VIEW_MARGIN)
     }
 
-    // Horizontal — check if centered tooltip bleeds off either edge
-    const centeredLeft = containerRect.left + containerRect.width / 2 - tooltipRect.width / 2
-    const centeredRight = centeredLeft + tooltipRect.width
-    if (centeredLeft < MARGIN) {
-      setHAlign('left')
-    } else if (centeredRight > window.innerWidth - MARGIN) {
-      setHAlign('right')
-    } else {
-      setHAlign('center')
-    }
+    const triggerCenter = tr.left + tr.width / 2
+    const arrowX = Math.min(Math.max(triggerCenter - left - 6, 16), tw - 28)
+
+    setBox({ top, left, arrowX, placeAbove })
   }, [isVisible])
 
-  // Close when clicking outside on mobile
+  useLayoutEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!isVisible) {
+      setBox(null)
+      return
+    }
+    updatePosition()
+    const ro = new ResizeObserver(() => updatePosition())
+    if (tooltipRef.current) ro.observe(tooltipRef.current)
+    window.addEventListener('scroll', updatePosition, true)
+    window.addEventListener('resize', updatePosition)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('scroll', updatePosition, true)
+      window.removeEventListener('resize', updatePosition)
+    }
+  }, [isVisible, updatePosition, lines, label])
+
   useEffect(() => {
     if (!isVisible) return
     const handleOutsideClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsVisible(false)
+      const t = e.target as Node
+      if (
+        containerRef.current?.contains(t) ||
+        tooltipRef.current?.contains(t)
+      ) {
+        return
       }
+      setIsVisible(false)
     }
     document.addEventListener('mousedown', handleOutsideClick)
     return () => document.removeEventListener('mousedown', handleOutsideClick)
   }, [isVisible])
+
+  const tooltipNode =
+    isVisible &&
+    mounted &&
+    typeof document !== 'undefined' &&
+    createPortal(
+      <div
+        ref={tooltipRef}
+        role="tooltip"
+        className="fixed z-[100] rounded-lg bg-[#111] border border-[#39ff14] text-white text-xs shadow-xl pointer-events-none"
+        style={{
+          top: box?.top ?? -9999,
+          left: box?.left ?? 0,
+          maxWidth: `min(${MAX_TOOLTIP_W}px, calc(100vw - ${VIEW_MARGIN * 2}px))`,
+          width: 'max-content',
+          padding: '0.75rem 1rem 0.875rem',
+          visibility: box ? 'visible' : 'hidden',
+        }}
+      >
+        <div className="font-bold text-[#39ff14] mb-2 text-[11px] tracking-wide uppercase">
+          {label}
+        </div>
+        {lines.length === 1 ? (
+          <p className="text-gray-300 leading-relaxed break-words">{lines[0]}</p>
+        ) : (
+          <ul className="list-none space-y-1.5 m-0 p-0">
+            {lines.map((line, i) => (
+              <li
+                key={i}
+                className="text-gray-300 leading-relaxed break-words pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-[#39ff14]/60"
+              >
+                {line}
+              </li>
+            ))}
+          </ul>
+        )}
+        {box && (
+          <div
+            className={`pointer-events-none absolute w-2 h-2 bg-[#111] border-r border-b border-[#39ff14] ${
+              box.placeAbove ? '-bottom-1 -rotate-45' : '-top-1 rotate-45'
+            }`}
+            style={{ left: box.arrowX }}
+          />
+        )}
+      </div>,
+      document.body
+    )
 
   return (
     <div
@@ -70,39 +163,7 @@ export default function Tooltip({ children, label, explanation }: TooltipProps) 
       tabIndex={0}
     >
       {children}
-
-      {isVisible && (
-        <div
-          ref={tooltipRef}
-          role="tooltip"
-          className={`absolute z-50 w-52 px-3 py-2.5 rounded bg-[#111] border border-[#39ff14] text-white text-xs shadow-lg ${
-            position === 'below' ? 'top-full mt-2' : 'bottom-full mb-2'
-          } ${
-            hAlign === 'center' ? 'left-1/2 -translate-x-1/2' :
-            hAlign === 'left'   ? 'left-0' :
-                                  'right-0'
-          }`}
-        >
-          <div className="font-bold text-[#39ff14] mb-1.5 text-[11px] tracking-wide uppercase">{label}</div>
-          <ul className="space-y-1">
-            {lines.map((line, i) => (
-              <li key={i} className="text-gray-300 leading-snug">
-                {line}
-              </li>
-            ))}
-          </ul>
-          {/* Arrow — tracks horizontal alignment */}
-          <div
-            className={`absolute w-2 h-2 bg-[#111] border-r border-b border-[#39ff14] ${
-              hAlign === 'center' ? 'left-1/2 -translate-x-1/2' :
-              hAlign === 'left'   ? 'left-3' :
-                                    'right-3'
-            } ${
-              position === 'below' ? '-top-1 rotate-45' : '-bottom-1 -rotate-45'
-            }`}
-          />
-        </div>
-      )}
+      {tooltipNode}
     </div>
   )
 }

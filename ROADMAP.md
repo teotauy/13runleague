@@ -133,10 +133,10 @@ Email sections:
 - Footer: same as opener
 
 Build plan:
-- `WeeklyRecapModal.tsx` in admin — briefing panel + winner picker + rollover toggle + write-up textarea + preview iframe
-- `/api/league/[slug]/weekly-briefing` — aggregates streak data, near-misses, MLB hot hitters
-- `/api/league/[slug]/weekly-recap` — builds HTML, sends via Resend with 250ms rate limiting
-- Preview renders full HTML in modal before send button is enabled
+- **Shipped (baseline):** `WeeklyRecapSection.tsx` on admin — load preview (iframe) + confirm-before-send; `src/lib/weeklyRecapActions.ts` server actions (`previewWeeklyRecapEmail`, `sendWeeklyRecapEmail`) so auth uses the same `cookies()` as the admin page (no separate API route).
+- **Still to build:** `WeeklyRecapModal.tsx` — briefing panel + winner picker + rollover toggle + write-up textarea (commissioner voice)
+- **Still to build:** `/api/league/[slug]/weekly-briefing` — aggregates streak data, near-misses, MLB hot hitters
+- Season opener emails use 250ms spacing between Resend calls; weekly recap currently sends one broadcast (`to` array) — revisit rate limits if Resend limits change
 
 ### Homepage & Design
 - [ ] Logo / wordmark — no mark exists yet; explore SVG concept built in-browser
