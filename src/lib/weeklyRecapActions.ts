@@ -10,6 +10,8 @@ import {
   getEffectiveRolloverPotForDashboard,
 } from '@/lib/pot'
 import { verifyRecapCapability } from '@/lib/recapCapability'
+import { sanitizeRecapHtml } from '@/lib/recapHtmlSanitize'
+import { buildRecapSuggestions, type RecapSuggestionBlock } from '@/lib/recapSuggestions'
 
 async function buildRecapData(slug: string) {
   const supabase = createServiceClient()
@@ -63,13 +65,68 @@ async function buildRecapData(slug: string) {
   return { league, emails, props, weekNumber }
 }
 
+export type RecapEditorOptions = {
+  commissionerHtml?: string | null
+  showLeaguePot?: boolean
+  showBranding?: boolean
+}
+
+function mergeRecapProps(
+  data: NonNullable<Awaited<ReturnType<typeof buildRecapData>>>,
+  options?: RecapEditorOptions
+) {
+  const raw = options?.commissionerHtml
+  const commissionerHtml =
+    raw && String(raw).trim() ? sanitizeRecapHtml(String(raw)) : undefined
+  return {
+    ...data.props,
+    commissionerHtml,
+    showLeaguePot: options?.showLeaguePot !== false,
+    showBranding: options?.showBranding !== false,
+  }
+}
+
+export type RecapSuggestionsResult =
+  | { ok: true; blocks: RecapSuggestionBlock[]; weekNumber: number; recipientCount: number }
+  | { ok: false; error: string }
+
+export async function fetchRecapSuggestions(
+  slug: string,
+  capabilityToken: string
+): Promise<RecapSuggestionsResult> {
+  const verified = verifyRecapCapability(capabilityToken)
+  if (!verified || verified.slug !== slug) {
+    return { ok: false, error: 'Unauthorized' }
+  }
+
+  const supabase = createServiceClient()
+  const { data: league } = await supabase.from('leagues').select('id').eq('slug', slug).single()
+  if (!league || league.id !== verified.leagueId) {
+    return { ok: false, error: 'Unauthorized' }
+  }
+
+  const data = await buildRecapData(slug)
+  if (!data || data.league.id !== verified.leagueId) {
+    return { ok: false, error: 'Unauthorized' }
+  }
+
+  const blocks = await buildRecapSuggestions(league.id, supabase)
+  return {
+    ok: true,
+    blocks,
+    weekNumber: data.weekNumber,
+    recipientCount: data.emails.length,
+  }
+}
+
 export type WeeklyRecapPreviewResult =
   | { ok: true; html: string; weekNumber: number; recipientCount: number }
   | { ok: false; error: string }
 
 export async function previewWeeklyRecapEmail(
   slug: string,
-  capabilityToken: string
+  capabilityToken: string,
+  options?: RecapEditorOptions
 ): Promise<WeeklyRecapPreviewResult> {
   const verified = verifyRecapCapability(capabilityToken)
   if (!verified || verified.slug !== slug) {
@@ -83,7 +140,7 @@ export async function previewWeeklyRecapEmail(
     return { ok: false, error: 'Unauthorized' }
   }
 
-  const html = await render(WeeklyRecap(data.props))
+  const html = await render(WeeklyRecap(mergeRecapProps(data, options)))
   return {
     ok: true,
     html,
@@ -98,7 +155,8 @@ export type WeeklyRecapSendResult =
 
 export async function sendWeeklyRecapEmail(
   slug: string,
-  capabilityToken: string
+  capabilityToken: string,
+  options?: RecapEditorOptions
 ): Promise<WeeklyRecapSendResult> {
   const verified = verifyRecapCapability(capabilityToken)
   if (!verified || verified.slug !== slug) {
@@ -116,7 +174,7 @@ export async function sendWeeklyRecapEmail(
     return { ok: false, error: 'No recipient emails found' }
   }
 
-  const html = await render(WeeklyRecap(data.props))
+  const html = await render(WeeklyRecap(mergeRecapProps(data, options)))
   const resend = new Resend(process.env.RESEND_API_KEY)
 
   const { error } = await resend.emails.send({

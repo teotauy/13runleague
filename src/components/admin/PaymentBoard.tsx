@@ -68,11 +68,20 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ week_number: week, year }),
       })
-      if (!res.ok) throw new Error('Failed to calculate payouts')
+      if (!res.ok) {
+        let msg = 'Failed to calculate payouts'
+        try {
+          const j = (await res.json()) as { error?: string }
+          if (j?.error) msg = j.error
+        } catch {
+          /* ignore */
+        }
+        throw new Error(msg)
+      }
       router.refresh()
     } catch (err) {
       console.error(err)
-      alert('Error calculating payouts')
+      alert(err instanceof Error ? err.message : 'Error calculating payouts')
     } finally {
       setCalculatingWeek(null)
     }

@@ -1,0 +1,63 @@
+import sanitizeHtml from 'sanitize-html'
+
+/** Email-safe HTML for the commissioner-editable recap block (and optional full-document mode). */
+export function sanitizeRecapHtml(html: string): string {
+  return sanitizeHtml(html.trim(), {
+    allowedTags: [
+      'code',
+      'pre',
+      'p',
+      'br',
+      'strong',
+      'b',
+      'em',
+      'i',
+      'u',
+      'a',
+      'ul',
+      'ol',
+      'li',
+      'div',
+      'span',
+      'img',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'blockquote',
+      'hr',
+      'table',
+      'thead',
+      'tbody',
+      'tr',
+      'th',
+      'td',
+    ],
+    allowedAttributes: {
+      a: ['href', 'name', 'style', 'target'],
+      img: ['src', 'alt', 'width', 'height', 'style'],
+      td: ['colspan', 'rowspan', 'style'],
+      th: ['colspan', 'rowspan', 'style'],
+      '*': ['style', 'class'],
+    },
+    allowedStyles: {
+      '*': {
+        color: [/^#[0-9a-fA-F]{3,8}$/, /^rgb/, /^rgba/],
+        'background-color': [/^#[0-9a-fA-F]{3,8}$/, /^rgb/, /^rgba/],
+        'text-align': [/^left$/, /^right$/, /^center$/],
+        'font-size': [/^\d+(?:px|em|%)$/],
+        'font-weight': [/^bold$/, /^normal$/, /^\d+$/],
+        margin: [/^\d+(?:px|em)?$/],
+        'margin-top': [/^\d+(?:px|em)?$/],
+        'margin-bottom': [/^\d+(?:px|em)?$/],
+        padding: [/^\d+(?:px|em)?$/],
+        width: [/^\d+(?:px|%)$/],
+        'max-width': [/^\d+(?:px|%)$/],
+        border: [/^.*$/],
+      },
+    },
+    allowedSchemes: ['http', 'https', 'mailto'],
+    allowedSchemesByTag: { img: ['http', 'https'] },
+    allowProtocolRelative: false,
+  })
+}

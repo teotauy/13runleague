@@ -29,12 +29,21 @@ interface WeeklyRecapProps {
   weekNumber: number
   upcomingGames: HighProbGame[]
   leagues: LeagueSummary[]
+  /** Sanitized HTML from commissioner editor (images, GIFs, layout). */
+  commissionerHtml?: string
+  /** When false, hides auto-generated pot / league summary block. */
+  showLeaguePot?: boolean
+  /** When false, hides 13 header + Retrosheet / footer (commissioner supplies narrative only). */
+  showBranding?: boolean
 }
 
 export default function WeeklyRecap({
   weekNumber,
   upcomingGames,
   leagues,
+  commissionerHtml,
+  showLeaguePot = true,
+  showBranding = true,
 }: WeeklyRecapProps) {
   return (
     <Html>
@@ -43,14 +52,16 @@ export default function WeeklyRecap({
         <Container style={{ maxWidth: '600px', margin: '0 auto', padding: '32px 16px' }}>
 
           {/* Header */}
-          <Section>
-            <Heading style={{ color: '#39ff14', fontSize: '28px', margin: '0 0 4px' }}>
-              13 Run League
-            </Heading>
-            <Text style={{ color: '#6b7280', margin: '0 0 32px', fontSize: '14px' }}>
-              Week {weekNumber} Recap
-            </Text>
-          </Section>
+          {showBranding && (
+            <Section>
+              <Heading style={{ color: '#39ff14', fontSize: '28px', margin: '0 0 4px' }}>
+                13 Run League
+              </Heading>
+              <Text style={{ color: '#6b7280', margin: '0 0 32px', fontSize: '14px' }}>
+                Week {weekNumber} Recap
+              </Text>
+            </Section>
+          )}
 
           {/* Upcoming high-probability games */}
           {upcomingGames.length > 0 && (
@@ -77,7 +88,7 @@ export default function WeeklyRecap({
           )}
 
           {/* League pot totals */}
-          {leagues.length > 0 && (
+          {showLeaguePot && leagues.length > 0 && (
             <Section>
               <Heading as="h2" style={{ color: '#ffffff', fontSize: '18px', marginBottom: '12px' }}>
                 💰 League Pot Totals
@@ -102,24 +113,33 @@ export default function WeeklyRecap({
             </Section>
           )}
 
+          {/* Commissioner-editable narrative (after pot, before footer) */}
+          {commissionerHtml ? (
+            <Section style={{ marginBottom: '24px' }}>
+              <div dangerouslySetInnerHTML={{ __html: commissionerHtml }} />
+            </Section>
+          ) : null}
+
           {/* Footer */}
-          <Section>
-            <Text style={{ color: '#374151', fontSize: '11px', lineHeight: '1.6' }}>
-              The information used here was obtained free of charge from and is copyrighted by{' '}
-              <Link href="https://www.retrosheet.org" style={{ color: '#4b5563' }}>
-                Retrosheet
-              </Link>
-              . Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
-            </Text>
-            <Text style={{ color: '#374151', fontSize: '11px' }}>
-              13runleague.com · You&apos;re receiving this because you&apos;re in a 13 Run League.
-            </Text>
-            <Text style={{ fontSize: '12px', marginTop: '8px' }}>
-              <Link href="https://buymeacoffee.com/colbyblack" style={{ color: '#eab308' }}>
-                ☕ Buy me a coffee
-              </Link>
-            </Text>
-          </Section>
+          {showBranding && (
+            <Section>
+              <Text style={{ color: '#374151', fontSize: '11px', lineHeight: '1.6' }}>
+                The information used here was obtained free of charge from and is copyrighted by{' '}
+                <Link href="https://www.retrosheet.org" style={{ color: '#4b5563' }}>
+                  Retrosheet
+                </Link>
+                . Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
+              </Text>
+              <Text style={{ color: '#374151', fontSize: '11px' }}>
+                13runleague.com · You&apos;re receiving this because you&apos;re in a 13 Run League.
+              </Text>
+              <Text style={{ fontSize: '12px', marginTop: '8px' }}>
+                <Link href="https://buymeacoffee.com/colbyblack" style={{ color: '#eab308' }}>
+                  ☕ Buy me a coffee
+                </Link>
+              </Text>
+            </Section>
+          )}
 
         </Container>
       </Body>

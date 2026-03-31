@@ -10,6 +10,10 @@ import {
 } from '@/lib/pot'
 import { recalculateStreaks } from '@/lib/streaks'
 
+function isAdmin(value: string | undefined) {
+  return value === 'admin' || value === 'authenticated'
+}
+
 interface CalculatePayoutsRequest {
   week_number: number
   year: number
@@ -42,8 +46,7 @@ export async function POST(
   const cookieStore = await cookies()
   const authCookie = cookieStore.get(`league_auth_${slug}`)
 
-  // Verify authentication
-  if (!authCookie) {
+  if (!authCookie || !isAdmin(authCookie.value)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
