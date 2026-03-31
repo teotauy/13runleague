@@ -17,23 +17,39 @@ interface PayoutRecord {
 }
 
 /**
- * Calculate week number based on date and season start
- * Week 1 = March 25-31, Week 2 = April 1-7, etc.
+ * Get the Monday of the week containing a given date.
+ * Weeks run Monday–Sunday to align with baseball weekly payouts.
+ */
+function getWeekMonday(date: Date): Date {
+  const dow = date.getDay() // 0=Sun, 1=Mon … 6=Sat
+  const daysSinceMon = dow === 0 ? 6 : dow - 1
+  const mon = new Date(date)
+  mon.setDate(mon.getDate() - daysSinceMon)
+  mon.setHours(0, 0, 0, 0)
+  return mon
+}
+
+/**
+ * Calculate week number based on date and season start.
+ * Week 1 = the Mon–Sun week containing Opening Day (March 25).
+ * Week 2 = the following Mon–Sun week, etc.
  * Season starts March 25 each year (MLB Opening Day)
  */
 export function getWeekNumber(date: Date, seasonStartMonth: number = 3, seasonStartDay: number = 25): number {
   const year = date.getFullYear()
   const seasonStart = new Date(year, seasonStartMonth - 1, seasonStartDay)
+  const weekOneMonday = getWeekMonday(seasonStart)
 
-  // If date is before season start, use previous year's season
-  if (date < seasonStart) {
+  // If date is before Week 1 Monday, fall back to previous year
+  if (date < weekOneMonday) {
     const prevYearStart = new Date(year - 1, seasonStartMonth - 1, seasonStartDay)
-    const daysDiff = Math.floor((date.getTime() - prevYearStart.getTime()) / (1000 * 60 * 60 * 24))
-    return Math.ceil((daysDiff + 1) / 7)
+    const prevWeekOneMonday = getWeekMonday(prevYearStart)
+    const daysDiff = Math.floor((date.getTime() - prevWeekOneMonday.getTime()) / (1000 * 60 * 60 * 24))
+    return Math.floor(daysDiff / 7) + 1
   }
 
-  const daysDiff = Math.floor((date.getTime() - seasonStart.getTime()) / (1000 * 60 * 60 * 24))
-  return Math.ceil((daysDiff + 1) / 7)
+  const daysDiff = Math.floor((date.getTime() - weekOneMonday.getTime()) / (1000 * 60 * 60 * 24))
+  return Math.floor(daysDiff / 7) + 1
 }
 
 /**
@@ -76,13 +92,13 @@ export async function calculateWeeklyPot(
     throw new Error('League not found')
   }
 
-  // Count active members
+  // Count active members only (exclude alumni/inactive)
   const { data: members } = await supabase
     .from('members')
-    .select('id')
+    .select('id, is_active')
     .eq('league_id', league_id)
 
-  const memberCount = members?.length || 0
+  const memberCount = (members ?? []).filter((m) => m.is_active !== false).length
   const basePot = (league.weekly_buy_in || 10) * memberCount
 
   // Check for rollover from previous week
@@ -122,9 +138,10 @@ export async function getWinnersForWeek(
   year: number,
   supabase: SupabaseClient
 ): Promise<Winner[]> {
-  // Get the week boundaries
+  // Get the week boundaries (Monday–Sunday, aligned to opening-day week)
   const seasonStart = new Date(year, 2, 25) // March 25 (MLB Opening Day)
-  const weekStart = new Date(seasonStart)
+  const weekOneMonday = getWeekMonday(seasonStart)
+  const weekStart = new Date(weekOneMonday)
   weekStart.setDate(weekStart.getDate() + (week_number - 1) * 7)
   const weekEnd = new Date(weekStart)
   weekEnd.setDate(weekEnd.getDate() + 6)
