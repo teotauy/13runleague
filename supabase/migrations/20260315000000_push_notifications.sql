@@ -17,3 +17,11 @@ CREATE TABLE IF NOT EXISTS push_notifications_sent (
   sent_at    timestamptz DEFAULT now(),
   PRIMARY KEY (game_pk, team, event_type)
 );
+
+-- RLS: required by Supabase security advisor
+ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE push_notifications_sent ENABLE ROW LEVEL SECURITY;
+
+-- Anyone can register a push subscription (INSERT); service role manages reads/deletes
+CREATE POLICY IF NOT EXISTS "push_subscriptions_public_insert"
+  ON push_subscriptions FOR INSERT WITH CHECK (true);
