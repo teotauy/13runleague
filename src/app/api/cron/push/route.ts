@@ -109,6 +109,34 @@ export async function GET(request: Request) {
     return NextResponse.json({ sent: 0, message: 'No final games' })
   }
 
+  // 1b. Persist all 13-run finals to game_results so the celebration banner,
+  //     winner detection, and payout settlement all work automatically.
+  const gameDate = baseballToday()
+  const thirteenGameRows = games
+    .filter((g) => g.teams.away.score === 13 || g.teams.home.score === 13)
+    .map((g) => {
+      const winningTeams: string[] = []
+      if (g.teams.away.score === 13) winningTeams.push(g.teams.away.team.abbreviation)
+      if (g.teams.home.score === 13) winningTeams.push(g.teams.home.team.abbreviation)
+      return {
+        game_pk:      String(g.gamePk),
+        game_date:    gameDate,
+        home_team:    g.teams.home.team.abbreviation,
+        away_team:    g.teams.away.team.abbreviation,
+        home_score:   g.teams.home.score ?? 0,
+        away_score:   g.teams.away.score ?? 0,
+        was_thirteen: true,
+        winning_team: winningTeams.join(','),
+        final:        true,
+      }
+    })
+
+  if (thirteenGameRows.length > 0) {
+    await supabase
+      .from('game_results')
+      .upsert(thirteenGameRows, { onConflict: 'game_pk' })
+  }
+
   // 2. Find teams that scored exactly 13
   const thirteenHits: Array<{ gamePk: string; team: string; abbr: string; opponent: string; score: string }> = []
 
