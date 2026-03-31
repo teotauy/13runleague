@@ -49,7 +49,7 @@ export async function recalculateStreaks(
   // 1. Members in this league
   const { data: members } = await supabase
     .from('members')
-    .select('id, assigned_team')
+    .select('id, assigned_team, created_at')
     .eq('league_id', leagueId)
 
   if (!members || members.length === 0) return
@@ -75,9 +75,6 @@ export async function recalculateStreaks(
   const currentWeek       = Math.min(rawWeek, SEASON_WEEKS)
   const currentGlobal     = globalWeek(currentYear, currentWeek)
 
-  // For "never won" case, drought measured from first week of BASE_YEAR
-  const neverWonDrought = currentGlobal  // = weeks since the very beginning
-
   // Determine elapsed weeks in the given season year (for longest-drought-this-season)
   const seasonStart       = new Date(year, 3, 1)  // April 1
   const currentSeasonYear = getSeasonYear(today)
@@ -95,6 +92,15 @@ export async function recalculateStreaks(
       const wins = winsByMember.get(member.id) ?? []
 
       // ── Cross-season drought ───────────────────────────────────────────────
+      // For never-won members, count from when they joined — not from BASE_YEAR.
+      // This prevents new members (e.g. joined 2026) from showing 200+ week droughts.
+      const joinDate   = member.created_at ? new Date(member.created_at) : new Date(BASE_YEAR, 2, 25)
+      const joinYear   = getSeasonYear(joinDate)
+      const joinWeek   = Math.max(1, Math.min(getWeekNumber(joinDate), SEASON_WEEKS))
+      const joinGlobal = globalWeek(joinYear, joinWeek)
+      // drought = 0 means "won this week"; drought = 1 means "one week without a win"
+      const neverWonDrought = Math.max(0, currentGlobal - joinGlobal + 1)
+
       let drought: number
       if (wins.length === 0) {
         drought = neverWonDrought
