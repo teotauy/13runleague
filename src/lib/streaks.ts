@@ -93,13 +93,23 @@ export async function recalculateStreaks(
 
       // ── Cross-season drought ───────────────────────────────────────────────
       // For never-won members, count from when they joined — not from BASE_YEAR.
-      // This prevents new members (e.g. joined 2026) from showing 200+ week droughts.
-      const joinDate   = member.created_at ? new Date(member.created_at) : new Date(BASE_YEAR, 2, 25)
-      const joinYear   = getSeasonYear(joinDate)
-      const joinWeek   = Math.max(1, Math.min(getWeekNumber(joinDate), SEASON_WEEKS))
-      const joinGlobal = globalWeek(joinYear, joinWeek)
-      // drought = 0 means "won this week"; drought = 1 means "one week without a win"
-      const neverWonDrought = Math.max(0, currentGlobal - joinGlobal + 1)
+      // If created_at is before that calendar year's Opening Day (March 25),
+      // treat them as joining at Week 1 of that year's season rather than the
+      // tail of the prior season (which getSeasonYear/getWeekNumber would return).
+      const joinDate     = member.created_at ? new Date(member.created_at) : new Date(BASE_YEAR, 2, 25)
+      const joinCalYear  = joinDate.getFullYear()
+      const openingDay   = new Date(joinCalYear, 2, 25) // March 25 of their join calendar year
+      let joinGlobal: number
+      if (joinDate < openingDay) {
+        // Pre-season join → first eligible week is Week 1 of that calendar year's season
+        joinGlobal = globalWeek(joinCalYear, 1)
+      } else {
+        const joinYear = getSeasonYear(joinDate)
+        const joinWeek = Math.max(1, Math.min(getWeekNumber(joinDate), SEASON_WEEKS))
+        joinGlobal = globalWeek(joinYear, joinWeek)
+      }
+      // drought = weeks elapsed since join week without a win (0 = won this week)
+      const neverWonDrought = Math.max(0, currentGlobal - joinGlobal)
 
       let drought: number
       if (wins.length === 0) {
