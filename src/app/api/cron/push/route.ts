@@ -9,6 +9,8 @@ import { NextResponse } from 'next/server'
 import webpush from 'web-push'
 import { createServiceClient } from '@/lib/supabase/server'
 import { baseballToday } from '@/lib/mlb'
+import { recalculateStreaks } from '@/lib/streaks'
+import { getSeasonYear } from '@/lib/pot'
 
 // ---------------------------------------------------------------------------
 // VAPID setup (lazy — avoids env var errors at import time)
@@ -230,7 +232,19 @@ export async function GET(request: Request) {
       .upsert({ game_pk: hit.gamePk, team: hit.abbr, event_type: 'thirteen' })
   }
 
-  // 6. Clean up expired subscriptions
+  // 6. Recalculate streaks for all leagues — wins count the moment the game ends.
+  //    Only runs when toSend had new games (above), so this is a no-op on repeat cron ticks.
+  try {
+    const { data: leagues } = await supabase.from('leagues').select('id')
+    const currentYear = getSeasonYear(new Date())
+    await Promise.all(
+      (leagues ?? []).map((league) => recalculateStreaks(league.id, currentYear, supabase))
+    )
+  } catch (err) {
+    console.error('[PushCron] Streak recalculation failed (non-fatal):', err)
+  }
+
+  // 7. Clean up expired subscriptions
   if (failedEndpoints.length > 0) {
     await supabase
       .from('push_subscriptions')

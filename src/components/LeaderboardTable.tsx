@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Tooltip from './Tooltip'
 
-type SortCol = 'prob' | 'streak' | 'wins' | 'won'
+type SortCol = 'player' | 'team' | 'prob' | 'streak' | 'wins' | 'won'
 type Dir = 'asc' | 'desc'
 
 interface MemberData {
@@ -49,11 +49,19 @@ export default function LeaderboardTable({
       setDir((d) => (d === 'desc' ? 'asc' : 'desc'))
     } else {
       setSortCol(col)
-      setDir('desc')
+      setDir(col === 'player' || col === 'team' ? 'asc' : 'desc')
     }
   }
 
   const sorted = [...rows].sort((a, b) => {
+    if (sortCol === 'player') {
+      const cmp = a.member.name.localeCompare(b.member.name)
+      return dir === 'asc' ? cmp : -cmp
+    }
+    if (sortCol === 'team') {
+      const cmp = a.member.assigned_team.localeCompare(b.member.assigned_team)
+      return dir === 'asc' ? cmp : -cmp
+    }
     let av: number, bv: number
     if (sortCol === 'prob') {
       av = a.todayProb ?? -1
@@ -110,8 +118,8 @@ export default function LeaderboardTable({
       <table className="w-full text-sm font-mono">
         <thead>
           <tr className="text-gray-500 border-b border-gray-800 text-left">
-            <th className="pb-2 pr-4">Player</th>
-            <th className="pb-2 pr-4">Team</th>
+            <SortTh label="Player" col="player" />
+            <SortTh label="Team" col="team" />
             <th className="pb-2 pr-4">Today</th>
             <SortTh label="P(13)" col="prob" explanation="Probability your team scores exactly 13 runs today. Pre-game Poisson model (season stats, park factors, pitcher). Updates live each inning during games." />
             <SortTh label="Drought" col="streak" title="Weeks since this player's last win" />

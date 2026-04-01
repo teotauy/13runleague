@@ -171,6 +171,115 @@ Build plan:
 
 ---
 
+## 📅 Annual Seasonal Lifecycle
+
+The league runs on a fixed calendar. Every phase has a defined start trigger, a set of actions, and a clear handoff to the next phase.
+
+---
+
+### Phase 1 — Regular Season
+**~March 25 → ~October 5**
+
+- Weekly cycle: Monday settlements (commissioner settles prior week via admin)
+- Push cron runs every 5 min during game hours detecting 13-run finals → auto-records to `game_results`, fires push notifications
+- Weekly recap email (Sunday): winner card / rollover card, commissioner's note, standings, streak narratives
+- Streaks (win drought) run live — `recalculateStreaks` is called on every week settlement
+- Pot accumulates; rollover preserved when no winner
+
+---
+
+### Phase 2 — End of Season
+**~October 5 (final regular-season game)**
+
+Trigger: Commissioner manually marks the season closed (or auto-detect: last scheduled game finalized).
+
+Actions:
+- Final weekly settlement + final recap email
+- Season summary email — all-time rankings snapshot, final payout tally, "see you next year" message
+- **Return survey embedded in the email** — one-click RSVP:
+  - ✅ **I'm in** — locks them in for next year
+  - ❌ **I'm out** — marks them as alumni (soft deactivate at season start)
+  - 🤔 **Maybe** — keeps them on the list, commissioner follows up in January
+- Payment option in the email — members can pre-pay their buy-in for next season (Venmo/cash, manually tracked in admin)
+- Streaks freeze at end of season — `currentGlobal` is capped at the final week of the season so offseason weeks don't inflate drought counters
+
+Implementation needed:
+- [ ] `season_status` flag on `leagues` table (`active` / `offseason` / `preseason`)
+- [ ] End-of-season summary email template
+- [ ] RSVP tracking column on `members` table (`next_season_status`: `in` / `out` / `maybe` / `pending`)
+- [ ] Admin UI: show RSVP responses, override individually
+
+---
+
+### Phase 3 — Offseason
+**~October 5 → February 13**
+
+- No weekly settlements, no streak movement
+- Commissioner can view RSVP status and send follow-up emails to `maybe` responders in January
+- New member invites go out — waitlist gets contacted, slots filled from `out` responses
+- Pre-payments can be recorded manually in admin
+- `GlobalSeasonBanner` shows offseason state + countdown to Draft Day (February 13)
+
+---
+
+### Phase 4 — Draft Day
+**February 13 (fixed, annually)**
+
+Draft day is the anchor for the pre-season. Set in stone: **February 13**.
+
+Workflow:
+1. Commissioner locks the roster — all `in` members finalized; `out` members marked alumni
+2. New members added (replacing outs) before draft executes
+3. Draft runs (existing `draft_sessions` / `draft_picks` system — random-assign or double-blind)
+4. Teams assigned, `assigned_team` updated on each member
+5. Draft Day email → each member receives their team assignment with team blurb
+6. Payments collected (those who haven't pre-paid) — tracked in admin
+
+Implementation needed:
+- [ ] Roster lock mechanism — prevent team changes after draft
+- [ ] Draft Day email template (team assignment + blurb)
+- [ ] `draft_year` column on `draft_sessions` so multiple seasons co-exist cleanly
+- [ ] Admin: "Close Season" → triggers offseason state and sends end-of-season email
+- [ ] Admin: "Open Draft" → unlocks draft UI, sends invites to new members
+
+---
+
+### Phase 5 — Spring Training / Pre-Season
+**February 13 → March 25**
+
+- Roster is set, teams assigned
+- Members who haven't paid are nudged via email / admin UI
+- `GlobalSeasonBanner` shows Spring Training state with countdown to Opening Day (March 25)
+- No streak movement, no weekly settlements
+- Commissioner can send a "get hyped" email in early March
+
+---
+
+### Phase 6 — Opening Day
+**March 25**
+
+- `season_status` flips to `active`
+- Banner switches to "Season is live · Week 1"
+- Week 1 pot initialized
+- Push cron resumes monitoring
+- Streak clock resumes from where it was capped at end of last season
+
+---
+
+### Annual Calendar Summary
+
+| Date | Event |
+|------|-------|
+| ~Oct 5 | Last regular-season game — season ends |
+| Oct (week of) | Final recap + season summary email with RSVP survey |
+| Oct–Jan | Offseason — streaks frozen, maybe-follows in January |
+| **Feb 13** | **Draft Day** — roster locked, teams assigned, draft email sent |
+| Feb 13 – Mar 25 | Spring Training — payments collected, hype builds |
+| **Mar 25** | **Opening Day** — Week 1 begins |
+| Mar 25 – Oct 5 | Regular Season — weekly settlements, recap emails, live push alerts |
+
+---
+
 ## 💰 Monetization Strategy
 
 ### The Prime Directive

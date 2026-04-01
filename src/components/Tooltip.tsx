@@ -2,6 +2,7 @@
 
 import {
   useState,
+  useMemo,
   ReactNode,
   useRef,
   useLayoutEffect,
@@ -34,7 +35,10 @@ export default function Tooltip({ children, label, explanation }: TooltipProps) 
     placeAbove: boolean
   } | null>(null)
 
-  const lines = Array.isArray(explanation) ? explanation : [explanation]
+  const lines = useMemo(
+    () => (Array.isArray(explanation) ? explanation : [explanation]),
+    [explanation]
+  )
 
   const updatePosition = useCallback(() => {
     const trigger = containerRef.current
