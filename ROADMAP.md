@@ -231,6 +231,7 @@ Build plan:
 
 ### Homepage & Design
 - [x] **Live Rankings P(13) = Live 13-Watch P(13)** for in-progress games — both use `getLiveConditionalProbs()` from `src/lib/probability.ts` with the same linescore snapshot; previews use per-team Poisson, finals use 0/1. Documented in **README.md**.
+- [x] **League dashboard leaderboard P(13)** matches the same live / preview / final behavior (`src/app/league/[slug]/page.tsx` + `scheduledGameLambdas.ts`).
 - [ ] Logo / wordmark — no mark exists yet; explore SVG concept built in-browser
 - [ ] Grain/noise texture overlay on hero (Luma-style depth)
 - [ ] Big bold hero section — "13 runs. One winner." energy

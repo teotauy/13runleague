@@ -2,8 +2,9 @@ import { cookies } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/mlb'
-import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
+import { fetchTodaySchedule, fetchLiveFeed, currentSeason, type MLBLiveGame, type MLBGame } from '@/lib/mlb'
+import { calculateThirteenProbability, getLiveConditionalProbs } from '@/lib/probability'
+import { buildPitcherAdjustedLambdasForGame } from '@/lib/scheduledGameLambdas'
 import {
   getWeekNumber,
   getSeasonYear,
@@ -62,9 +63,31 @@ export default async function LeagueDashboard({ params }: Props) {
 
   const games = await fetchTodaySchedule()
 
+  const liveGames = games.filter((g) => g.status.abstractGameState === 'Live')
+  const liveFeeds = await Promise.all(
+    liveGames.map((g) => fetchLiveFeed(g.gamePk).catch(() => null))
+  )
+  const liveFeedByPk = new Map<number, MLBLiveGame>()
+  for (const feed of liveFeeds) {
+    if (feed) liveFeedByPk.set(feed.gamePk, feed)
+  }
+
+  const lambdasByGamePk = new Map<
+    number,
+    ReturnType<typeof buildPitcherAdjustedLambdasForGame>
+  >()
+  function lambdasForGame(game: MLBGame) {
+    let p = lambdasByGamePk.get(game.gamePk)
+    if (!p) {
+      p = buildPitcherAdjustedLambdasForGame(game, season)
+      lambdasByGamePk.set(game.gamePk, p)
+    }
+    return p
+  }
+
   const activeMembers = (members ?? []).filter((m) => m.is_active !== false)
 
-  // Enrich each active member with today's game info and probability
+  // Enrich each active member with today's game info and P(13) (live conditional when in progress)
   const enrichedMembers = await Promise.all(
     activeMembers.map(async (member) => {
       const teamAbbr = member.assigned_team.toUpperCase()
@@ -82,17 +105,32 @@ export default async function LeagueDashboard({ params }: Props) {
       }
 
       const isHome = todayGame.teams.home.team.abbreviation === teamAbbr
-      const teamId = isHome
-        ? todayGame.teams.home.team.id
-        : todayGame.teams.away.team.id
+      const { awayLambda, homeLambda } = await lambdasForGame(todayGame)
+      const awayAdj = awayLambda.pitcherAdjusted
+      const homeAdj = homeLambda.pitcherAdjusted
+      const status = todayGame.status.abstractGameState
+      const feed = liveFeedByPk.get(todayGame.gamePk)
 
-      const stats = await fetchTeamSeasonStats(teamId, season)
-      const lambda = buildLambda({
-        baseRunsPerGame: stats.runsPerGame,
-        gamesPlayed: stats.gamesPlayed,
-        venueId: String(todayGame.venue.id),
-      })
-      const prob = calculateThirteenProbability(lambda.pitcherAdjusted)
+      let prob: number
+      if (status === 'Final') {
+        const runs = isHome
+          ? (todayGame.teams.home.score ?? 0)
+          : (todayGame.teams.away.score ?? 0)
+        prob = runs === 13 ? 1 : 0
+      } else if (status === 'Live' && feed) {
+        const ls = feed.liveData.linescore
+        const live = getLiveConditionalProbs(
+          ls.teams.away.runs ?? 0,
+          ls.teams.home.runs ?? 0,
+          ls.currentInning,
+          ls.isTopInning,
+          awayAdj,
+          homeAdj
+        )
+        prob = isHome ? live.home.probability : live.away.probability
+      } else {
+        prob = calculateThirteenProbability(isHome ? homeAdj : awayAdj)
+      }
 
       return { member, streak, todayGame, todayProb: prob }
     })

@@ -121,7 +121,11 @@ export default function LeaderboardTable({
             <SortTh label="Player" col="player" />
             <SortTh label="Team" col="team" />
             <th className="pb-2 pr-4">Today</th>
-            <SortTh label="P(13)" col="prob" explanation="Probability your team scores exactly 13 runs today. Pre-game Poisson model (season stats, park factors, pitcher). Updates live each inning during games." />
+            <SortTh
+              label="P(13)"
+              col="prob"
+              explanation="Probability your team finishes with exactly 13 runs today. Pre-game: Poisson from season stats, park, and matchup run environment. Live: same Retrosheet/Poisson conditional model as the public homepage (linescore). Final: 100% or 0%."
+            />
             <SortTh label="Drought" col="streak" title="Weeks since this player's last win" />
             <SortTh label="Wins" col="wins" title="Winning weeks this season" />
             <SortTh label="$$$" col="won" title="Money won this season" />

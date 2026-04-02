@@ -48,6 +48,10 @@ These two modules are meant to show the **same** notion of P(13) for live games.
 
 Game **sort order** on the homepage still uses pre-game **combined** game probability (`gameThirteenProbability`) for ordering matchups; per-cell P(13) follows the table above.
 
+### League dashboard leaderboard
+
+Password-protected **`/league/[slug]`** leaderboard **P(13)** column uses the **same rules** as the public homepage: live games pull MLB live feeds and `getLiveConditionalProbs`; previews use per-team pitcher-adjusted Poisson via `buildPitcherAdjustedLambdasForGame` (`src/lib/scheduledGameLambdas.ts`); finals use 0 or 1. Lambdas are cached per `gamePk` so multiple members on the same matchup do not duplicate API work.
+
 ---
 
 ## Useful paths
@@ -55,8 +59,10 @@ Game **sort order** on the homepage still uses pre-game **combined** game probab
 | Area | Location |
 |------|----------|
 | Probability engine + live helper | `src/lib/probability.ts` |
+| Pitcher-adjusted λ for a scheduled game (shared) | `src/lib/scheduledGameLambdas.ts` |
 | Retrosheet lookup table | `src/data/thirteen_lookup.json` |
 | Homepage (schedule, live feeds, rankings data) | `src/app/page.tsx` |
+| League dashboard (live P(13) for members) | `src/app/league/[slug]/page.tsx` |
 | Live rankings UI | `src/components/LiveRankTable.tsx` |
 | Live watch cards + polling | `src/components/LiveWatchCard.tsx` |
 

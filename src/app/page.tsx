@@ -1,10 +1,10 @@
-import { fetchTodaySchedule, fetchTeamSeasonStats, fetchPitcherEra, fetchLiveFeed, fetchTeamGameLog, currentSeason, fetchLastSeasonRunsPerGame, baseballToday, fetchOnThisDayThirteens } from '@/lib/mlb'
+import { fetchTodaySchedule, fetchLiveFeed, fetchTeamGameLog, currentSeason, baseballToday, fetchOnThisDayThirteens } from '@/lib/mlb'
 import {
-  buildLambda,
   calculateThirteenProbability,
   gameThirteenProbability,
   getLiveConditionalProbs,
 } from '@/lib/probability'
+import { buildPitcherAdjustedLambdasForGame } from '@/lib/scheduledGameLambdas'
 import CollapsibleGameCard from '@/components/CollapsibleGameCard'
 import LiveRankTable from '@/components/LiveRankTable'
 import LiveWatchCard from '@/components/LiveWatchCard'
@@ -30,87 +30,24 @@ interface PageProps {
   searchParams: Promise<{ window?: string }>
 }
 
-async function enrichGame(
-  game: MLBGame,
-  season: number,
-  rollingWindow: number
-) {
-  try {
-    const [awayStats, homeStats] = await Promise.all([
-      fetchTeamSeasonStats(game.teams.away.team.id, season, rollingWindow || undefined).catch(
-        () => ({ teamId: game.teams.away.team.id, gamesPlayed: 0, runsPerGame: 4.5, totalRuns: 0 })
-      ),
-      fetchTeamSeasonStats(game.teams.home.team.id, season, rollingWindow || undefined).catch(
-        () => ({ teamId: game.teams.home.team.id, gamesPlayed: 0, runsPerGame: 4.5, totalRuns: 0 })
-      ),
-    ])
-
-    const [awayLastSeason, homeLastSeason] = await Promise.all([
-      awayStats.gamesPlayed < 10
-        ? fetchLastSeasonRunsPerGame(game.teams.away.team.id, season).catch(() => null)
-        : Promise.resolve(null),
-      homeStats.gamesPlayed < 10
-        ? fetchLastSeasonRunsPerGame(game.teams.home.team.id, season).catch(() => null)
-        : Promise.resolve(null),
-    ])
-
-    const awayPitcherId = game.probablePitchers?.away?.id
-    const homePitcherId = game.probablePitchers?.home?.id
-
-    const [awayPitcherEra, homePitcherEra] = await Promise.all([
-      awayPitcherId ? fetchPitcherEra(awayPitcherId, season).catch(() => null) : Promise.resolve(null),
-      homePitcherId ? fetchPitcherEra(homePitcherId, season).catch(() => null) : Promise.resolve(null),
-    ])
-
-    const venueId = String(game.venue.id)
-
-    const awayLambda = buildLambda({
-      baseRunsPerGame: awayStats.runsPerGame,
-      gamesPlayed: awayStats.gamesPlayed,
-      lastSeasonRunsPerGame: awayLastSeason ?? undefined,
-      venueId,
-      starterEra: homePitcherEra ?? undefined,
-    })
-
-    const homeLambda = buildLambda({
-      baseRunsPerGame: homeStats.runsPerGame,
-      gamesPlayed: homeStats.gamesPlayed,
-      lastSeasonRunsPerGame: homeLastSeason ?? undefined,
-      venueId,
-      starterEra: awayPitcherEra ?? undefined,
-    })
-
-    const combinedProb = gameThirteenProbability(
-      homeLambda.pitcherAdjusted,
-      awayLambda.pitcherAdjusted
-    )
-
-    return {
-      game,
-      awayLambda,
-      homeLambda,
-      combinedProb,
-      isBlended: awayLambda.isBlended || homeLambda.isBlended,
-      awayPitcherName: game.probablePitchers?.away?.fullName,
-      homePitcherName: game.probablePitchers?.home?.fullName,
-    }
-  } catch {
-    // Fall back to pure Poisson with defaults if any fetch fails
-    const venueId = String(game.venue.id)
-    const defaultLambda = buildLambda({ baseRunsPerGame: 4.5, gamesPlayed: 0, venueId })
-    const combinedProb = gameThirteenProbability(
-      defaultLambda.pitcherAdjusted,
-      defaultLambda.pitcherAdjusted
-    )
-    return {
-      game,
-      awayLambda: defaultLambda,
-      homeLambda: defaultLambda,
-      combinedProb,
-      isBlended: false,
-      awayPitcherName: undefined,
-      homePitcherName: undefined,
-    }
+async function enrichGame(game: MLBGame, season: number, rollingWindow: number) {
+  const { awayLambda, homeLambda } = await buildPitcherAdjustedLambdasForGame(
+    game,
+    season,
+    rollingWindow || undefined
+  )
+  const combinedProb = gameThirteenProbability(
+    homeLambda.pitcherAdjusted,
+    awayLambda.pitcherAdjusted
+  )
+  return {
+    game,
+    awayLambda,
+    homeLambda,
+    combinedProb,
+    isBlended: awayLambda.isBlended || homeLambda.isBlended,
+    awayPitcherName: game.probablePitchers?.away?.fullName,
+    homePitcherName: game.probablePitchers?.home?.fullName,
   }
 }
 
