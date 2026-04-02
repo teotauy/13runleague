@@ -230,6 +230,7 @@ Build plan:
 - Season opener emails use 250ms spacing between Resend calls; weekly recap currently sends one broadcast (`to` array) — revisit rate limits if Resend limits change
 
 ### Homepage & Design
+- [x] **Live Rankings P(13) = Live 13-Watch P(13)** for in-progress games — both use `getLiveConditionalProbs()` from `src/lib/probability.ts` with the same linescore snapshot; previews use per-team Poisson, finals use 0/1. Documented in **README.md**.
 - [ ] Logo / wordmark — no mark exists yet; explore SVG concept built in-browser
 - [ ] Grain/noise texture overlay on hero (Luma-style depth)
 - [ ] Big bold hero section — "13 runs. One winner." energy

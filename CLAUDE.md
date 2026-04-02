@@ -18,3 +18,9 @@ Never mention pitchers in any user-facing copy, blurbs, or emails. We don't care
 
 ### No unverified player claims
 Never write that a specific player is on a specific team unless it is verified from a live data source in the current session. Rosters change. Juan Soto is on the Mets. Carlos Correa is in Houston. Nolan Arenado went to Arizona. We have been burned by stale knowledge.
+
+---
+
+## Project documentation
+
+**README.md** (repo root) describes how P(13) works, how Live 13-Watch and Live Rankings stay aligned, and where the main code lives. Use it as the reference for product behavior and onboarding contributors.

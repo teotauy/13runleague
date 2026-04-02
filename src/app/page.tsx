@@ -1,5 +1,10 @@
 import { fetchTodaySchedule, fetchTeamSeasonStats, fetchPitcherEra, fetchLiveFeed, fetchTeamGameLog, currentSeason, fetchLastSeasonRunsPerGame, baseballToday, fetchOnThisDayThirteens } from '@/lib/mlb'
-import { buildLambda, gameThirteenProbability, getConditionalProbability } from '@/lib/probability'
+import {
+  buildLambda,
+  calculateThirteenProbability,
+  gameThirteenProbability,
+  getLiveConditionalProbs,
+} from '@/lib/probability'
 import CollapsibleGameCard from '@/components/CollapsibleGameCard'
 import LiveRankTable from '@/components/LiveRankTable'
 import LiveWatchCard from '@/components/LiveWatchCard'
@@ -14,7 +19,6 @@ import type { SeasonState } from '@/components/SeasonBanner'
 import { getFestiveTheme } from '@/lib/festiveThemes'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { MLBGame, MLBLiveGame } from '@/lib/mlb'
-import type { LiveGameState } from "@/lib/probability"
 import AddToHomeScreenBanner from "@/components/AddToHomeScreenBanner"
 
 export const revalidate = 60
@@ -309,31 +313,21 @@ export default async function HomePage({ searchParams }: PageProps) {
                 const homeRuns = linescore.teams.home.runs
                 const inning = linescore.currentInning
                 const isTop = linescore.isTopInning
-                const isHomeWinning = homeRuns > awayRuns
-
-                const awayState: LiveGameState = {
-                  side: 'vis',
-                  inningCompleted: isTop ? inning - 1 : inning,
-                  currentScore: awayRuns,
-                  isHomeTeamWinning: isHomeWinning,
-                  inning,
-                  isBottom: !isTop,
-                }
-                const homeState: LiveGameState = {
-                  side: 'home',
-                  inningCompleted: isTop ? inning - 1 : inning,
-                  currentScore: homeRuns,
-                  isHomeTeamWinning: isHomeWinning,
-                  inning,
-                  isBottom: !isTop,
-                }
 
                 const enriched = enrichedGames.find((e) => e.game.gamePk === feed.gamePk)
                 const awayLambdaVal = enriched?.awayLambda.pitcherAdjusted ?? 4.5
                 const homeLambdaVal = enriched?.homeLambda.pitcherAdjusted ?? 4.5
 
-                const awayResult = getConditionalProbability(awayState, awayLambdaVal)
-                const homeResult = getConditionalProbability(homeState, homeLambdaVal)
+                const liveProbs = getLiveConditionalProbs(
+                  awayRuns,
+                  homeRuns,
+                  inning,
+                  isTop,
+                  awayLambdaVal,
+                  homeLambdaVal
+                )
+                const awayResult = liveProbs.away
+                const homeResult = liveProbs.home
 
                 const innings = linescore.innings.map((inn) => ({
                   num: inn.num,
@@ -378,21 +372,64 @@ export default async function HomePage({ searchParams }: PageProps) {
           </section>
         ) : (
           <LiveRankTable
-            games={enrichedGames.map(({ game, awayLambda, homeLambda, combinedProb }) => {
-              const liveFeed = activeLiveFeeds.find(f => f.gamePk === game.gamePk)
-              // Split combined probability proportionally by lambda
-              const awayShare = awayLambda.pitcherAdjusted / (awayLambda.pitcherAdjusted + homeLambda.pitcherAdjusted)
+            games={enrichedGames.map(({ game, awayLambda, homeLambda }) => {
+              const status = game.status.abstractGameState
+              const liveFeed = activeLiveFeeds.find((f) => f.gamePk === game.gamePk)
+              const awayL = awayLambda.pitcherAdjusted
+              const homeL = homeLambda.pitcherAdjusted
+
+              let awayScore = game.teams.away.score
+              let homeScore = game.teams.home.score
+              let inning: number | undefined
+              let isTopInning: boolean | undefined
+              let awayProb: number
+              let homeProb: number
+
+              if (status === 'Final') {
+                const ar = game.teams.away.score ?? 0
+                const hr = game.teams.home.score ?? 0
+                awayScore = ar
+                homeScore = hr
+                awayProb = ar === 13 ? 1 : 0
+                homeProb = hr === 13 ? 1 : 0
+              } else if (status === 'Live' && liveFeed) {
+                const ls = liveFeed.liveData.linescore
+                const ar = ls.teams.away.runs ?? 0
+                const hr = ls.teams.home.runs ?? 0
+                awayScore = ar
+                homeScore = hr
+                inning = ls.currentInning
+                isTopInning = ls.isTopInning
+                const live = getLiveConditionalProbs(
+                  ar,
+                  hr,
+                  ls.currentInning,
+                  ls.isTopInning,
+                  awayL,
+                  homeL
+                )
+                awayProb = live.away.probability
+                homeProb = live.home.probability
+              } else if (status === 'Live') {
+                // Feed missing (rare): fall back to pre-game marginal
+                awayProb = calculateThirteenProbability(awayL)
+                homeProb = calculateThirteenProbability(homeL)
+              } else {
+                awayProb = calculateThirteenProbability(awayL)
+                homeProb = calculateThirteenProbability(homeL)
+              }
+
               return {
                 gamePk: game.gamePk,
                 awayTeam: game.teams.away.team.abbreviation,
                 homeTeam: game.teams.home.team.abbreviation,
-                awayScore: game.teams.away.score,
-                homeScore: game.teams.home.score,
-                gameStatus: game.status.abstractGameState,
-                inning: liveFeed?.liveData.linescore.currentInning,
-                isTopInning: liveFeed?.liveData.linescore.isTopInning,
-                awayProb: combinedProb * awayShare,
-                homeProb: combinedProb * (1 - awayShare),
+                awayScore,
+                homeScore,
+                gameStatus: status,
+                inning,
+                isTopInning,
+                awayProb,
+                homeProb,
               }
             })}
           />
