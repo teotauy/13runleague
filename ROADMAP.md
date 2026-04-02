@@ -83,6 +83,33 @@
 
 ---
 
+## 🔜 Soon
+
+### Cloudflare Zero Trust Auth
+Replace the shared-password league gate and cookie-based admin check with proper identity auth — zero code changes required on the app side.
+
+**Phase 1 — Admin (do this first, 30 min):**
+- Create a CF Access application scoped to `13runleague.com/league/*/admin*`
+- Policy: email allowlist = commissioner's email only
+- Auth method: email OTP (one-time code to inbox) or Google
+- The `isAdmin()` cookie check stays as defense-in-depth, but CF is the real gate
+- Result: no more shared admin password; commissioner logs in with their own email
+
+**Phase 2 — Full league gate (optional, later):**
+- Extend CF Access to cover `13runleague.com/league/*`
+- Policy: email allowlist = all active members
+- Replaces the shared league password + `/league/[slug]/login` page entirely
+- Bonus: CF injects `Cf-Access-Authenticated-User-Email` header → app knows *who* is viewing → enables personalized "your team is playing today" banners, member-specific dashboard highlights
+- Remove or archive: `isAdmin()` cookie auth, login page, password-in-cookie flow
+
+**Prerequisites:**
+- Domain must be proxied through Cloudflare (orange cloud in DNS). Currently pointing to Vercel — add CF as proxy layer, set SSL to Full (strict).
+- Exclude from Zero Trust: `/api/cron/*` (already uses `CRON_SECRET`), `/api/league/*/push-subscribe`, all public routes (`/`, `/teams/*`, etc.)
+
+**Cost:** Free. CF Zero Trust free tier supports up to 50 users.
+
+---
+
 ## 🔒 Features — Hold for Next Billing Cycle
 
 ### Data-Driven Team Blurbs (Retrosheet 1901–present)
