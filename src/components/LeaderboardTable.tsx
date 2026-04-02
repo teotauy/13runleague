@@ -127,7 +127,7 @@ export default function LeaderboardTable({
               explanation="Probability your team finishes with exactly 13 runs today. Pre-game: Poisson from season stats, park, and matchup run environment. Live: same Retrosheet/Poisson conditional model as the public homepage (linescore). Final: 100% or 0%."
             />
             <SortTh label="Drought" col="streak" title="Weeks since this player's last win" />
-            <SortTh label="Wins" col="wins" title="Winning weeks this season" />
+            <SortTh label="Wins" col="wins" title="Times your team scored exactly 13 runs this season" />
             <SortTh label="$$$" col="won" title="Money won this season" />
           </tr>
         </thead>
