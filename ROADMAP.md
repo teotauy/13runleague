@@ -126,6 +126,30 @@ Analytics dashboard (admin-only) showing model accuracy across probability thres
 
 **Why:** Validates that the Poisson + Retrosheet lookup model is actually predictive. If hit rates are way off, it signals model drift or data quality issues.
 
+### Daily Team Probability Tracker
+Public-facing chart showing all 30 MLB teams' peak probabilities per day across the season.
+
+**Data:**
+- For each day (March 25 – Oct 5), capture each team's highest P(13%) reached that day
+- Store in `team_daily_probabilities` table: team, date, peak_probability, game_pk
+
+**Visualizations:**
+- **Heatmap:** 30 rows (teams, A-Z), X-axis = dates (season timeline), each cell colored by peak P
+  - Cold (blue): P < 40%
+  - Warm (yellow): P 40-70%
+  - Hot (orange): P 70-85%
+  - Blazing (red): P 85%+
+- **Daily Leaderboard:** "Today's Top 10 Hot Teams" — ranked by peak P, clickable to see game details
+- **Team Tracker:** Select a team, see their daily probability curve for the season (scatter plot: date vs P)
+
+**Insights you can extract:**
+- "Which teams consistently get hot?" (high mean P across season)
+- "Which day was the spiciest?" (max P across all teams that day)
+- "Orioles never hit P(70%)" (identify weak teams)
+- "Dodgers had 5 P(80%+) games in week 3" (pattern spotting)
+
+**Why:** Beautiful visual narrative of the season. Members can see team trends, understand why certain teams are "dangerous," and replay memorable high-probability days.
+
 ### Member Hearts + Notification Threshold — Unlocked by CF Auth
 Once CF Zero Trust is live and the app can read `Cf-Access-Authenticated-User-Email`, add per-member team favorites and tunable alert thresholds.
 
