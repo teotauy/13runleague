@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server'
 import webpush from 'web-push'
 import { createServiceClient } from '@/lib/supabase/server'
 import { baseballToday } from '@/lib/mlb'
+import { normalizeTeamAbbr } from '@/lib/teamColors'
 import { recalculateStreaks } from '@/lib/streaks'
 import { getSeasonYear } from '@/lib/pot'
 
@@ -57,12 +58,20 @@ async function fetchTodayFinalGames(): Promise<ScheduleGame[]> {
   for (const d of data.dates ?? []) {
     for (const g of d.games ?? []) {
       if (g.status?.abstractGameState !== 'Final') continue
+      const awayAbbr = normalizeTeamAbbr(String(g.teams.away.team.abbreviation).toUpperCase())
+      const homeAbbr = normalizeTeamAbbr(String(g.teams.home.team.abbreviation).toUpperCase())
       games.push({
         gamePk: g.gamePk,
         status: g.status,
         teams: {
-          away: { team: g.teams.away.team, score: g.teams.away.score },
-          home: { team: g.teams.home.team, score: g.teams.home.score },
+          away: {
+            team: { ...g.teams.away.team, abbreviation: awayAbbr },
+            score: g.teams.away.score,
+          },
+          home: {
+            team: { ...g.teams.home.team, abbreviation: homeAbbr },
+            score: g.teams.home.score,
+          },
         },
       })
     }

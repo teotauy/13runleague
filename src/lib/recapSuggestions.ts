@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { fetchScheduleForDate } from '@/lib/mlb'
 import { getSeasonYear, getWeekNumber, getWeekCalendarBoundsForSeasonYear } from '@/lib/pot'
+import { franchiseAbbrs, normalizeTeamAbbr } from '@/lib/teamColors'
 
 export interface RecapSuggestionBlock {
   id: string
@@ -45,8 +46,9 @@ function teamRuns(game: {
   home_score: number | null
   away_score: number | null
 }, abbr: string): number | null {
-  if (game.home_team === abbr) return game.home_score
-  if (game.away_team === abbr) return game.away_score
+  const a = normalizeTeamAbbr(abbr.toUpperCase())
+  if (normalizeTeamAbbr(game.home_team.toUpperCase()) === a) return game.home_score
+  if (normalizeTeamAbbr(game.away_team.toUpperCase()) === a) return game.away_score
   return null
 }
 
@@ -57,8 +59,11 @@ function buildThirteenVsOpponentMap(
   const out = new Map<string, Map<string, number>>()
   for (const g of rows) {
     if (!g.winning_team) continue
-    const w = g.winning_team
-    const opp = g.away_team === w ? g.home_team : g.away_team
+    const w = normalizeTeamAbbr(g.winning_team.toUpperCase())
+    const awayC = normalizeTeamAbbr(g.away_team.toUpperCase())
+    const homeC = normalizeTeamAbbr(g.home_team.toUpperCase())
+    const opp = awayC === w ? homeC : homeC === w ? awayC : null
+    if (opp == null) continue
     if (!out.has(w)) out.set(w, new Map())
     const m = out.get(w)!
     m.set(opp, (m.get(opp) ?? 0) + 1)
@@ -84,6 +89,9 @@ export async function buildRecapSuggestions(
   if (active.length === 0) return staticIdeaBlocks()
 
   const teamSet = [...new Set(active.map((m) => m.assigned_team.toUpperCase()))]
+  const teamSetForSql = [
+    ...new Set(teamSet.flatMap((t) => franchiseAbbrs(normalizeTeamAbbr(t)))),
+  ]
 
   const { data: streakRows } = await supabase
     .from('streaks')
@@ -128,10 +136,16 @@ export async function buildRecapSuggestions(
     if (g.final !== true) continue
     for (const m of active) {
       const abbr = m.assigned_team.toUpperCase()
-      if (g.home_team !== abbr && g.away_team !== abbr) continue
+      const ac = normalizeTeamAbbr(abbr)
+      if (
+        normalizeTeamAbbr(g.home_team.toUpperCase()) !== ac &&
+        normalizeTeamAbbr(g.away_team.toUpperCase()) !== ac
+      ) {
+        continue
+      }
       const runs = teamRuns(g, abbr)
       if (runs == null || !NEAR.has(runs)) continue
-      const opp = g.home_team === abbr ? g.away_team : g.home_team
+      const opp = normalizeTeamAbbr(g.home_team.toUpperCase()) === ac ? g.away_team : g.home_team
       const label = runs === 14 ? 'heartbreak 14' : `landed on ${runs}`
       misses.push(`${m.name} (${abbr}) ${label} vs ${opp} (${g.game_date})`)
     }
@@ -151,11 +165,11 @@ export async function buildRecapSuggestions(
     .from('game_results')
     .select('game_date, winning_team')
     .eq('was_thirteen', true)
-    .in('winning_team', teamSet)
+    .in('winning_team', teamSetForSql)
 
   const monthByTeam = new Map<string, Map<number, number>>()
   for (const g of thirteenGames ?? []) {
-    const t = g.winning_team!
+    const t = normalizeTeamAbbr(g.winning_team!.toUpperCase())
     const mo = parseInt(g.game_date.slice(5, 7), 10) - 1
     if (!monthByTeam.has(t)) monthByTeam.set(t, new Map())
     const mm = monthByTeam.get(t)!
@@ -165,7 +179,7 @@ export async function buildRecapSuggestions(
   const peakLines: string[] = []
   const peakHtmlParts: string[] = []
   for (const m of active) {
-    const t = m.assigned_team.toUpperCase()
+    const t = normalizeTeamAbbr(m.assigned_team.toUpperCase())
     const mm = monthByTeam.get(t)
     if (!mm || mm.size === 0) continue
     let bestM = 0
@@ -178,8 +192,12 @@ export async function buildRecapSuggestions(
     }
     if (bestC < 2) continue
     const label = MONTH_NAMES[bestM] ?? `Month ${bestM + 1}`
-    peakLines.push(`${t}: most franchise 13-run games in ${label} (historical sample) — ${bestC} games.`)
-    peakHtmlParts.push(`<li><strong>${escapeHtml(t)}</strong>: peak month <strong>${label}</strong> (${bestC} historical 13-run wins logged)</li>`)
+    peakLines.push(
+      `${m.assigned_team.toUpperCase()}: most franchise 13-run games in ${label} (historical sample) — ${bestC} games.`
+    )
+    peakHtmlParts.push(
+      `<li><strong>${escapeHtml(m.assigned_team.toUpperCase())}</strong>: peak month <strong>${label}</strong> (${bestC} historical 13-run wins logged)</li>`
+    )
   }
   if (peakLines.length > 0) {
     blocks.push({
@@ -202,11 +220,12 @@ export async function buildRecapSuggestions(
       continue
     }
     for (const g of games) {
-      const away = g.teams.away.team.abbreviation.toUpperCase()
-      const home = g.teams.home.team.abbreviation.toUpperCase()
+      const away = normalizeTeamAbbr(g.teams.away.team.abbreviation.toUpperCase())
+      const home = normalizeTeamAbbr(g.teams.home.team.abbreviation.toUpperCase())
       for (const t of teamSet) {
-        if (t !== away && t !== home) continue
-        const opp = t === away ? home : away
+        const tc = normalizeTeamAbbr(t)
+        if (tc !== away && tc !== home) continue
+        const opp = tc === away ? home : away
         if (!schedulePairs.has(t)) schedulePairs.set(t, new Map())
         const om = schedulePairs.get(t)!
         om.set(opp, (om.get(opp) ?? 0) + 1)
@@ -218,7 +237,7 @@ export async function buildRecapSuggestions(
     .from('game_results')
     .select('home_team, away_team, winning_team')
     .eq('was_thirteen', true)
-    .in('winning_team', teamSet)
+    .in('winning_team', teamSetForSql)
 
   const vsMap = buildThirteenVsOpponentMap(h2h ?? [])
 
@@ -229,7 +248,7 @@ export async function buildRecapSuggestions(
     if (!opps) continue
     const tMembers = active.filter((m) => m.assigned_team.toUpperCase() === t).map((m) => m.name).join(', ')
     for (const [opp, cnt] of opps) {
-      const hist = vsMap.get(t)?.get(opp) ?? 0
+      const hist = vsMap.get(normalizeTeamAbbr(t))?.get(opp) ?? 0
       if (hist < 1 && cnt < 2) continue
       rows.push({ team: t, opp, gamesThisWeek: cnt, hist, memberNames: tMembers })
     }

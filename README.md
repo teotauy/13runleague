@@ -35,6 +35,8 @@ Shared helper for **both teams** from the same linescore snapshot:
 
 - `getLiveConditionalProbs(...)` in `src/lib/probability.ts` — single source of truth for live conditional P(13) given away runs, home runs, inning, top/bottom, and each team’s adjusted λ.
 
+**MLB API note:** The Diamondbacks are returned as **`AZ`** in the Stats API; the app normalizes to **`ARI`** everywhere (schedule, live feeds, cron) via `normalizeTeamAbbr` / `TEAM_ABBR_ALIASES` in `src/lib/teamColors.ts` so member assignments and URLs stay consistent.
+
 ---
 
 ## Homepage: Live 13-Watch vs Live Rankings

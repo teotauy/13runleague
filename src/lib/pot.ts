@@ -1,5 +1,6 @@
 import { createClient } from './supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { franchiseAbbrs, normalizeTeamAbbr } from './teamColors'
 
 interface Winner {
   member_id: string
@@ -198,16 +199,37 @@ export async function getWinnersForWeek(
     return []
   }
 
-  // Find members who own these winning teams
-  const winningTeams = gameResults.map((g) => g.winning_team)
+  // Include alias abbreviations (e.g. AZ vs ARI for Arizona) so .in matches members table
+  const assignableVariants = new Set<string>()
+  for (const g of gameResults) {
+    const cell = g.winning_team ?? ''
+    for (const part of cell.split(',')) {
+      const p = part.trim().toUpperCase()
+      if (!p) continue
+      const canon = normalizeTeamAbbr(p)
+      franchiseAbbrs(canon).forEach((a) => assignableVariants.add(a))
+    }
+  }
+  const variantList = [...assignableVariants]
+
   const { data: winners } = await supabase
     .from('members')
     .select('id, name, assigned_team')
     .eq('league_id', league_id)
-    .in('assigned_team', winningTeams)
+    .in('assigned_team', variantList.length > 0 ? variantList : ['__none__'])
 
   if (!winners) {
     return []
+  }
+
+  const memberOwnsWinningTeam = (memberAbbr: string, winningCell: string) => {
+    const m = normalizeTeamAbbr(memberAbbr.toUpperCase())
+    for (const part of winningCell.split(',')) {
+      const p = part.trim().toUpperCase()
+      if (!p) continue
+      if (normalizeTeamAbbr(p) === m) return true
+    }
+    return false
   }
 
   // Map game results to member winners
@@ -215,7 +237,7 @@ export async function getWinnersForWeek(
 
   winners.forEach((member) => {
     gameResults.forEach((game) => {
-      if (member.assigned_team === game.winning_team) {
+      if (memberOwnsWinningTeam(member.assigned_team, game.winning_team)) {
         // Use member_id as key to avoid duplicates if they have multiple 13-run games
         if (!winnerMap[member.id]) {
           winnerMap[member.id] = {

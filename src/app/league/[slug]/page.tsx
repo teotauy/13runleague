@@ -19,6 +19,7 @@ import WinCelebration, { type WinCelebrationPayout } from '@/components/WinCeleb
 import LeagueTabs from '@/components/LeagueTabs'
 import LeagueExplainer from '@/components/LeagueExplainer'
 import ThirteenRunLore from '@/components/ThirteenRunLore'
+import { normalizeTeamAbbr } from '@/lib/teamColors'
 
 export const dynamic = 'force-dynamic'
 
@@ -90,12 +91,12 @@ export default async function LeagueDashboard({ params }: Props) {
   // Enrich each active member with today's game info and P(13) (live conditional when in progress)
   const enrichedMembers = await Promise.all(
     activeMembers.map(async (member) => {
-      const teamAbbr = member.assigned_team.toUpperCase()
+      const canonMemberTeam = normalizeTeamAbbr(member.assigned_team.toUpperCase())
 
       const todayGame = games.find(
         (g) =>
-          g.teams.home.team.abbreviation === teamAbbr ||
-          g.teams.away.team.abbreviation === teamAbbr
+          normalizeTeamAbbr(g.teams.home.team.abbreviation) === canonMemberTeam ||
+          normalizeTeamAbbr(g.teams.away.team.abbreviation) === canonMemberTeam
       )
 
       const streak = streaks?.find((s) => s.member_id === member.id)
@@ -104,7 +105,7 @@ export default async function LeagueDashboard({ params }: Props) {
         return { member, streak, todayGame: null, todayProb: null }
       }
 
-      const isHome = todayGame.teams.home.team.abbreviation === teamAbbr
+      const isHome = normalizeTeamAbbr(todayGame.teams.home.team.abbreviation) === canonMemberTeam
       const { awayLambda, homeLambda } = await lambdasForGame(todayGame)
       const awayAdj = awayLambda.pitcherAdjusted
       const homeAdj = homeLambda.pitcherAdjusted
