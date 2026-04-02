@@ -108,6 +108,19 @@ Replace the shared-password league gate and cookie-based admin check with proper
 
 **Cost:** Free. CF Zero Trust free tier supports up to 50 users.
 
+### Member Hearts (Favorite Teams) — Unlocked by CF Auth
+Once CF Zero Trust is live and the app can read `Cf-Access-Authenticated-User-Email`, add per-member favorite team selection.
+
+**Features:**
+- Dashboard: "Your Team: WSH | Your Hearts: BOS, NYY"
+- Heart icon next to team names across the app to toggle
+- Favorites persist in a `member_favorites` table
+- SMS alerts fire for both assigned team + all hearted teams
+- "On Deck" and "13 Alert" notifications scoped to member's teams
+- Leaderboard highlights: your team + hearts in a special color
+
+**Why wait for CF auth first?** Without authenticated identity, you don't know who's viewing. With CF, the app always knows the member's email → can load their hearts instantly.
+
 ---
 
 ## 🔒 Features — Hold for Next Billing Cycle
@@ -190,6 +203,12 @@ Build plan:
   - **Final score**: "Final - Red Sox 11, Yankees 4."
 - [ ] **4.9** Alert deduplication — `alert_log` table prevents repeat messages per game per event type
 - [ ] **4.10** SMS opt-in flow — phone number, team preference, threshold setting, consent checkbox with timestamp, STOP handler
+
+**Note:** Once Cloudflare Zero Trust auth is live (see "Soon" section), SMS becomes beautifully personalized:
+  - Member logs in → app knows their email → looks up their profile → sees their assigned team + any "hearted" favorite teams
+  - SMS alerts fire only for that member's specific teams (both assigned + hearts)
+  - No more generic broadcast alerts — each member gets notifications for *their* teams
+  - Simplifies opt-in flow: preferences are tied to authenticated identity, not a stored choice
 
 ### Bigger Features
 - [ ] Day-of-week chart on team page
