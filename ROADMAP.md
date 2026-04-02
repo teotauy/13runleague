@@ -108,18 +108,45 @@ Replace the shared-password league gate and cookie-based admin check with proper
 
 **Cost:** Free. CF Zero Trust free tier supports up to 50 users.
 
-### Member Hearts (Favorite Teams) — Unlocked by CF Auth
-Once CF Zero Trust is live and the app can read `Cf-Access-Authenticated-User-Email`, add per-member favorite team selection.
+### Probability Calibration Dashboard
+Analytics dashboard (admin-only) showing model accuracy across probability thresholds.
+
+**Data:**
+- Query `game_results` + probability snapshots (see Member Threshold below)
+- For each threshold (P60, P65, P70, P75, P80, P85, P90, P95):
+  - How many games reached that threshold?
+  - Of those, what % actually became 13-run finals?
+  - Chart: threshold on X-axis, hit rate on Y-axis
+
+**Example:**
+- 847 games hit P(70%) threshold
+- 598 of them became 13-run finals
+- **Hit rate: 70.6%** ✓ (model is well-calibrated)
+- Compare to P(85%): 342 games, 288 hits = 84.2% (slightly underconfident)
+
+**Why:** Validates that the Poisson + Retrosheet lookup model is actually predictive. If hit rates are way off, it signals model drift or data quality issues.
+
+### Member Hearts + Notification Threshold — Unlocked by CF Auth
+Once CF Zero Trust is live and the app can read `Cf-Access-Authenticated-User-Email`, add per-member team favorites and tunable alert thresholds.
 
 **Features:**
 - Dashboard: "Your Team: WSH | Your Hearts: BOS, NYY"
 - Heart icon next to team names across the app to toggle
-- Favorites persist in a `member_favorites` table
+- Favorites persist in a `member_preferences` table
 - SMS alerts fire for both assigned team + all hearted teams
 - "On Deck" and "13 Alert" notifications scoped to member's teams
 - Leaderboard highlights: your team + hearts in a special color
+- **Threshold slider:** Member can adjust their P(XX%) notification trigger
+  - Default: P(70%) — moderate alert volume
+  - Too many alerts? Slide to P(85%) — only high-confidence games
+  - Want more? Slide to P(60%) — see earlier momentum
+  - Slider paired with calibration dashboard: "P(70%) games hit 13 runs 70% of the time"
+  - Probability snapshots logged for threshold tracking (feeds calibration dashboard)
 
-**Why wait for CF auth first?** Without authenticated identity, you don't know who's viewing. With CF, the app always knows the member's email → can load their hearts instantly.
+**Schema changes:**
+- `member_preferences` table: member_id, assigned_team, hearted_teams (JSON), phone, threshold_pct, opt_in_sms, created_at, updated_at
+
+**Why wait for CF auth first?** Without authenticated identity, you don't know who's viewing. With CF, the app always knows the member's email → can load their preferences instantly and personalize everything.
 
 ---
 
