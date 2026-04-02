@@ -15,6 +15,7 @@ interface PayoutRecord {
   shares_count: number
   member_name: string
   team: string
+  game_date: string
 }
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
@@ -232,26 +233,23 @@ export async function getWinnersForWeek(
     return false
   }
 
-  // Map game results to member winners
-  const winnerMap: { [key: string]: Winner } = {}
+  // One entry per 13-run game per member — a team hitting 13 twice in a week earns two shares
+  const winnerEntries: Winner[] = []
 
-  winners.forEach((member) => {
-    gameResults.forEach((game) => {
+  for (const game of gameResults) {
+    for (const member of winners) {
       if (memberOwnsWinningTeam(member.assigned_team, game.winning_team)) {
-        // Use member_id as key to avoid duplicates if they have multiple 13-run games
-        if (!winnerMap[member.id]) {
-          winnerMap[member.id] = {
-            member_id: member.id,
-            member_name: member.name,
-            team: member.assigned_team,
-            game_date: game.game_date,
-          }
-        }
+        winnerEntries.push({
+          member_id: member.id,
+          member_name: member.name,
+          team: member.assigned_team,
+          game_date: game.game_date,
+        })
       }
-    })
-  })
+    }
+  }
 
-  return Object.values(winnerMap)
+  return winnerEntries
 }
 
 /**
@@ -271,6 +269,7 @@ export function calculatePayouts(pot_amount: number, winners: Winner[]): PayoutR
     shares_count: winners.length,
     member_name: winner.member_name,
     team: winner.team,
+    game_date: winner.game_date,
   }))
 }
 
@@ -310,7 +309,7 @@ export async function recordPayouts(
     winning_team: payout.team,
     payout_amount: payout.payout_amount,
     shares_count: payout.shares_count,
-    game_date: winners.find((w) => w.member_id === payout.member_id)?.game_date || new Date().toISOString().split('T')[0],
+    game_date: payout.game_date,
   }))
 
   if (payoutRecords.length > 0) {

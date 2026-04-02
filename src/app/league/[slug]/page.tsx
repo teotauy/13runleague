@@ -206,15 +206,17 @@ export default async function LeagueDashboard({ params }: Props) {
   }
 
   // All payouts this season — for leaderboard Wins + Won columns
+  // wins = distinct winning weeks (a team hitting 13 twice in one week = 1 winning week, 2 shares)
   const { data: seasonPayouts } = await supabase
     .from('payouts')
-    .select('member_id, payout_amount')
+    .select('member_id, payout_amount, week_number')
     .eq('year', seasonYear)
 
-  const seasonStatsMap = new Map<string, { wins: number; totalWon: number }>()
+  const seasonStatsMap = new Map<string, { wins: number; totalWon: number; winWeeks: Set<number> }>()
   for (const p of seasonPayouts ?? []) {
-    const existing = seasonStatsMap.get(p.member_id) ?? { wins: 0, totalWon: 0 }
-    existing.wins += 1
+    const existing = seasonStatsMap.get(p.member_id) ?? { wins: 0, totalWon: 0, winWeeks: new Set<number>() }
+    existing.winWeeks.add(p.week_number)
+    existing.wins = existing.winWeeks.size
     existing.totalWon += p.payout_amount
     seasonStatsMap.set(p.member_id, existing)
   }
