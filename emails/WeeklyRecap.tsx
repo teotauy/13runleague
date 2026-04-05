@@ -48,8 +48,8 @@ export default function WeeklyRecap({
   return (
     <Html>
       <Head />
-      <Body style={{ backgroundColor: '#0a0a0a', fontFamily: 'monospace' }}>
-        <Container style={{ maxWidth: '600px', margin: '0 auto', padding: '32px 16px' }}>
+      <Body style={{ backgroundColor: '#0a0a0a', fontFamily: 'monospace', margin: 0, padding: 0 }}>
+        <Container style={{ maxWidth: '600px', margin: '0 auto', padding: '32px 16px', backgroundColor: '#0a0a0a' }}>
 
           {/* Header */}
           {showBranding && (
@@ -116,7 +116,10 @@ export default function WeeklyRecap({
           {/* Commissioner-editable narrative (after pot, before footer) */}
           {commissionerHtml ? (
             <Section style={{ marginBottom: '24px' }}>
-              <div dangerouslySetInnerHTML={{ __html: commissionerHtml }} />
+              <div
+                style={{ color: '#d1d5db', fontSize: '14px', lineHeight: '1.6' }}
+                dangerouslySetInnerHTML={{ __html: commissionerHtml }}
+              />
             </Section>
           ) : null}
 
