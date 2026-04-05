@@ -176,33 +176,36 @@ export default async function LeagueDashboard({ params }: Props) {
     supabase
   )
 
-  // Most recent payout — for win celebration banner (show within 72 hours)
-  const { data: recentPayout } = await supabase
+  // Recent payouts — for win celebration banner (show within 72 hours)
+  // Fetch all payouts from the most recently settled week so multi-winner weeks show everyone
+  const cutoff = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
+  const { data: recentPayouts } = await supabase
     .from('payouts')
     .select('id, member_id, week_number, year, winning_team, payout_amount, game_date, created_at')
     .eq('year', seasonYear)
+    .gte('created_at', cutoff)
     .order('created_at', { ascending: false })
-    .limit(1)
-    .single()
 
-  let winCelebrationPayout: WinCelebrationPayout | null = null
-  if (recentPayout?.created_at) {
-    const createdAt = new Date(recentPayout.created_at)
-    const hoursSince = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60)
-    if (hoursSince <= 72) {
-      const memberRecord = (members ?? []).find((m) => m.id === recentPayout.member_id)
-      if (memberRecord) {
-        winCelebrationPayout = {
-          id: recentPayout.id,
+  let winCelebrationPayouts: WinCelebrationPayout[] = []
+  if (recentPayouts && recentPayouts.length > 0) {
+    // All payouts from the most recently settled week
+    const newestWeek = recentPayouts[0].week_number
+    const newestYear = recentPayouts[0].year
+    winCelebrationPayouts = recentPayouts
+      .filter((p) => p.week_number === newestWeek && p.year === newestYear)
+      .flatMap((p) => {
+        const memberRecord = (members ?? []).find((m) => m.id === p.member_id)
+        if (!memberRecord) return []
+        return [{
+          id: p.id,
           member_name: memberRecord.name,
-          week_number: recentPayout.week_number,
-          year: recentPayout.year,
-          winning_team: recentPayout.winning_team,
-          payout_amount: recentPayout.payout_amount,
-          game_date: recentPayout.game_date ?? null,
-        }
-      }
-    }
+          week_number: p.week_number,
+          year: p.year,
+          winning_team: p.winning_team,
+          payout_amount: p.payout_amount,
+          game_date: p.game_date ?? null,
+        }]
+      })
   }
 
   // All payouts this season — for leaderboard Wins + Won columns
@@ -299,8 +302,8 @@ export default async function LeagueDashboard({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
-      {winCelebrationPayout && (
-        <WinCelebration payout={winCelebrationPayout} />
+      {winCelebrationPayouts.length > 0 && (
+        <WinCelebration payouts={winCelebrationPayouts} />
       )}
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
 
