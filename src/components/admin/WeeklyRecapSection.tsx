@@ -176,6 +176,7 @@ export default function WeeklyRecapSection({ leagueSlug, recapCapabilityToken }:
         <div className="flex flex-wrap gap-1.5 p-2 bg-[#111] border border-gray-800 rounded">
           <ToolbarBtn onClick={() => runCmd('bold')} label="Bold" />
           <ToolbarBtn onClick={() => runCmd('italic')} label="Italic" />
+          <ToolbarBtn onClick={() => runCmd('strikeThrough')} label="Strike" />
           <ToolbarBtn onClick={() => runCmd('insertUnorderedList')} label="• List" />
           <ToolbarBtn onClick={() => runCmd('insertOrderedList')} label="1. List" />
           <ToolbarBtn onClick={promptLink} label="Link" />
