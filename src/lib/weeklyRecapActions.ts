@@ -30,7 +30,7 @@ async function buildRecapData(slug: string) {
     .eq('league_id', league.id)
     .neq('is_active', false)
 
-  const emails = (members ?? [])
+  const rawEmails = (members ?? [])
     .flatMap((m) =>
       m.email
         ? m.email.split(',').map((e: string) => e.trim()).filter(Boolean)
@@ -38,12 +38,25 @@ async function buildRecapData(slug: string) {
     )
     .filter((e): e is string => !!e)
 
+  // Filter out anyone who has unsubscribed
+  const { data: unsubRows } = await supabase
+    .from('email_unsubscribes')
+    .select('email')
+  const unsubSet = new Set((unsubRows ?? []).map((r: { email: string }) => r.email.toLowerCase()))
+  const emails = rawEmails.filter((e) => !unsubSet.has(e.toLowerCase()))
+
   const activeMemberCount = (members ?? []).length
   const weeklyPot = (league.weekly_buy_in ?? 10) * activeMemberCount
 
   const today = new Date()
-  const weekNumber = getWeekNumber(today)
-  const seasonYear = getSeasonYear(today)
+  // Recap is for the just-completed week. The league week rolls over on Sunday
+  // (Sunday is day 0 and the first day of a new playing week), so if today is
+  // Sunday we anchor on yesterday (Saturday) to get last week's number.
+  const recapAnchor = today.getDay() === 0
+    ? new Date(today.getTime() - 24 * 60 * 60 * 1000)
+    : today
+  const weekNumber = getWeekNumber(recapAnchor)
+  const seasonYear = getSeasonYear(recapAnchor)
   const rolloverPot = await getEffectiveRolloverPotForDashboard(
     league.id,
     league.pot_total,
@@ -179,9 +192,14 @@ export async function sendWeeklyRecapEmail(
 
   const { error } = await resend.emails.send({
     from: '13 Run League <recap@13runleague.com>',
-    to: data.emails,
+    to: ['recap@13runleague.com'],
+    bcc: data.emails,
     subject: `13 Run League — Week ${data.weekNumber} Recap`,
     html,
+    headers: {
+      'List-Unsubscribe': '<mailto:recap@13runleague.com?subject=unsubscribe>',
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    },
   })
 
   if (error) {

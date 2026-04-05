@@ -3,6 +3,17 @@ import sanitizeHtml from 'sanitize-html'
 /** Email-safe HTML for the commissioner-editable recap block (and optional full-document mode). */
 export function sanitizeRecapHtml(html: string): string {
   return sanitizeHtml(html.trim(), {
+    transformTags: {
+      // Normalise <p> margins so email clients don't double-space paragraphs.
+      // 14px bottom gap only — no top margin — prevents the blank-line-between-paragraphs look.
+      p: (tagName, attribs) => ({
+        tagName,
+        attribs: {
+          ...attribs,
+          style: `margin:0 0 14px 0;padding:0;${attribs.style ? ' ' + attribs.style : ''}`,
+        },
+      }),
+    },
     allowedTags: [
       'code',
       'pre',

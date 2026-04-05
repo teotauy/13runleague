@@ -134,7 +134,13 @@ export default function WeeklyRecap({
                 . Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
               </Text>
               <Text style={{ color: '#374151', fontSize: '11px' }}>
-                13runleague.com · You&apos;re receiving this because you&apos;re in a 13 Run League.
+                13runleague.com · You&apos;re receiving this because you&apos;re in a 13 Run League.{' '}
+                <Link
+                  href="mailto:recap@13runleague.com?subject=unsubscribe"
+                  style={{ color: '#4b5563' }}
+                >
+                  Unsubscribe
+                </Link>
               </Text>
               <Text style={{ fontSize: '12px', marginTop: '8px' }}>
                 <Link href="https://buymeacoffee.com/colbyblack" style={{ color: '#eab308' }}>
