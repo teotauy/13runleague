@@ -160,6 +160,43 @@ export function getConditionalProbability(
   return { probability: prob, source: 'poisson' }
 }
 
+/** Live P(13) for both teams — same state construction as Live 13-Watch / linescore. */
+export function getLiveConditionalProbs(
+  awayRuns: number,
+  homeRuns: number,
+  inning: number,
+  isTopInning: boolean,
+  awayLambdaPitcher: number,
+  homeLambdaPitcher: number
+): {
+  away: { probability: number; source: 'lookup' | 'poisson' }
+  home: { probability: number; source: 'lookup' | 'poisson' }
+} {
+  const isHomeWinning = homeRuns > awayRuns
+
+  const awayState: LiveGameState = {
+    side: 'vis',
+    inningCompleted: isTopInning ? inning - 1 : inning,
+    currentScore: awayRuns,
+    isHomeTeamWinning: isHomeWinning,
+    inning,
+    isBottom: !isTopInning,
+  }
+  const homeState: LiveGameState = {
+    side: 'home',
+    inningCompleted: isTopInning ? inning - 1 : inning,
+    currentScore: homeRuns,
+    isHomeTeamWinning: isHomeWinning,
+    inning,
+    isBottom: !isTopInning,
+  }
+
+  return {
+    away: getConditionalProbability(awayState, awayLambdaPitcher),
+    home: getConditionalProbability(homeState, homeLambdaPitcher),
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Probability color coding
 // ---------------------------------------------------------------------------

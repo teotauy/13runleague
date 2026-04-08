@@ -1,14 +1,18 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { getSeasonYear } from '@/lib/pot'
 import { recalculateStreaks } from '@/lib/streaks'
 
+function isAdmin(value: string | undefined) {
+  return value === 'admin' || value === 'authenticated'
+}
+
 /**
  * POST /api/league/[slug]/recalculate-streaks
  *
- * Commissioner-only endpoint to recompute drought streaks and closest misses
- * for every member in the league.  Call this after importing historical payouts
+ * Commissioner-only endpoint to recompute drought streaks for every member in the league.
+ * Call this after importing historical payouts
  * or whenever the streaks table looks stale.
  *
  * Body (all optional):
@@ -22,11 +26,11 @@ export async function POST(
   const cookieStore = await cookies()
   const authCookie = cookieStore.get(`league_auth_${slug}`)
 
-  if (!authCookie) {
+  if (!authCookie || !isAdmin(authCookie.value)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   try {
     const body = await req.json().catch(() => ({})) as { year?: number }

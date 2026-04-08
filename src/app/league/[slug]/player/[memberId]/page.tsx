@@ -103,7 +103,7 @@ export default async function PlayerPage({ params }: Props) {
   // Get active streak (2026 only)
   const { data: activeStreak } = await supabase
     .from('streaks')
-    .select('current_streak, longest_streak, closest_miss_score, closest_miss_date')
+    .select('current_streak, longest_streak')
     .eq('member_id', memberId)
     .single()
 
@@ -337,16 +337,9 @@ export default async function PlayerPage({ params }: Props) {
         {activeStreak && (
           <section className="rounded-xl bg-white/[0.025] border border-white/[0.07] p-6 mb-8">
             <h2 className="text-lg font-bold mb-4">Current Season (2026)</h2>
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 gap-6">
               <StatBlock label="Current Streak" value={String(activeStreak.current_streak ?? 0)} />
               <StatBlock label="Longest Streak" value={String(activeStreak.longest_streak ?? 0)} />
-              {activeStreak.closest_miss_score !== null && (activeStreak.closest_miss_score ?? 0) >= 8 && (
-                <StatBlock
-                  label="Closest Miss"
-                  value={`${activeStreak.closest_miss_score} runs`}
-                  subtitle={activeStreak.closest_miss_date ? `(${activeStreak.closest_miss_date})` : undefined}
-                />
-              )}
             </div>
           </section>
         )}

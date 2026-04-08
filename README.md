@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 13 Run League
 
-## Getting Started
+Web app for the **13 Run League**: members draft MLB teams; if a team scores **exactly 13 runs** in a game, that week’s pot pays out. Public pages cover today’s probabilities and history; password-protected league dashboards cover members, payouts, and admin tools.
 
-First, run the development server:
+## Stack
+
+- **Next.js** (App Router), React, Tailwind CSS  
+- **Supabase** (data + auth for leagues)  
+- **MLB Stats API** (schedule, live linescores, team stats)  
+- **Resend / Twilio / web-push** (messaging — sending is gated; see `CLAUDE.md`)
+
+## Getting started
 
 ```bash
+npm install
+cp .env.example .env.local   # fill in secrets
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Other scripts: `npm run build`, `npm run lint`, `npm run seed`, `npm run seed:retrosheet`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## P(13): what the number means
 
-To learn more about Next.js, take a look at the following resources:
+**P(13)** is the probability that **a given team’s final run total for that game is exactly 13** (not 12, not 14).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Before first pitch:** Per-team Poisson using season run rates, park factor, and the opposing starter’s ERA adjustment (`buildLambda` → `calculateThirteenProbability` in `src/lib/probability.ts`).
+- **During a live game:** **Conditional** probability from the current score and inning. The app prefers a **Retrosheet-derived lookup** (`src/data/thirteen_lookup.json`); if there is no bucket with enough sample size, it falls back to a simpler Poisson remainder (`getConditionalProbability`).
+- **After the game is final:** Effectively **100%** if that team scored 13, **0%** otherwise.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Shared helper for **both teams** from the same linescore snapshot:
 
-## Deploy on Vercel
+- `getLiveConditionalProbs(...)` in `src/lib/probability.ts` — single source of truth for live conditional P(13) given away runs, home runs, inning, top/bottom, and each team’s adjusted λ.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**MLB API note:** The Diamondbacks are returned as **`AZ`** in the Stats API; the app normalizes to **`ARI`** everywhere (schedule, live feeds, cron) via `normalizeTeamAbbr` / `TEAM_ABBR_ALIASES` in `src/lib/teamColors.ts` so member assignments and URLs stay consistent.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Homepage: Live 13-Watch vs Live Rankings
+
+These two modules are meant to show the **same** notion of P(13) for live games.
+
+| Module | Behavior |
+|--------|----------|
+| **Live 13-Watch** | Games where either team has **≥ 9 runs**. Uses linescore data + `getLiveConditionalProbs`. `LiveWatchCard` polls the feed and recomputes with the same helper so client state matches the model. |
+| **Live Rankings** | All of today’s games in a sortable table. **Live** rows use the **same** `getLiveConditionalProbs` inputs as Live 13-Watch (scores and inning from the live feed when available). **Preview** rows use per-team pre-game `calculateThirteenProbability` (not a split of combined “either team” probability). **Final** rows use 0 or 1 as above. |
+
+Game **sort order** on the homepage still uses pre-game **combined** game probability (`gameThirteenProbability`) for ordering matchups; per-cell P(13) follows the table above.
+
+### League dashboard leaderboard
+
+Password-protected **`/league/[slug]`** leaderboard **P(13)** column uses the **same rules** as the public homepage: live games pull MLB live feeds and `getLiveConditionalProbs`; previews use per-team pitcher-adjusted Poisson via `buildPitcherAdjustedLambdasForGame` (`src/lib/scheduledGameLambdas.ts`); finals use 0 or 1. Lambdas are cached per `gamePk` so multiple members on the same matchup do not duplicate API work.
+
+---
+
+## Useful paths
+
+| Area | Location |
+|------|----------|
+| Probability engine + live helper | `src/lib/probability.ts` |
+| Pitcher-adjusted λ for a scheduled game (shared) | `src/lib/scheduledGameLambdas.ts` |
+| Retrosheet lookup table | `src/data/thirteen_lookup.json` |
+| Homepage (schedule, live feeds, rankings data) | `src/app/page.tsx` |
+| League dashboard (live P(13) for members) | `src/app/league/[slug]/page.tsx` |
+| Live rankings UI | `src/components/LiveRankTable.tsx` |
+| Live watch cards + polling | `src/components/LiveWatchCard.tsx` |
+
+Product backlog and seasonal notes: **`ROADMAP.md`**. Agent rules (email/SMS, copy constraints): **`CLAUDE.md`**.
+
+---
+
+## Learn More (Next.js)
+
+This project started from [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app). See [Next.js documentation](https://nextjs.org/docs) and [deployment](https://nextjs.org/docs/app/building-your-application/deploying).

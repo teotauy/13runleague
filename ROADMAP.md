@@ -83,6 +83,97 @@
 
 ---
 
+## 🔜 Soon
+
+### Cloudflare Zero Trust Auth
+Replace the shared-password league gate and cookie-based admin check with proper identity auth — zero code changes required on the app side.
+
+**Phase 1 — Admin (do this first, 30 min):**
+- Create a CF Access application scoped to `13runleague.com/league/*/admin*`
+- Policy: email allowlist = commissioner's email only
+- Auth method: email OTP (one-time code to inbox) or Google
+- The `isAdmin()` cookie check stays as defense-in-depth, but CF is the real gate
+- Result: no more shared admin password; commissioner logs in with their own email
+
+**Phase 2 — Full league gate (optional, later):**
+- Extend CF Access to cover `13runleague.com/league/*`
+- Policy: email allowlist = all active members
+- Replaces the shared league password + `/league/[slug]/login` page entirely
+- Bonus: CF injects `Cf-Access-Authenticated-User-Email` header → app knows *who* is viewing → enables personalized "your team is playing today" banners, member-specific dashboard highlights
+- Remove or archive: `isAdmin()` cookie auth, login page, password-in-cookie flow
+
+**Prerequisites:**
+- Domain must be proxied through Cloudflare (orange cloud in DNS). Currently pointing to Vercel — add CF as proxy layer, set SSL to Full (strict).
+- Exclude from Zero Trust: `/api/cron/*` (already uses `CRON_SECRET`), `/api/league/*/push-subscribe`, all public routes (`/`, `/teams/*`, etc.)
+
+**Cost:** Free. CF Zero Trust free tier supports up to 50 users.
+
+### Probability Calibration Dashboard
+Analytics dashboard (admin-only) showing model accuracy across probability thresholds.
+
+**Data:**
+- Query `game_results` + probability snapshots (see Member Threshold below)
+- For each threshold (P60, P65, P70, P75, P80, P85, P90, P95):
+  - How many games reached that threshold?
+  - Of those, what % actually became 13-run finals?
+  - Chart: threshold on X-axis, hit rate on Y-axis
+
+**Example:**
+- 847 games hit P(70%) threshold
+- 598 of them became 13-run finals
+- **Hit rate: 70.6%** ✓ (model is well-calibrated)
+- Compare to P(85%): 342 games, 288 hits = 84.2% (slightly underconfident)
+
+**Why:** Validates that the Poisson + Retrosheet lookup model is actually predictive. If hit rates are way off, it signals model drift or data quality issues.
+
+### Daily Team Probability Tracker
+Public-facing chart showing all 30 MLB teams' peak probabilities per day across the season.
+
+**Data:**
+- For each day (March 25 – Oct 5), capture each team's highest P(13%) reached that day
+- Store in `team_daily_probabilities` table: team, date, peak_probability, game_pk
+
+**Visualizations:**
+- **Heatmap:** 30 rows (teams, A-Z), X-axis = dates (season timeline), each cell colored by peak P
+  - Cold (blue): P < 40%
+  - Warm (yellow): P 40-70%
+  - Hot (orange): P 70-85%
+  - Blazing (red): P 85%+
+- **Daily Leaderboard:** "Today's Top 10 Hot Teams" — ranked by peak P, clickable to see game details
+- **Team Tracker:** Select a team, see their daily probability curve for the season (scatter plot: date vs P)
+
+**Insights you can extract:**
+- "Which teams consistently get hot?" (high mean P across season)
+- "Which day was the spiciest?" (max P across all teams that day)
+- "Orioles never hit P(70%)" (identify weak teams)
+- "Dodgers had 5 P(80%+) games in week 3" (pattern spotting)
+
+**Why:** Beautiful visual narrative of the season. Members can see team trends, understand why certain teams are "dangerous," and replay memorable high-probability days.
+
+### Member Hearts + Notification Threshold — Unlocked by CF Auth
+Once CF Zero Trust is live and the app can read `Cf-Access-Authenticated-User-Email`, add per-member team favorites and tunable alert thresholds.
+
+**Features:**
+- Dashboard: "Your Team: WSH | Your Hearts: BOS, NYY"
+- Heart icon next to team names across the app to toggle
+- Favorites persist in a `member_preferences` table
+- SMS alerts fire for both assigned team + all hearted teams
+- "On Deck" and "13 Alert" notifications scoped to member's teams
+- Leaderboard highlights: your team + hearts in a special color
+- **Threshold slider:** Member can adjust their P(XX%) notification trigger
+  - Default: P(70%) — moderate alert volume
+  - Too many alerts? Slide to P(85%) — only high-confidence games
+  - Want more? Slide to P(60%) — see earlier momentum
+  - Slider paired with calibration dashboard: "P(70%) games hit 13 runs 70% of the time"
+  - Probability snapshots logged for threshold tracking (feeds calibration dashboard)
+
+**Schema changes:**
+- `member_preferences` table: member_id, assigned_team, hearted_teams (JSON), phone, threshold_pct, opt_in_sms, created_at, updated_at
+
+**Why wait for CF auth first?** Without authenticated identity, you don't know who's viewing. With CF, the app always knows the member's email → can load their preferences instantly and personalize everything.
+
+---
+
 ## 🔒 Features — Hold for Next Billing Cycle
 
 ### Data-Driven Team Blurbs (Retrosheet 1901–present)
@@ -133,12 +224,14 @@ Email sections:
 - Footer: same as opener
 
 Build plan:
-- `WeeklyRecapModal.tsx` in admin — briefing panel + winner picker + rollover toggle + write-up textarea + preview iframe
-- `/api/league/[slug]/weekly-briefing` — aggregates streak data, near-misses, MLB hot hitters
-- `/api/league/[slug]/weekly-recap` — builds HTML, sends via Resend with 250ms rate limiting
-- Preview renders full HTML in modal before send button is enabled
+- **Shipped (baseline):** `WeeklyRecapSection.tsx` on admin — load preview (iframe) + confirm-before-send; `src/lib/weeklyRecapActions.ts` server actions (`previewWeeklyRecapEmail`, `sendWeeklyRecapEmail`) so auth uses the same `cookies()` as the admin page (no separate API route).
+- **Still to build:** `WeeklyRecapModal.tsx` — briefing panel + winner picker + rollover toggle + write-up textarea (commissioner voice)
+- **Still to build:** `/api/league/[slug]/weekly-briefing` — aggregates streak data, near-misses, MLB hot hitters
+- Season opener emails use 250ms spacing between Resend calls; weekly recap currently sends one broadcast (`to` array) — revisit rate limits if Resend limits change
 
 ### Homepage & Design
+- [x] **Live Rankings P(13) = Live 13-Watch P(13)** for in-progress games — both use `getLiveConditionalProbs()` from `src/lib/probability.ts` with the same linescore snapshot; previews use per-team Poisson, finals use 0/1. Documented in **README.md**.
+- [x] **League dashboard leaderboard P(13)** matches the same live / preview / final behavior (`src/app/league/[slug]/page.tsx` + `scheduledGameLambdas.ts`).
 - [ ] Logo / wordmark — no mark exists yet; explore SVG concept built in-browser
 - [ ] Grain/noise texture overlay on hero (Luma-style depth)
 - [ ] Big bold hero section — "13 runs. One winner." energy
@@ -164,10 +257,125 @@ Build plan:
 - [ ] **4.9** Alert deduplication — `alert_log` table prevents repeat messages per game per event type
 - [ ] **4.10** SMS opt-in flow — phone number, team preference, threshold setting, consent checkbox with timestamp, STOP handler
 
+**Note:** Once Cloudflare Zero Trust auth is live (see "Soon" section), SMS becomes beautifully personalized:
+  - Member logs in → app knows their email → looks up their profile → sees their assigned team + any "hearted" favorite teams
+  - SMS alerts fire only for that member's specific teams (both assigned + hearts)
+  - No more generic broadcast alerts — each member gets notifications for *their* teams
+  - Simplifies opt-in flow: preferences are tied to authenticated identity, not a stored choice
+
 ### Bigger Features
 - [ ] Day-of-week chart on team page
 - [ ] Payout UI — cleaner history, better recording flow
 - [ ] Onboarding flow for new leagues (commissioner sign-up, league creation)
+
+---
+
+## 📅 Annual Seasonal Lifecycle
+
+The league runs on a fixed calendar. Every phase has a defined start trigger, a set of actions, and a clear handoff to the next phase.
+
+---
+
+### Phase 1 — Regular Season
+**~March 25 → ~October 5**
+
+- Weekly cycle: Monday settlements (commissioner settles prior week via admin)
+- Push cron runs every 5 min during game hours detecting 13-run finals → auto-records to `game_results`, fires push notifications
+- Weekly recap email (Sunday): winner card / rollover card, commissioner's note, standings, streak narratives
+- Streaks (win drought) run live — `recalculateStreaks` is called on every week settlement
+- Pot accumulates; rollover preserved when no winner
+
+---
+
+### Phase 2 — End of Season
+**~October 5 (final regular-season game)**
+
+Trigger: Commissioner manually marks the season closed (or auto-detect: last scheduled game finalized).
+
+Actions:
+- Final weekly settlement + final recap email
+- Season summary email — all-time rankings snapshot, final payout tally, "see you next year" message
+- **Return survey embedded in the email** — one-click RSVP:
+  - ✅ **I'm in** — locks them in for next year
+  - ❌ **I'm out** — marks them as alumni (soft deactivate at season start)
+  - 🤔 **Maybe** — keeps them on the list, commissioner follows up in January
+- Payment option in the email — members can pre-pay their buy-in for next season (Venmo/cash, manually tracked in admin)
+- Streaks freeze at end of season — `currentGlobal` is capped at the final week of the season so offseason weeks don't inflate drought counters
+
+Implementation needed:
+- [ ] `season_status` flag on `leagues` table (`active` / `offseason` / `preseason`)
+- [ ] End-of-season summary email template
+- [ ] RSVP tracking column on `members` table (`next_season_status`: `in` / `out` / `maybe` / `pending`)
+- [ ] Admin UI: show RSVP responses, override individually
+
+---
+
+### Phase 3 — Offseason
+**~October 5 → February 13**
+
+- No weekly settlements, no streak movement
+- Commissioner can view RSVP status and send follow-up emails to `maybe` responders in January
+- New member invites go out — waitlist gets contacted, slots filled from `out` responses
+- Pre-payments can be recorded manually in admin
+- `GlobalSeasonBanner` shows offseason state + countdown to Draft Day (February 13)
+
+---
+
+### Phase 4 — Draft Day
+**February 13 (fixed, annually)**
+
+Draft day is the anchor for the pre-season. Set in stone: **February 13**.
+
+Workflow:
+1. Commissioner locks the roster — all `in` members finalized; `out` members marked alumni
+2. New members added (replacing outs) before draft executes
+3. Draft runs (existing `draft_sessions` / `draft_picks` system — random-assign or double-blind)
+4. Teams assigned, `assigned_team` updated on each member
+5. Draft Day email → each member receives their team assignment with team blurb
+6. Payments collected (those who haven't pre-paid) — tracked in admin
+
+Implementation needed:
+- [ ] Roster lock mechanism — prevent team changes after draft
+- [ ] Draft Day email template (team assignment + blurb)
+- [ ] `draft_year` column on `draft_sessions` so multiple seasons co-exist cleanly
+- [ ] Admin: "Close Season" → triggers offseason state and sends end-of-season email
+- [ ] Admin: "Open Draft" → unlocks draft UI, sends invites to new members
+
+---
+
+### Phase 5 — Spring Training / Pre-Season
+**February 13 → March 25**
+
+- Roster is set, teams assigned
+- Members who haven't paid are nudged via email / admin UI
+- `GlobalSeasonBanner` shows Spring Training state with countdown to Opening Day (March 25)
+- No streak movement, no weekly settlements
+- Commissioner can send a "get hyped" email in early March
+
+---
+
+### Phase 6 — Opening Day
+**March 25**
+
+- `season_status` flips to `active`
+- Banner switches to "Season is live · Week 1"
+- Week 1 pot initialized
+- Push cron resumes monitoring
+- Streak clock resumes from where it was capped at end of last season
+
+---
+
+### Annual Calendar Summary
+
+| Date | Event |
+|------|-------|
+| ~Oct 5 | Last regular-season game — season ends |
+| Oct (week of) | Final recap + season summary email with RSVP survey |
+| Oct–Jan | Offseason — streaks frozen, maybe-follows in January |
+| **Feb 13** | **Draft Day** — roster locked, teams assigned, draft email sent |
+| Feb 13 – Mar 25 | Spring Training — payments collected, hype builds |
+| **Mar 25** | **Opening Day** — Week 1 begins |
+| Mar 25 – Oct 5 | Regular Season — weekly settlements, recap emails, live push alerts |
 
 ---
 

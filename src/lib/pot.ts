@@ -1,5 +1,6 @@
 import { createClient } from './supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { franchiseAbbrs, normalizeTeamAbbr } from './teamColors'
 
 interface Winner {
   member_id: string
@@ -14,56 +15,74 @@ interface PayoutRecord {
   shares_count: number
   member_name: string
   team: string
+  game_date: string
+}
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24
+
+/** Sunday 00:00 local on or before the given calendar day (for Sunday-based playing weeks). */
+function sundayOnOrBefore(d: Date): Date {
+  const out = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  out.setDate(out.getDate() - out.getDay())
+  return out
 }
 
 /**
- * Get the Monday of the week containing a given date.
- * Weeks run Monday–Sunday to align with baseball weekly payouts.
- */
-function getWeekMonday(date: Date): Date {
-  const dow = date.getDay() // 0=Sun, 1=Mon … 6=Sat
-  const daysSinceMon = dow === 0 ? 6 : dow - 1
-  const mon = new Date(date)
-  mon.setDate(mon.getDate() - daysSinceMon)
-  mon.setHours(0, 0, 0, 0)
-  return mon
-}
-
-/**
- * Calculate week number based on date and season start.
- * Week 1 = the Mon–Sun week containing Opening Day (March 25).
- * Week 2 = the following Mon–Sun week, etc.
- * Season starts March 25 each year (MLB Opening Day)
+ * Playing week number within the season year.
+ *
+ * On/after March 25: week 1 is the Sunday-through-Saturday span that contains Opening Week
+ * (Sunday on or before March 25 → the following Saturday). Week 2 starts the next Sunday.
+ * Example 2026: March 22–28 = week 1, March 29+ = week 2.
+ *
+ * Before March 25 in a calendar year: still the prior season year’s grid (weeks since previous
+ * March 25 anchor), same as historical behavior.
  */
 export function getWeekNumber(date: Date, seasonStartMonth: number = 3, seasonStartDay: number = 25): number {
   const year = date.getFullYear()
   const seasonStart = new Date(year, seasonStartMonth - 1, seasonStartDay)
-  const weekOneMonday = getWeekMonday(seasonStart)
 
-  // If date is before Week 1 Monday, fall back to previous year
-  if (date < weekOneMonday) {
+  if (date < seasonStart) {
     const prevYearStart = new Date(year - 1, seasonStartMonth - 1, seasonStartDay)
-    const prevWeekOneMonday = getWeekMonday(prevYearStart)
-    const daysDiff = Math.floor((date.getTime() - prevWeekOneMonday.getTime()) / (1000 * 60 * 60 * 24))
-    return Math.floor(daysDiff / 7) + 1
+    const daysDiff = Math.floor((date.getTime() - prevYearStart.getTime()) / MS_PER_DAY)
+    return Math.ceil((daysDiff + 1) / 7)
   }
 
-  const daysDiff = Math.floor((date.getTime() - weekOneMonday.getTime()) / (1000 * 60 * 60 * 24))
+  const week1Sunday = sundayOnOrBefore(seasonStart)
+  const daysDiff = Math.floor((date.getTime() - week1Sunday.getTime()) / MS_PER_DAY)
   return Math.floor(daysDiff / 7) + 1
 }
 
 /**
- * Get the current year for the season
- * If date is before April 1, return previous year
+ * Season year for league data (payouts, tabs, pot). Uses the same March 25 anchor as
+ * {@link getWeekNumber} — not April 1 — so late-March games count in the new season.
  */
-export function getSeasonYear(date: Date, seasonStartMonth: number = 3): number {
+export function getSeasonYear(date: Date, seasonStartMonth: number = 3, seasonStartDay: number = 25): number {
   const year = date.getFullYear()
-  const seasonStart = new Date(year, seasonStartMonth - 1, 1)
-
+  const seasonStart = new Date(year, seasonStartMonth - 1, seasonStartDay)
   if (date < seasonStart) {
     return year - 1
   }
   return year
+}
+
+/**
+ * Inclusive YYYY-MM-DD bounds for a playing week (same Sunday-based grid as {@link getWeekNumber}).
+ */
+export function getWeekCalendarBoundsForSeasonYear(
+  seasonYear: number,
+  weekNumber: number,
+  seasonStartMonth: number = 3,
+  seasonStartDay: number = 25
+): { start: string; end: string } {
+  const anchor = new Date(seasonYear, seasonStartMonth - 1, seasonStartDay)
+  const week1Sunday = sundayOnOrBefore(anchor)
+  const start = new Date(week1Sunday)
+  start.setDate(start.getDate() + (weekNumber - 1) * 7)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 6)
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return { start: fmt(start), end: fmt(end) }
 }
 
 interface WeeklyPotResult {
@@ -92,13 +111,14 @@ export async function calculateWeeklyPot(
     throw new Error('League not found')
   }
 
-  // Count active members only (exclude alumni/inactive)
+  // Active roster only (matches dashboard PotBreakdown)
   const { data: members } = await supabase
     .from('members')
-    .select('id, is_active')
+    .select('id')
     .eq('league_id', league_id)
+    .or('is_active.is.null,is_active.eq.true')
 
-  const memberCount = (members ?? []).filter((m) => m.is_active !== false).length
+  const memberCount = members?.length || 0
   const basePot = (league.weekly_buy_in || 10) * memberCount
 
   // Check for rollover from previous week
@@ -112,7 +132,7 @@ export async function calculateWeeklyPot(
       .eq('league_id', league_id)
       .eq('year', year)
       .eq('week_number', week_number - 1)
-      .single()
+      .maybeSingle()
 
     // If previous week had no winners, we have a rollover
     if (prevWeekLedger && prevWeekLedger.number_of_winners === 0) {
@@ -129,6 +149,34 @@ export async function calculateWeeklyPot(
 }
 
 /**
+ * Rollover stored on `leagues.pot_total` after a no-winner settlement. If that was never written
+ * (older bug), derive the same amount from the prior week's ledger for the dashboard.
+ */
+export async function getEffectiveRolloverPotForDashboard(
+  leagueId: string,
+  storedPotTotal: number | null,
+  seasonYear: number,
+  currentWeekNumber: number,
+  supabase: SupabaseClient
+): Promise<number> {
+  const stored = storedPotTotal ?? 0
+  if (stored > 0 || currentWeekNumber <= 1) return stored
+
+  const { data: prev } = await supabase
+    .from('weekly_pot_ledger')
+    .select('pot_amount, number_of_winners')
+    .eq('league_id', leagueId)
+    .eq('year', seasonYear)
+    .eq('week_number', currentWeekNumber - 1)
+    .maybeSingle()
+
+  if (prev && prev.number_of_winners === 0 && (prev.pot_amount ?? 0) > 0) {
+    return prev.pot_amount
+  }
+  return 0
+}
+
+/**
  * Find all winners for a given week (teams that scored 13)
  * Returns array of member owners of those teams
  */
@@ -138,58 +186,70 @@ export async function getWinnersForWeek(
   year: number,
   supabase: SupabaseClient
 ): Promise<Winner[]> {
-  // Get the week boundaries (Monday–Sunday, aligned to opening-day week)
-  const seasonStart = new Date(year, 2, 25) // March 25 (MLB Opening Day)
-  const weekOneMonday = getWeekMonday(seasonStart)
-  const weekStart = new Date(weekOneMonday)
-  weekStart.setDate(weekStart.getDate() + (week_number - 1) * 7)
-  const weekEnd = new Date(weekStart)
-  weekEnd.setDate(weekEnd.getDate() + 6)
+  const { start, end } = getWeekCalendarBoundsForSeasonYear(year, week_number)
 
   // Find all games with 13-run results this week
   const { data: gameResults } = await supabase
     .from('game_results')
     .select('winning_team, game_date')
     .eq('was_thirteen', true)
-    .gte('game_date', weekStart.toISOString().split('T')[0])
-    .lte('game_date', weekEnd.toISOString().split('T')[0])
+    .gte('game_date', start)
+    .lte('game_date', end)
 
   if (!gameResults || gameResults.length === 0) {
     return []
   }
 
-  // Find members who own these winning teams
-  const winningTeams = gameResults.map((g) => g.winning_team)
+  // Include alias abbreviations (e.g. AZ vs ARI for Arizona) so .in matches members table
+  const assignableVariants = new Set<string>()
+  for (const g of gameResults) {
+    const cell = g.winning_team ?? ''
+    for (const part of cell.split(',')) {
+      const p = part.trim().toUpperCase()
+      if (!p) continue
+      const canon = normalizeTeamAbbr(p)
+      franchiseAbbrs(canon).forEach((a) => assignableVariants.add(a))
+    }
+  }
+  const variantList = [...assignableVariants]
+
   const { data: winners } = await supabase
     .from('members')
     .select('id, name, assigned_team')
     .eq('league_id', league_id)
-    .in('assigned_team', winningTeams)
+    .in('assigned_team', variantList.length > 0 ? variantList : ['__none__'])
 
   if (!winners) {
     return []
   }
 
-  // Map game results to member winners
-  const winnerMap: { [key: string]: Winner } = {}
+  const memberOwnsWinningTeam = (memberAbbr: string, winningCell: string) => {
+    const m = normalizeTeamAbbr(memberAbbr.toUpperCase())
+    for (const part of winningCell.split(',')) {
+      const p = part.trim().toUpperCase()
+      if (!p) continue
+      if (normalizeTeamAbbr(p) === m) return true
+    }
+    return false
+  }
 
-  winners.forEach((member) => {
-    gameResults.forEach((game) => {
-      if (member.assigned_team === game.winning_team) {
-        // Use member_id as key to avoid duplicates if they have multiple 13-run games
-        if (!winnerMap[member.id]) {
-          winnerMap[member.id] = {
-            member_id: member.id,
-            member_name: member.name,
-            team: member.assigned_team,
-            game_date: game.game_date,
-          }
-        }
+  // One entry per 13-run game per member — a team hitting 13 twice in a week earns two shares
+  const winnerEntries: Winner[] = []
+
+  for (const game of gameResults) {
+    for (const member of winners) {
+      if (memberOwnsWinningTeam(member.assigned_team, game.winning_team)) {
+        winnerEntries.push({
+          member_id: member.id,
+          member_name: member.name,
+          team: member.assigned_team,
+          game_date: game.game_date,
+        })
       }
-    })
-  })
+    }
+  }
 
-  return Object.values(winnerMap)
+  return winnerEntries
 }
 
 /**
@@ -209,6 +269,7 @@ export function calculatePayouts(pot_amount: number, winners: Winner[]): PayoutR
     shares_count: winners.length,
     member_name: winner.member_name,
     team: winner.team,
+    game_date: winner.game_date,
   }))
 }
 
@@ -248,15 +309,15 @@ export async function recordPayouts(
     winning_team: payout.team,
     payout_amount: payout.payout_amount,
     shares_count: payout.shares_count,
-    game_date: winners.find((w) => w.member_id === payout.member_id)?.game_date || new Date().toISOString().split('T')[0],
+    game_date: payout.game_date,
   }))
 
-  const { error: payoutError } = await supabase
-    .from('payouts')
-    .insert(payoutRecords)
+  if (payoutRecords.length > 0) {
+    const { error: payoutError } = await supabase.from('payouts').insert(payoutRecords)
 
-  if (payoutError) {
-    throw new Error(`Failed to insert payouts: ${payoutError.message}`)
+    if (payoutError) {
+      throw new Error(`Failed to insert payouts: ${payoutError.message}`)
+    }
   }
 
   // 2. Update weekly_pot_ledger
@@ -268,7 +329,8 @@ export async function recordPayouts(
       year,
       pot_amount,
       number_of_winners: winners.length,
-      payout_per_share: Math.floor(pot_amount / (winners.length || 1)),
+      payout_per_share:
+        winners.length > 0 ? Math.floor(pot_amount / winners.length) : 0,
       calculated_at: new Date().toISOString(),
     })
 
@@ -311,13 +373,20 @@ export async function recordPayouts(
     }
   }
 
-  // 4. Update leagues.pot_total (reset to 0 if winners, keep amount if no rollover)
-  // If there are winners, pot resets to 0 (next week will have fresh pot)
-  // If no winners, pot stays as is (handled by next week's calculation with rollover)
+  // 4. leagues.pot_total — dashboard shows pot_total + this week's buy-ins
   if (winners.length > 0) {
     const { error: leagueError } = await supabase
       .from('leagues')
       .update({ pot_total: 0 })
+      .eq('id', league_id)
+
+    if (leagueError) {
+      throw new Error(`Failed to update league pot_total: ${leagueError.message}`)
+    }
+  } else {
+    const { error: leagueError } = await supabase
+      .from('leagues')
+      .update({ pot_total: pot_amount })
       .eq('id', league_id)
 
     if (leagueError) {

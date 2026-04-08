@@ -3,6 +3,8 @@
  * Base URL: https://statsapi.mlb.com
  */
 
+import { normalizeTeamAbbr } from '@/lib/teamColors'
+
 const MLB_API = 'https://statsapi.mlb.com'
 
 // ---------------------------------------------------------------------------
@@ -192,10 +194,17 @@ export async function fetchScheduleForDate(date: string): Promise<MLBGame[]> {
   return games
 }
 
+function canonTeam(team: MLBTeam): MLBTeam {
+  const abbr = String(team.abbreviation ?? '').toUpperCase()
+  return { ...team, abbreviation: normalizeTeamAbbr(abbr) }
+}
+
 function normalizeGame(raw: Record<string, unknown>): MLBGame {
   const teams = raw.teams as Record<string, Record<string, unknown>>
   const venue = raw.venue as Record<string, unknown>
   const status = raw.status as Record<string, unknown>
+  const awayT = canonTeam(teams.away.team as MLBTeam)
+  const homeT = canonTeam(teams.home.team as MLBTeam)
 
   return {
     gamePk: raw.gamePk as number,
@@ -207,18 +216,34 @@ function normalizeGame(raw: Record<string, unknown>): MLBGame {
     },
     teams: {
       away: {
-        team: teams.away.team as MLBTeam,
+        team: awayT,
         score: teams.away.score as number | undefined,
         leagueRecord: teams.away.leagueRecord as { wins: number; losses: number },
       },
       home: {
-        team: teams.home.team as MLBTeam,
+        team: homeT,
         score: teams.home.score as number | undefined,
         leagueRecord: teams.home.leagueRecord as { wins: number; losses: number },
       },
     },
     venue: { id: venue.id as number, name: venue.name as string },
     probablePitchers: raw.probablePitchers as MLBGame['probablePitchers'],
+  }
+}
+
+function normalizeLiveFeedTeams(feed: MLBLiveGame): MLBLiveGame {
+  const away = feed.gameData?.teams?.away
+  const home = feed.gameData?.teams?.home
+  if (!away?.abbreviation || !home?.abbreviation) return feed
+  return {
+    ...feed,
+    gameData: {
+      ...feed.gameData,
+      teams: {
+        away: canonTeam(away),
+        home: canonTeam(home),
+      },
+    },
   }
 }
 
@@ -301,7 +326,8 @@ export async function fetchLiveFeed(gamePk: number): Promise<MLBLiveGame> {
   const res = await fetch(url, { next: { revalidate: 15 } })
   if (!res.ok) throw new Error(`MLB live feed fetch failed: ${res.status}`)
 
-  return res.json()
+  const feed = (await res.json()) as MLBLiveGame
+  return normalizeLiveFeedTeams(feed)
 }
 
 /**
@@ -314,7 +340,8 @@ export async function fetchLiveFeedClient(gamePk: number): Promise<MLBLiveGame> 
   const res = await fetch(url)
   if (!res.ok) throw new Error(`MLB live feed fetch failed: ${res.status}`)
 
-  return res.json()
+  const feed = (await res.json()) as MLBLiveGame
+  return normalizeLiveFeedTeams(feed)
 }
 
 // ---------------------------------------------------------------------------
@@ -457,9 +484,11 @@ export async function fetchTeamGameLog(
         const runsScored = isHome
           ? (game.teams.home.score ?? 0)
           : (game.teams.away.score ?? 0)
-        const opponent = isHome
-          ? game.teams.away.team.abbreviation
-          : game.teams.home.team.abbreviation
+        const opponent = normalizeTeamAbbr(
+          String(
+            isHome ? game.teams.away.team.abbreviation : game.teams.home.team.abbreviation
+          ).toUpperCase()
+        )
 
         entries.push({
           date: game.gameDate.split('T')[0],

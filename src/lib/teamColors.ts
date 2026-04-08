@@ -237,6 +237,7 @@ export const TEAM_COLORS: Record<string, TeamColor> = {
  */
 export const TEAM_ABBR_ALIASES: Record<string, string> = {
   OAK: 'ATH', // Oakland Athletics → Athletics (2025+)
+  AZ: 'ARI', // MLB Stats API uses AZ for Arizona; app + members table use ARI
 }
 
 /** Normalize a stored abbreviation to its current equivalent. */

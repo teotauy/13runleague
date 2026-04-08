@@ -2,9 +2,15 @@ import { cookies } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { fetchTodaySchedule, fetchTeamSeasonStats, currentSeason } from '@/lib/mlb'
-import { buildLambda, calculateThirteenProbability } from '@/lib/probability'
-import { getWeekNumber, getSeasonYear, getWinnersForWeek } from '@/lib/pot'
+import { fetchTodaySchedule, fetchLiveFeed, currentSeason, type MLBLiveGame, type MLBGame } from '@/lib/mlb'
+import { calculateThirteenProbability, getLiveConditionalProbs } from '@/lib/probability'
+import { buildPitcherAdjustedLambdasForGame } from '@/lib/scheduledGameLambdas'
+import {
+  getWeekNumber,
+  getSeasonYear,
+  getWinnersForWeek,
+  getEffectiveRolloverPotForDashboard,
+} from '@/lib/pot'
 import RankingsTabs, { type AllTimeEntry, type TeamEntry } from '@/components/RankingsTabs'
 import PotBreakdown from '@/components/PotBreakdown'
 import LeaderboardTable, { type LeaderboardRow } from '@/components/LeaderboardTable'
@@ -13,6 +19,7 @@ import WinCelebration, { type WinCelebrationPayout } from '@/components/WinCeleb
 import LeagueTabs from '@/components/LeagueTabs'
 import LeagueExplainer from '@/components/LeagueExplainer'
 import ThirteenRunLore from '@/components/ThirteenRunLore'
+import { normalizeTeamAbbr } from '@/lib/teamColors'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,7 +53,7 @@ export default async function LeagueDashboard({ params }: Props) {
 
   const { data: streaks } = await supabase
     .from('streaks')
-    .select('member_id, current_streak, longest_streak, closest_miss_score, closest_miss_date')
+    .select('member_id, current_streak, longest_streak')
 
   // Fetch ALL 13-run games — small dataset, used for both the recent list and lore stats
   const { data: thirteenHistory } = await supabase
@@ -57,15 +64,39 @@ export default async function LeagueDashboard({ params }: Props) {
 
   const games = await fetchTodaySchedule()
 
-  // Enrich each member with today's game info and probability
+  const liveGames = games.filter((g) => g.status.abstractGameState === 'Live')
+  const liveFeeds = await Promise.all(
+    liveGames.map((g) => fetchLiveFeed(g.gamePk).catch(() => null))
+  )
+  const liveFeedByPk = new Map<number, MLBLiveGame>()
+  for (const feed of liveFeeds) {
+    if (feed) liveFeedByPk.set(feed.gamePk, feed)
+  }
+
+  const lambdasByGamePk = new Map<
+    number,
+    ReturnType<typeof buildPitcherAdjustedLambdasForGame>
+  >()
+  function lambdasForGame(game: MLBGame) {
+    let p = lambdasByGamePk.get(game.gamePk)
+    if (!p) {
+      p = buildPitcherAdjustedLambdasForGame(game, season)
+      lambdasByGamePk.set(game.gamePk, p)
+    }
+    return p
+  }
+
+  const activeMembers = (members ?? []).filter((m) => m.is_active !== false)
+
+  // Enrich each active member with today's game info and P(13) (live conditional when in progress)
   const enrichedMembers = await Promise.all(
-    (members ?? []).map(async (member) => {
-      const teamAbbr = member.assigned_team.toUpperCase()
+    activeMembers.map(async (member) => {
+      const canonMemberTeam = normalizeTeamAbbr(member.assigned_team.toUpperCase())
 
       const todayGame = games.find(
         (g) =>
-          g.teams.home.team.abbreviation === teamAbbr ||
-          g.teams.away.team.abbreviation === teamAbbr
+          normalizeTeamAbbr(g.teams.home.team.abbreviation) === canonMemberTeam ||
+          normalizeTeamAbbr(g.teams.away.team.abbreviation) === canonMemberTeam
       )
 
       const streak = streaks?.find((s) => s.member_id === member.id)
@@ -74,18 +105,33 @@ export default async function LeagueDashboard({ params }: Props) {
         return { member, streak, todayGame: null, todayProb: null }
       }
 
-      const isHome = todayGame.teams.home.team.abbreviation === teamAbbr
-      const teamId = isHome
-        ? todayGame.teams.home.team.id
-        : todayGame.teams.away.team.id
+      const isHome = normalizeTeamAbbr(todayGame.teams.home.team.abbreviation) === canonMemberTeam
+      const { awayLambda, homeLambda } = await lambdasForGame(todayGame)
+      const awayAdj = awayLambda.pitcherAdjusted
+      const homeAdj = homeLambda.pitcherAdjusted
+      const status = todayGame.status.abstractGameState
+      const feed = liveFeedByPk.get(todayGame.gamePk)
 
-      const stats = await fetchTeamSeasonStats(teamId, season)
-      const lambda = buildLambda({
-        baseRunsPerGame: stats.runsPerGame,
-        gamesPlayed: stats.gamesPlayed,
-        venueId: String(todayGame.venue.id),
-      })
-      const prob = calculateThirteenProbability(lambda.pitcherAdjusted)
+      let prob: number
+      if (status === 'Final') {
+        const runs = isHome
+          ? (todayGame.teams.home.score ?? 0)
+          : (todayGame.teams.away.score ?? 0)
+        prob = runs === 13 ? 1 : 0
+      } else if (status === 'Live' && feed) {
+        const ls = feed.liveData.linescore
+        const live = getLiveConditionalProbs(
+          ls.teams.away.runs ?? 0,
+          ls.teams.home.runs ?? 0,
+          ls.currentInning,
+          ls.isTopInning,
+          awayAdj,
+          homeAdj
+        )
+        prob = isHome ? live.home.probability : live.away.probability
+      } else {
+        prob = calculateThirteenProbability(isHome ? homeAdj : awayAdj)
+      }
 
       return { member, streak, todayGame, todayProb: prob }
     })
@@ -95,6 +141,10 @@ export default async function LeagueDashboard({ params }: Props) {
   const today = new Date()
   const currentWeekNumber = getWeekNumber(today)
   const seasonYear = getSeasonYear(today)
+  const calendarYear = today.getFullYear()
+  const alumniNamesLower = (members ?? [])
+    .filter((m) => m.is_active === false)
+    .map((m) => m.name.trim().toLowerCase())
 
   // Fetch weekly payments for current week
   const { data: currentWeekPayments } = await supabase
@@ -118,36 +168,48 @@ export default async function LeagueDashboard({ params }: Props) {
     supabase
   )
 
-  // Most recent payout — for win celebration banner (show within 72 hours)
-  const { data: recentPayout } = await supabase
+  const potTotalForDisplay = await getEffectiveRolloverPotForDashboard(
+    league.id,
+    league.pot_total,
+    seasonYear,
+    currentWeekNumber,
+    supabase
+  )
+
+  // Recent payouts — for win celebration banner (show within 72 hours)
+  // Fetch all payouts from the most recently settled week so multi-winner weeks show everyone
+  const cutoff = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
+  const { data: recentPayouts } = await supabase
     .from('payouts')
     .select('id, member_id, week_number, year, winning_team, payout_amount, game_date, created_at')
     .eq('year', seasonYear)
+    .gte('created_at', cutoff)
     .order('created_at', { ascending: false })
-    .limit(1)
-    .single()
 
-  let winCelebrationPayout: WinCelebrationPayout | null = null
-  if (recentPayout?.created_at) {
-    const createdAt = new Date(recentPayout.created_at)
-    const hoursSince = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60)
-    if (hoursSince <= 72) {
-      const memberRecord = (members ?? []).find((m) => m.id === recentPayout.member_id)
-      if (memberRecord) {
-        winCelebrationPayout = {
-          id: recentPayout.id,
+  let winCelebrationPayouts: WinCelebrationPayout[] = []
+  if (recentPayouts && recentPayouts.length > 0) {
+    // All payouts from the most recently settled week
+    const newestWeek = recentPayouts[0].week_number
+    const newestYear = recentPayouts[0].year
+    winCelebrationPayouts = recentPayouts
+      .filter((p) => p.week_number === newestWeek && p.year === newestYear)
+      .flatMap((p) => {
+        const memberRecord = (members ?? []).find((m) => m.id === p.member_id)
+        if (!memberRecord) return []
+        return [{
+          id: p.id,
           member_name: memberRecord.name,
-          week_number: recentPayout.week_number,
-          year: recentPayout.year,
-          winning_team: recentPayout.winning_team,
-          payout_amount: recentPayout.payout_amount,
-          game_date: recentPayout.game_date ?? null,
-        }
-      }
-    }
+          week_number: p.week_number,
+          year: p.year,
+          winning_team: p.winning_team,
+          payout_amount: p.payout_amount,
+          game_date: p.game_date ?? null,
+        }]
+      })
   }
 
   // All payouts this season — for leaderboard Wins + Won columns
+  // wins = total 13-run games scored by the member's team this season
   const { data: seasonPayouts } = await supabase
     .from('payouts')
     .select('member_id, payout_amount')
@@ -176,27 +238,34 @@ export default async function LeagueDashboard({ params }: Props) {
     .eq('league_id', league.id)
 
   // Build a case-insensitive name → member map for robust matching
-  const memberByName = new Map<string, { id: string; name: string }>()
+  const memberByName = new Map<string, { id: string; name: string; isActive: boolean }>()
   for (const m of members ?? []) {
-    memberByName.set(m.name.trim().toLowerCase(), { id: m.id, name: m.name })
+    memberByName.set(m.name.trim().toLowerCase(), {
+      id: m.id,
+      name: m.name,
+      isActive: m.is_active !== false,
+    })
   }
 
   // Aggregate all-time rankings by member
   const allTimeMap = new Map<string, AllTimeEntry>()
   for (const row of historicalRaw ?? []) {
+    const matched = memberByName.get(row.member_name.trim().toLowerCase())
+    const isActive = matched?.isActive ?? false
     const existing = allTimeMap.get(row.member_name)
     if (existing) {
       existing.totalWon += row.total_won ?? 0
       existing.totalShares += row.shares ?? 0
       existing.yearsPlayed.push(row.year)
+      existing.isActive = isActive
+      if (matched?.id) existing.id = matched.id
     } else {
-      const matched = memberByName.get(row.member_name.trim().toLowerCase())
       allTimeMap.set(row.member_name, {
         name: row.member_name,
         totalWon: row.total_won ?? 0,
         totalShares: row.shares ?? 0,
         yearsPlayed: [row.year],
-        isActive: !!matched,
+        isActive,
         id: matched?.id,
       })
     }
@@ -225,17 +294,6 @@ export default async function LeagueDashboard({ params }: Props) {
   const teamRankings: TeamEntry[] = Array.from(teamMap.values())
     .sort((a, b) => b.thirteenRunWeeks - a.thirteenRunWeeks)
 
-  // Closest misses — primary: distance to 13; tie-break: most recent date first
-  const closestMisses = streaks
-    ?.filter((s) => s.closest_miss_score !== null && (s.closest_miss_score ?? 0) >= 8)
-    .sort((a, b) => {
-      const aDist = Math.abs((a.closest_miss_score ?? 0) - 13)
-      const bDist = Math.abs((b.closest_miss_score ?? 0) - 13)
-      if (aDist !== bDist) return aDist - bDist
-      return (b.closest_miss_date ?? '').localeCompare(a.closest_miss_date ?? '')
-    })
-    .slice(0, 5)
-
   // Season Archive years derived from historicalRaw (already fetched above)
   const archiveYears = [...new Set((historicalRaw ?? []).map((r) => r.year))].sort(
     (a, b) => a - b
@@ -244,8 +302,8 @@ export default async function LeagueDashboard({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
-      {winCelebrationPayout && (
-        <WinCelebration payout={winCelebrationPayout} />
+      {winCelebrationPayouts.length > 0 && (
+        <WinCelebration payouts={winCelebrationPayouts} />
       )}
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
 
@@ -262,7 +320,7 @@ export default async function LeagueDashboard({ params }: Props) {
           payments={currentWeekPayments ?? []}
           currentWeek={currentWeekNumber}
           weeklyBuyIn={league.weekly_buy_in ?? 10}
-          potTotal={league.pot_total ?? 0}
+          potTotal={potTotalForDisplay}
           weekWinners={thisWeekWinners}
           settledPayouts={currentWeekPayouts?.map((p) => ({
             member_id: p.member_id,
@@ -276,6 +334,8 @@ export default async function LeagueDashboard({ params }: Props) {
           teamRankings={teamRankings}
           slug={slug}
           currentYear={seasonYear}
+          calendarYear={calendarYear}
+          alumniNamesLower={alumniNamesLower}
         >
           {/* Leaderboard */}
           <section>
@@ -286,67 +346,33 @@ export default async function LeagueDashboard({ params }: Props) {
           {/* ── Explainer Zone — between live dashboard and lore ── */}
           <LeagueExplainer />
 
-          {/* 13-Run History + Closest Miss Board — side by side */}
+          {/* 13-Run History — recent 10 games */}
           {thirteenHistory && thirteenHistory.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-              {/* 13-Run History — recent 10 games */}
-              <section>
-                <div className="flex items-center gap-3 mb-4">
-                  <h2 className="text-lg font-bold"><span className="text-[#39ff14]">13</span>-Run History</h2>
-                  <span className="text-xs text-gray-600 font-mono">most recent</span>
-                </div>
-                <div className="space-y-1.5">
-                  {thirteenHistory.slice(0, 10).map((result) => (
-                    <div
-                      key={`${result.game_date}-${result.home_team}`}
-                      className="flex items-center gap-2 text-xs rounded bg-[#111] border border-gray-900 px-3 py-2"
-                    >
-                      <span className="text-[#39ff14] font-bold font-mono shrink-0">13</span>
-                      <span className="text-gray-600 font-mono shrink-0">{result.game_date}</span>
-                      <span className="text-white truncate">
-                        <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
-                        {' scored '}
-                        <span className="text-[#39ff14] font-bold">13</span>
-                        {' — '}
-                        {result.away_team}@{result.home_team}{' '}
-                        ({result.away_score}–{result.home_score})
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* Closest Miss Board */}
-              <section>
-                <h2 className="text-lg font-bold mb-4">Closest Miss Board 💔</h2>
-                {closestMisses && closestMisses.length > 0 ? (
-                  <div className="space-y-1.5">
-                    {closestMisses.map((s) => {
-                      const member = members?.find((m) => m.id === s.member_id)
-                      const diff = Math.abs((s.closest_miss_score ?? 0) - 13)
-                      return (
-                        <div
-                          key={s.member_id}
-                          className="flex items-center gap-2 text-xs rounded bg-[#111] border border-gray-900 px-3 py-2"
-                        >
-                          {s.closest_miss_date && (
-                            <span className="text-gray-500 font-mono shrink-0">{fmtMD(s.closest_miss_date)}</span>
-                          )}
-                          <span className="text-amber-400 font-bold shrink-0">{s.closest_miss_score} runs</span>
-                          <span className="text-white truncate">{member?.name ?? '—'} ({member?.assigned_team})</span>
-                          <span className="text-gray-600 ml-auto shrink-0 text-[10px]">
-                            {diff === 1 ? '1 away!' : `${diff} away`}
-                          </span>
-                        </div>
-                      )
-                    })}
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-lg font-bold"><span className="text-[#39ff14]">13</span>-Run History</h2>
+                <span className="text-xs text-gray-600 font-mono">most recent</span>
+              </div>
+              <div className="space-y-1.5 max-w-3xl">
+                {thirteenHistory.slice(0, 10).map((result) => (
+                  <div
+                    key={`${result.game_date}-${result.home_team}`}
+                    className="flex items-center gap-2 text-xs rounded bg-[#111] border border-gray-900 px-3 py-2"
+                  >
+                    <span className="text-[#39ff14] font-bold font-mono shrink-0">13</span>
+                    <span className="text-gray-600 font-mono shrink-0">{result.game_date}</span>
+                    <span className="text-white truncate">
+                      <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
+                      {' scored '}
+                      <span className="text-[#39ff14] font-bold">13</span>
+                      {' — '}
+                      {result.away_team}@{result.home_team}{' '}
+                      ({result.away_score}–{result.home_score})
+                    </span>
                   </div>
-                ) : (
-                  <div className="text-gray-700 text-xs">No near-misses recorded yet.</div>
-                )}
-              </section>
-            </div>
+                ))}
+              </div>
+            </section>
           )}
 
           {/* 13-Run Lore — franchise / day / home-away / month breakdowns */}
@@ -393,10 +419,4 @@ export default async function LeagueDashboard({ params }: Props) {
       </div>
     </main>
   )
-}
-
-/** "2025-04-05" → "4/5" */
-function fmtMD(dateStr: string): string {
-  const parts = dateStr.split('-')
-  return `${parseInt(parts[1])}/${parseInt(parts[2])}`
 }

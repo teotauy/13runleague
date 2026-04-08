@@ -9,6 +9,9 @@ import { NextResponse } from 'next/server'
 import webpush from 'web-push'
 import { createServiceClient } from '@/lib/supabase/server'
 import { baseballToday } from '@/lib/mlb'
+import { normalizeTeamAbbr } from '@/lib/teamColors'
+import { recalculateStreaks } from '@/lib/streaks'
+import { getSeasonYear } from '@/lib/pot'
 
 // ---------------------------------------------------------------------------
 // VAPID setup (lazy — avoids env var errors at import time)
@@ -55,12 +58,20 @@ async function fetchTodayFinalGames(): Promise<ScheduleGame[]> {
   for (const d of data.dates ?? []) {
     for (const g of d.games ?? []) {
       if (g.status?.abstractGameState !== 'Final') continue
+      const awayAbbr = normalizeTeamAbbr(String(g.teams.away.team.abbreviation).toUpperCase())
+      const homeAbbr = normalizeTeamAbbr(String(g.teams.home.team.abbreviation).toUpperCase())
       games.push({
         gamePk: g.gamePk,
         status: g.status,
         teams: {
-          away: { team: g.teams.away.team, score: g.teams.away.score },
-          home: { team: g.teams.home.team, score: g.teams.home.score },
+          away: {
+            team: { ...g.teams.away.team, abbreviation: awayAbbr },
+            score: g.teams.away.score,
+          },
+          home: {
+            team: { ...g.teams.home.team, abbreviation: homeAbbr },
+            score: g.teams.home.score,
+          },
         },
       })
     }
@@ -107,6 +118,34 @@ export async function GET(request: Request) {
   const games = await fetchTodayFinalGames()
   if (games.length === 0) {
     return NextResponse.json({ sent: 0, message: 'No final games' })
+  }
+
+  // 1b. Persist all 13-run finals to game_results so the celebration banner,
+  //     winner detection, and payout settlement all work automatically.
+  const gameDate = baseballToday()
+  const thirteenGameRows = games
+    .filter((g) => g.teams.away.score === 13 || g.teams.home.score === 13)
+    .map((g) => {
+      const winningTeams: string[] = []
+      if (g.teams.away.score === 13) winningTeams.push(g.teams.away.team.abbreviation)
+      if (g.teams.home.score === 13) winningTeams.push(g.teams.home.team.abbreviation)
+      return {
+        game_pk:      String(g.gamePk),
+        game_date:    gameDate,
+        home_team:    g.teams.home.team.abbreviation,
+        away_team:    g.teams.away.team.abbreviation,
+        home_score:   g.teams.home.score ?? 0,
+        away_score:   g.teams.away.score ?? 0,
+        was_thirteen: true,
+        winning_team: winningTeams.join(','),
+        final:        true,
+      }
+    })
+
+  if (thirteenGameRows.length > 0) {
+    await supabase
+      .from('game_results')
+      .upsert(thirteenGameRows, { onConflict: 'game_pk' })
   }
 
   // 2. Find teams that scored exactly 13
@@ -202,7 +241,19 @@ export async function GET(request: Request) {
       .upsert({ game_pk: hit.gamePk, team: hit.abbr, event_type: 'thirteen' })
   }
 
-  // 6. Clean up expired subscriptions
+  // 6. Recalculate streaks for all leagues — wins count the moment the game ends.
+  //    Only runs when toSend had new games (above), so this is a no-op on repeat cron ticks.
+  try {
+    const { data: leagues } = await supabase.from('leagues').select('id')
+    const currentYear = getSeasonYear(new Date())
+    await Promise.all(
+      (leagues ?? []).map((league) => recalculateStreaks(league.id, currentYear, supabase))
+    )
+  } catch (err) {
+    console.error('[PushCron] Streak recalculation failed (non-fatal):', err)
+  }
+
+  // 7. Clean up expired subscriptions
   if (failedEndpoints.length > 0) {
     await supabase
       .from('push_subscriptions')

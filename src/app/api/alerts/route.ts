@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendBulkSmsAlerts } from '@/lib/alerts'
 import { getAlertTier } from '@/lib/probability'
+import { franchiseAbbrs, normalizeTeamAbbr } from '@/lib/teamColors'
 
 function adminClient() {
   return createClient(
@@ -35,11 +36,14 @@ export async function POST(request: Request) {
 
   const supabase = adminClient()
 
+  const canon = normalizeTeamAbbr(teamAbbr.toUpperCase())
+  const assignableVariants = franchiseAbbrs(canon)
+
   // Find all members with this team assigned who have a phone number
   const { data: members } = await supabase
     .from('members')
     .select('phone, name')
-    .eq('assigned_team', teamAbbr)
+    .in('assigned_team', assignableVariants)
     .not('phone', 'is', null)
 
   const phones = (members ?? [])

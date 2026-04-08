@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Tooltip from './Tooltip'
 
-type SortCol = 'prob' | 'streak' | 'wins' | 'won'
+type SortCol = 'player' | 'team' | 'prob' | 'streak' | 'wins' | 'won'
 type Dir = 'asc' | 'desc'
 
 interface MemberData {
@@ -16,8 +16,6 @@ interface MemberData {
 interface StreakData {
   current_streak: number
   longest_streak: number
-  closest_miss_score: number | null
-  closest_miss_date: string | null
 }
 
 interface GameData {
@@ -36,12 +34,6 @@ export interface LeaderboardRow {
   seasonWon: number
 }
 
-/** "2025-04-05" → "4/5" */
-function fmtMD(dateStr: string): string {
-  const parts = dateStr.split('-')
-  return `${parseInt(parts[1])}/${parseInt(parts[2])}`
-}
-
 export default function LeaderboardTable({
   rows,
   slug,
@@ -57,11 +49,19 @@ export default function LeaderboardTable({
       setDir((d) => (d === 'desc' ? 'asc' : 'desc'))
     } else {
       setSortCol(col)
-      setDir('desc')
+      setDir(col === 'player' || col === 'team' ? 'asc' : 'desc')
     }
   }
 
   const sorted = [...rows].sort((a, b) => {
+    if (sortCol === 'player') {
+      const cmp = a.member.name.localeCompare(b.member.name)
+      return dir === 'asc' ? cmp : -cmp
+    }
+    if (sortCol === 'team') {
+      const cmp = a.member.assigned_team.localeCompare(b.member.assigned_team)
+      return dir === 'asc' ? cmp : -cmp
+    }
     let av: number, bv: number
     if (sortCol === 'prob') {
       av = a.todayProb ?? -1
@@ -118,14 +118,17 @@ export default function LeaderboardTable({
       <table className="w-full text-sm font-mono">
         <thead>
           <tr className="text-gray-500 border-b border-gray-800 text-left">
-            <th className="pb-2 pr-4">Player</th>
-            <th className="pb-2 pr-4">Team</th>
+            <SortTh label="Player" col="player" />
+            <SortTh label="Team" col="team" />
             <th className="pb-2 pr-4">Today</th>
-            <SortTh label="P(13)" col="prob" explanation="Probability your team scores exactly 13 runs today. Pre-game Poisson model (season stats, park factors, pitcher). Updates live each inning during games." />
+            <SortTh
+              label="P(13)"
+              col="prob"
+              explanation="Probability your team finishes with exactly 13 runs today. Pre-game: Poisson from season stats, park, and matchup run environment. Live: same Retrosheet/Poisson conditional model as the public homepage (linescore). Final: 100% or 0%."
+            />
             <SortTh label="Drought" col="streak" title="Weeks since this player's last win" />
-            <SortTh label="Wins" col="wins" title="Winning weeks this season" />
+            <SortTh label="Wins" col="wins" title="Times your team scored exactly 13 runs this season" />
             <SortTh label="$$$" col="won" title="Money won this season" />
-            <th className="pb-2">Closest Miss</th>
           </tr>
         </thead>
         <tbody>
@@ -181,14 +184,6 @@ export default function LeaderboardTable({
                   <span className="text-[#39ff14] font-bold">${seasonWon.toLocaleString()}</span>
                 ) : (
                   <span className="text-gray-600">—</span>
-                )}
-              </td>
-              <td className="py-3 text-gray-400">
-                {streak?.closest_miss_score !== null &&
-                streak?.closest_miss_score !== undefined ? (
-                  `${streak.closest_miss_date ? fmtMD(streak.closest_miss_date) + ' — ' : ''}${streak.closest_miss_score} runs`
-                ) : (
-                  '—'
                 )}
               </td>
             </tr>

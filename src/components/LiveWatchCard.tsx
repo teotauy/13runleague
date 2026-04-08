@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { fetchLiveFeedClient } from '@/lib/mlb'
-import { getConditionalProbability, type LiveGameState } from '@/lib/probability'
+import { getLiveConditionalProbs } from '@/lib/probability'
 import type { MLBLiveGame } from '@/lib/mlb'
 import Tooltip from './Tooltip'
 
@@ -99,40 +99,22 @@ export default function LiveWatchCard({
         innings: newInnings,
       })
 
-      // Recalculate probabilities
-      if (linescore.teams.away.runs >= 9) {
-        const awayState: LiveGameState = {
-          side: 'vis',
-          inningCompleted: linescore.isTopInning ? linescore.currentInning - 1 : linescore.currentInning,
-          currentScore: linescore.teams.away.runs,
-          isHomeTeamWinning: linescore.teams.home.runs > linescore.teams.away.runs,
-          inning: linescore.currentInning,
-          isBottom: !linescore.isTopInning,
-        }
-        const awayResult = getConditionalProbability(awayState, awayLambda)
-        setProbabilities((prev) => ({
-          ...prev,
-          awayProb: awayResult.probability,
-          awaySource: awayResult.source,
-        }))
-      }
-
-      if (linescore.teams.home.runs >= 9) {
-        const homeState: LiveGameState = {
-          side: 'home',
-          inningCompleted: linescore.isTopInning ? linescore.currentInning - 1 : linescore.currentInning,
-          currentScore: linescore.teams.home.runs,
-          isHomeTeamWinning: linescore.teams.home.runs > linescore.teams.away.runs,
-          inning: linescore.currentInning,
-          isBottom: !linescore.isTopInning,
-        }
-        const homeResult = getConditionalProbability(homeState, homeLambda)
-        setProbabilities((prev) => ({
-          ...prev,
-          homeProb: homeResult.probability,
-          homeSource: homeResult.source,
-        }))
-      }
+      const ar = linescore.teams.away.runs
+      const hr = linescore.teams.home.runs
+      const live = getLiveConditionalProbs(
+        ar,
+        hr,
+        linescore.currentInning,
+        linescore.isTopInning,
+        awayLambda,
+        homeLambda
+      )
+      setProbabilities({
+        awayProb: ar >= 9 ? live.away.probability : null,
+        homeProb: hr >= 9 ? live.home.probability : null,
+        awaySource: live.away.source,
+        homeSource: live.home.source,
+      })
 
       setLastUpdate(new Date())
     } catch (err) {
