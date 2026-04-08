@@ -136,7 +136,7 @@ export default function WeeklyRecap({
               <Text style={{ color: '#374151', fontSize: '11px' }}>
                 13runleague.com · You&apos;re receiving this because you&apos;re in a 13 Run League.{' '}
                 <Link
-                  href="mailto:recap@13runleague.com?subject=unsubscribe"
+                  href="https://13runleague.com/unsubscribe"
                   style={{ color: '#4b5563' }}
                 >
                   Unsubscribe
