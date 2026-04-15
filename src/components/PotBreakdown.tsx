@@ -220,7 +220,10 @@ export default function PotBreakdown({
                   />
                 </div>
                 <div className="flex justify-between text-[11px] text-gray-700">
-                  <span>{barPct}% chance of a 13 this week</span>
+                  <span>
+                    {barPct}%{' '}
+                    {weekWinners.length > 0 ? 'chance of a split' : 'chance of a 13 this week'}
+                  </span>
                   {totalGamesLeft !== undefined && (
                     <span>{totalGamesLeft} game{totalGamesLeft !== 1 ? 's' : ''} left</span>
                   )}
