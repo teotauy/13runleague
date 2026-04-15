@@ -19,6 +19,7 @@ interface StreakData {
 }
 
 interface GameData {
+  status: { abstractGameState: string }
   teams: {
     away: { team: { abbreviation: string } }
     home: { team: { abbreviation: string } }
@@ -32,6 +33,8 @@ export interface LeaderboardRow {
   todayProb: number | null
   seasonWins: number
   seasonWon: number
+  /** Non-Final games remaining for this team from today through Saturday */
+  weekGamesLeft: number
 }
 
 export default function LeaderboardTable({
@@ -132,7 +135,7 @@ export default function LeaderboardTable({
           </tr>
         </thead>
         <tbody>
-          {sorted.map(({ member, streak, todayGame, todayProb, seasonWins, seasonWon }) => (
+          {sorted.map(({ member, streak, todayGame, todayProb, seasonWins, seasonWon, weekGamesLeft }) => (
             <tr key={member.id} className="border-b border-gray-900 hover:bg-[#111]">
               <td className="py-3 pr-4">
                 <Link
@@ -148,9 +151,21 @@ export default function LeaderboardTable({
                 </Link>
               </td>
               <td className="py-3 pr-4 text-gray-400">
-                {todayGame
-                  ? `${todayGame.teams.away.team.abbreviation} @ ${todayGame.teams.home.team.abbreviation}`
-                  : '—'}
+                <div>
+                  {todayGame
+                    ? `${todayGame.teams.away.team.abbreviation} @ ${todayGame.teams.home.team.abbreviation}`
+                    : '—'}
+                </div>
+                {(() => {
+                  // How many extra games are there beyond what's shown above?
+                  const todayIsLive = todayGame && todayGame.status.abstractGameState !== 'Final'
+                  const extra = todayIsLive ? weekGamesLeft - 1 : weekGamesLeft
+                  return extra > 0 ? (
+                    <div className="text-[10px] text-gray-700 mt-0.5">
+                      +{extra} more this wk
+                    </div>
+                  ) : null
+                })()}
               </td>
               <td className="py-3 pr-4">
                 {todayProb !== null ? (

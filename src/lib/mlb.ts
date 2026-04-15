@@ -176,6 +176,25 @@ export async function fetchTodaySchedule(): Promise<MLBGame[]> {
   return games
 }
 
+/**
+ * Fetch all regular-season games between two dates (YYYY-MM-DD, inclusive).
+ * Lightweight hydration — team names + status only — used for week-ahead game counts
+ * and the Sweat Factor calculation (no pitcher/linescore needed).
+ */
+export async function fetchDateRangeSchedule(start: string, end: string): Promise<MLBGame[]> {
+  const url = `${MLB_API}/api/v1/schedule?sportId=1&startDate=${start}&endDate=${end}&gameType=R&hydrate=team`
+  const res = await fetch(url, { next: { revalidate: 300 } })
+  if (!res.ok) return []
+  const data = await res.json()
+  const games: MLBGame[] = []
+  for (const dateEntry of data.dates ?? []) {
+    for (const game of dateEntry.games ?? []) {
+      games.push(normalizeGame(game))
+    }
+  }
+  return games
+}
+
 export async function fetchScheduleForDate(date: string): Promise<MLBGame[]> {
   const url = `${MLB_API}/api/v1/schedule?sportId=1&date=${date}&gameType=R&hydrate=probablePitcher(note),linescore,team,venue`
 

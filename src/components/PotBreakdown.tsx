@@ -64,6 +64,18 @@ interface Props {
   weekWinners: WeekWinner[]
   // Payout amounts once the admin settles at end of week (optional)
   settledPayouts: SettledPayout[]
+  /** P(at least one 13-run game in remaining league games this week), 0–1 */
+  sweatPct?: number
+  /** Total non-Final team-game slots remaining this week */
+  totalGamesLeft?: number
+}
+
+function sweatLabel(pct: number): { emoji: string; label: string; color: string } {
+  if (pct >= 0.50) return { emoji: '💀', label: 'Pray',        color: '#ef4444' }
+  if (pct >= 0.30) return { emoji: '🔥', label: 'Dangerous',   color: '#f97316' }
+  if (pct >= 0.15) return { emoji: '😰', label: 'Warming Up',  color: '#eab308' }
+  if (pct >= 0.05) return { emoji: '😐', label: 'Low Risk',    color: '#6b7280' }
+  return              { emoji: '🥶', label: 'Ice Cold',    color: '#3b82f6' }
 }
 
 export default function PotBreakdown({
@@ -74,6 +86,8 @@ export default function PotBreakdown({
   potTotal,
   weekWinners,
   settledPayouts,
+  sweatPct,
+  totalGamesLeft,
 }: Props) {
   const analysis = useMemo(() => {
     const weeklyPaid = payments.filter(
@@ -184,6 +198,38 @@ export default function PotBreakdown({
           </div>
         </div>
       </div>
+
+      {/* Sweat Meter */}
+      {sweatPct !== undefined && (
+        <div className="space-y-1.5 pt-2 border-t border-gray-800">
+          {(() => {
+            const { emoji, label, color } = sweatLabel(sweatPct)
+            const barPct = Math.round(sweatPct * 100)
+            return (
+              <>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-500 uppercase tracking-wider">Sweat Factor</span>
+                  <span className="font-mono font-bold" style={{ color }}>
+                    {emoji} {label}
+                  </span>
+                </div>
+                <div className="w-full h-1.5 rounded bg-gray-900 overflow-hidden">
+                  <div
+                    className="h-full rounded transition-all duration-500"
+                    style={{ width: `${barPct}%`, backgroundColor: color }}
+                  />
+                </div>
+                <div className="flex justify-between text-[11px] text-gray-700">
+                  <span>{barPct}% chance of a 13 this week</span>
+                  {totalGamesLeft !== undefined && (
+                    <span>{totalGamesLeft} game{totalGamesLeft !== 1 ? 's' : ''} left</span>
+                  )}
+                </div>
+              </>
+            )
+          })()}
+        </div>
+      )}
     </div>
   )
 }

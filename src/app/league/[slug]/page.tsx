@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { fetchTodaySchedule, fetchLiveFeed, currentSeason, type MLBLiveGame, type MLBGame } from '@/lib/mlb'
+import { fetchTodaySchedule, fetchLiveFeed, fetchDateRangeSchedule, currentSeason, type MLBLiveGame, type MLBGame } from '@/lib/mlb'
 import { calculateThirteenProbability, getLiveConditionalProbs } from '@/lib/probability'
 import { buildPitcherAdjustedLambdasForGame } from '@/lib/scheduledGameLambdas'
 import {
@@ -64,6 +64,15 @@ export default async function LeagueDashboard({ params }: Props) {
 
   const games = await fetchTodaySchedule()
 
+  // Week remaining schedule (today → Saturday) for games-left count + sweat factor
+  const nowForWeek = new Date()
+  const daysToSat = nowForWeek.getDay() === 6 ? 0 : 6 - nowForWeek.getDay()
+  const satDate = new Date(nowForWeek)
+  satDate.setDate(nowForWeek.getDate() + daysToSat)
+  const todayStr = nowForWeek.toISOString().slice(0, 10)
+  const satStr   = satDate.toISOString().slice(0, 10)
+  const weekSchedule = await fetchDateRangeSchedule(todayStr, satStr)
+
   const liveGames = games.filter((g) => g.status.abstractGameState === 'Live')
   const liveFeeds = await Promise.all(
     liveGames.map((g) => fetchLiveFeed(g.gamePk).catch(() => null))
@@ -87,6 +96,41 @@ export default async function LeagueDashboard({ params }: Props) {
   }
 
   const activeMembers = (members ?? []).filter((m) => m.is_active !== false)
+
+  // Games remaining this week per member (non-Final games today → Saturday)
+  const memberGamesLeft = new Map<string, number>()
+  const assignedTeamSet = new Set(
+    activeMembers.map((m) => normalizeTeamAbbr(m.assigned_team.toUpperCase()))
+  )
+  for (const member of activeMembers) {
+    const canonTeam = normalizeTeamAbbr(member.assigned_team.toUpperCase())
+    const count = weekSchedule.filter(
+      (g) =>
+        g.status.abstractGameState !== 'Final' &&
+        (normalizeTeamAbbr(g.teams.home.team.abbreviation) === canonTeam ||
+          normalizeTeamAbbr(g.teams.away.team.abbreviation) === canonTeam)
+    ).length
+    memberGamesLeft.set(member.id, count)
+  }
+
+  // Sweat Factor = P(at least one league team scores 13 in remaining games this week).
+  // Uses base Poisson lambda (no pitcher adjustment) since future-game pitchers aren't known.
+  const BASE_LAMBDA = 4.7
+  const baseP13 = calculateThirteenProbability(BASE_LAMBDA)
+  let pNoThirteen = 1
+  let totalGamesLeft = 0
+  for (const g of weekSchedule) {
+    if (g.status.abstractGameState === 'Final') continue
+    if (assignedTeamSet.has(normalizeTeamAbbr(g.teams.home.team.abbreviation))) {
+      pNoThirteen *= 1 - baseP13
+      totalGamesLeft++
+    }
+    if (assignedTeamSet.has(normalizeTeamAbbr(g.teams.away.team.abbreviation))) {
+      pNoThirteen *= 1 - baseP13
+      totalGamesLeft++
+    }
+  }
+  const sweatPct = totalGamesLeft > 0 ? 1 - pNoThirteen : 0
 
   // Enrich each active member with today's game info and P(13) (live conditional when in progress)
   const enrichedMembers = await Promise.all(
@@ -227,7 +271,15 @@ export default async function LeagueDashboard({ params }: Props) {
   const leaderboardRows: LeaderboardRow[] = enrichedMembers.map(
     ({ member, streak, todayGame, todayProb }) => {
       const ss = seasonStatsMap.get(member.id) ?? { wins: 0, totalWon: 0 }
-      return { member, streak, todayGame, todayProb, seasonWins: ss.wins, seasonWon: ss.totalWon }
+      return {
+        member,
+        streak,
+        todayGame,
+        todayProb,
+        seasonWins: ss.wins,
+        seasonWon: ss.totalWon,
+        weekGamesLeft: memberGamesLeft.get(member.id) ?? 0,
+      }
     }
   )
 
@@ -326,6 +378,8 @@ export default async function LeagueDashboard({ params }: Props) {
             member_id: p.member_id,
             payout_amount: p.payout_amount,
           })) ?? []}
+          sweatPct={sweatPct}
+          totalGamesLeft={totalGamesLeft}
         />
 
         <LeagueTabs
