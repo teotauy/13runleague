@@ -239,6 +239,7 @@ Build plan:
 - [ ] Collapsible 13-Run History — show most recent 1, [+] more opens next 10
 - [ ] Collapsible League Explainer — show teaser, [+] more expands full explanation
 - [ ] Probability tooltip on live games — explain what 0.31% actually means
+- [ ] **Contrast / readability pass** — league skews older; `text-gray-500/600/700` on `#0f1115` fails WCAG AA. Systematically bump secondary text to `text-gray-400` minimum, section labels to `text-gray-300`. Priority areas: PotBreakdown labels, leaderboard secondary text, Sweat Factor bar copy, footer text throughout.
 
 ### Co-ownership
 - [ ] Co-owner display — league table shows both names on same team row
