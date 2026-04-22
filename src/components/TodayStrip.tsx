@@ -84,7 +84,7 @@ export default function TodayStrip({
             </span>
           )}
         </div>
-        <span className="text-xs text-gray-600 font-mono">{today}</span>
+        <span className="text-xs text-gray-400 font-mono">{today}</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -134,12 +134,12 @@ export default function TodayStrip({
                   </span>
                 )}
                 {isFinal && (
-                  <span className={`text-xs font-mono font-bold ${hit13 ? 'text-[#39ff14]' : 'text-gray-600'}`}>
+                  <span className={`text-xs font-mono font-bold ${hit13 ? 'text-[#39ff14]' : 'text-gray-400'}`}>
                     {hit13 ? '⚡ FINAL' : 'FINAL'}
                   </span>
                 )}
                 {isPreview && entry.gameDate && (
-                  <span className="text-gray-600 text-xs font-mono">
+                  <span className="text-gray-400 text-xs font-mono">
                     {gameTime(entry.gameDate)}
                   </span>
                 )}
@@ -154,7 +154,7 @@ export default function TodayStrip({
                   {entry.team.toUpperCase()}
                 </span>
                 {opp && (
-                  <span className="text-gray-600 text-xs font-mono shrink-0">
+                  <span className="text-gray-400 text-xs font-mono shrink-0">
                     {entry.isHome ? 'vs' : '@'} {opp}
                   </span>
                 )}
@@ -167,7 +167,7 @@ export default function TodayStrip({
                     <span className={`font-bold ${myHit13 ? 'text-[#39ff14] text-base' : 'text-white'}`}>
                       {myScore}
                     </span>
-                    <span className="text-gray-700 mx-0.5">–</span>
+                    <span className="text-gray-400 mx-0.5">–</span>
                     <span className={`${oppHit13 ? 'text-[#39ff14] font-bold text-base' : 'text-gray-400'}`}>
                       {oppScore}
                     </span>

@@ -135,7 +135,7 @@ export default function LiveRankTable({ games, teamOwners, slug }: LiveRankTable
         <table className="w-full text-sm">
           {/* Subtle header */}
           <thead>
-            <tr className="text-[11px] text-gray-600 uppercase tracking-wider font-mono">
+            <tr className="text-[11px] text-gray-400 uppercase tracking-wider font-mono">
               <th className="text-left py-1.5 px-2 w-8">#</th>
               <th className="text-left py-1.5 px-2">Team</th>
               <th className="text-left py-1.5 px-2 hidden sm:table-cell">Opp</th>
@@ -246,13 +246,13 @@ function RankRow({
         {row.score !== undefined ? (
           <>
             <span className={row.score === 13 ? 'text-[#39ff14]' : 'text-white'}>{row.score}</span>
-            <span className="text-gray-600 mx-0.5">-</span>
+            <span className="text-gray-400 mx-0.5">-</span>
             <span className={row.opponentScore === 13 ? 'text-[#39ff14]' : 'text-gray-400'}>
               {row.opponentScore}
             </span>
           </>
         ) : (
-          <span className="text-gray-600">-</span>
+          <span className="text-gray-400">-</span>
         )}
       </td>
 
@@ -261,9 +261,9 @@ function RankRow({
         {row.gameStatus === 'Live' && inningDisplay ? (
           <span className="text-green-400">{inningDisplay}</span>
         ) : row.gameStatus === 'Final' ? (
-          <span className={hit13 ? 'text-[#39ff14]/60' : 'text-gray-600'}>{inningDisplay}</span>
+          <span className={hit13 ? 'text-[#39ff14]/60' : 'text-gray-400'}>{inningDisplay}</span>
         ) : (
-          <span className="text-gray-600">PRE</span>
+          <span className="text-gray-400">PRE</span>
         )}
       </td>
 
@@ -287,7 +287,7 @@ function RankRow({
               <span className="text-gray-400 truncate max-w-[100px] inline-block">{row.owner}</span>
             )
           ) : (
-            <span className="text-gray-700">-</span>
+            <span className="text-gray-400">-</span>
           )}
         </td>
       )}

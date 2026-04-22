@@ -141,10 +141,10 @@ export default function SeasonLog({ slug, year }: { slug: string; year: number }
               return (
                 <div
                   key={row.weekNum}
-                  className="flex items-center gap-4 py-1.5 px-3 rounded text-gray-700 hover:bg-[#0f0f0f]"
+                  className="flex items-center gap-4 py-1.5 px-3 rounded text-gray-400 hover:bg-[#0f0f0f]"
                 >
                   <span className="font-mono text-xs w-6 text-right">{weekNumStr}</span>
-                  <span className="text-xs w-16 text-gray-600">{row.dateStr}</span>
+                  <span className="text-xs w-16 text-gray-400">{row.dateStr}</span>
                   <span className="text-xs tracking-[0.2em]">· · · ROLLOVER · · ·</span>
                 </div>
               )

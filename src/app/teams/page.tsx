@@ -47,7 +47,7 @@ export default async function TeamsIndexPage() {
   return (
     <main className="min-h-screen bg-[#0a0a0a] px-4 py-10 max-w-3xl mx-auto">
       <div className="mb-8">
-        <Link href="/" className="text-xs text-gray-600 hover:text-gray-400 transition-colors font-mono">← Home</Link>
+        <Link href="/" className="text-xs text-gray-400 hover:text-gray-400 transition-colors font-mono">← Home</Link>
         <h1 className="text-2xl font-black mt-4 mb-1">All MLB Teams</h1>
         <p className="text-gray-500 text-sm">13-run games scored by franchise, all-time</p>
       </div>
@@ -84,12 +84,12 @@ export default async function TeamsIndexPage() {
               </div>
             </div>
 
-            <span className="text-gray-700 group-hover:text-gray-400 transition-colors text-xs shrink-0">→</span>
+            <span className="text-gray-400 group-hover:text-gray-400 transition-colors text-xs shrink-0">→</span>
           </Link>
         ))}
       </div>
 
-      <p className="text-gray-700 text-xs mt-8 text-center">
+      <p className="text-gray-400 text-xs mt-8 text-center">
         Based on {(rows ?? []).length.toLocaleString()} 13-run games in our database
       </p>
     </main>

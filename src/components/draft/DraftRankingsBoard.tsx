@@ -163,7 +163,7 @@ export default function DraftRankingsBoard({ teamStats, pickedTeams, onSelectTea
                         : 'hover:bg-[#0f0f0f]'}
                   `}
                 >
-                  <td className="pl-4 pr-2 py-2 text-gray-600">{idx + 1}</td>
+                  <td className="pl-4 pr-2 py-2 text-gray-400">{idx + 1}</td>
                   <td className="px-4 py-2">
                     <div className="flex items-center gap-2">
                       {/* Team color swatch */}
@@ -171,24 +171,24 @@ export default function DraftRankingsBoard({ teamStats, pickedTeams, onSelectTea
                         className="inline-block w-2 h-2 rounded-full flex-shrink-0"
                         style={{ backgroundColor: teamColor.primaryColor }}
                       />
-                      <span className={`font-bold ${isPicked ? 'line-through text-gray-600' : 'text-white'}`}>
+                      <span className={`font-bold ${isPicked ? 'line-through text-gray-400' : 'text-white'}`}>
                         {s.abbr}
                       </span>
                       {isPicked && (
-                        <span className="text-gray-600 text-[10px]">picked</span>
+                        <span className="text-gray-400 text-[10px]">picked</span>
                       )}
                     </div>
                   </td>
-                  <td className={`text-right px-3 py-2 ${noHistory ? 'text-gray-700' : sortKey === 'leagueWins' ? 'text-[#39ff14] font-bold' : 'text-gray-300'}`}>
+                  <td className={`text-right px-3 py-2 ${noHistory ? 'text-gray-400' : sortKey === 'leagueWins' ? 'text-[#39ff14] font-bold' : 'text-gray-300'}`}>
                     {noHistory ? '—' : s.leagueWins}
                   </td>
-                  <td className={`text-right px-3 py-2 ${noHistory ? 'text-gray-700' : sortKey === 'winRate' ? 'text-[#39ff14] font-bold' : 'text-gray-400'}`}>
+                  <td className={`text-right px-3 py-2 ${noHistory ? 'text-gray-400' : sortKey === 'winRate' ? 'text-[#39ff14] font-bold' : 'text-gray-400'}`}>
                     {noHistory ? '—' : wr.toFixed(1)}
                   </td>
-                  <td className={`text-right px-3 py-2 ${noHistory ? 'text-gray-700' : sortKey === 'earned' ? 'text-[#39ff14] font-bold' : 'text-gray-400'}`}>
+                  <td className={`text-right px-3 py-2 ${noHistory ? 'text-gray-400' : sortKey === 'earned' ? 'text-[#39ff14] font-bold' : 'text-gray-400'}`}>
                     {noHistory ? '—' : `$${s.totalEarned.toLocaleString()}`}
                   </td>
-                  <td className={`text-right px-3 py-2 ${s.leagueWins === 0 ? 'text-gray-700' : sortKey === 'war' ? 'text-[#39ff14] font-bold' : 'text-gray-400'}`}>
+                  <td className={`text-right px-3 py-2 ${s.leagueWins === 0 ? 'text-gray-400' : sortKey === 'war' ? 'text-[#39ff14] font-bold' : 'text-gray-400'}`}>
                     {s.leagueWins === 0 ? '—' : `$${Math.round(warVal)}`}
                   </td>
                   <td className={`text-right px-3 py-2 pr-4 ${sortKey === 'mlb' ? 'text-[#39ff14] font-bold' : 'text-gray-500'}`}>
@@ -199,7 +199,7 @@ export default function DraftRankingsBoard({ teamStats, pickedTeams, onSelectTea
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-gray-600">
+                <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
                   All teams have been picked
                 </td>
               </tr>
@@ -209,7 +209,7 @@ export default function DraftRankingsBoard({ teamStats, pickedTeams, onSelectTea
       </div>
 
       {/* Legend */}
-      <div className="px-4 py-2 border-t border-gray-800 text-[10px] text-gray-600 flex flex-wrap gap-x-4 gap-y-1">
+      <div className="px-4 py-2 border-t border-gray-800 text-[10px] text-gray-400 flex flex-wrap gap-x-4 gap-y-1">
         <span><span className="text-gray-400">L.Wins</span> = 13-run wins in league history</span>
         <span><span className="text-gray-400">W/Ssn</span> = wins per season</span>
         <span><span className="text-gray-400">WAR</span> = $/win (solo &gt; split)</span>

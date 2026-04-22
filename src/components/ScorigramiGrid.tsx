@@ -32,7 +32,7 @@ export default function ScorigramiGrid({ teamAbbr, runCounts }: ScorigramiGridPr
           )
         })}
       </div>
-      <div className="text-[10px] text-gray-700 mt-1 font-mono">0 ——————— 20+</div>
+      <div className="text-[10px] text-gray-400 mt-1 font-mono">0 ——————— 20+</div>
     </div>
   )
 }

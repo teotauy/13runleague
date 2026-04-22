@@ -82,7 +82,7 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
     <section>
       <div className="flex items-center gap-3 mb-4">
         <h2 className="text-lg font-bold">13-Run Lore</h2>
-        <span className="text-xs text-gray-600 font-mono">
+        <span className="text-xs text-gray-400 font-mono">
           {games.length.toLocaleString()} all-time
           {firstYear && lastYear && firstYear !== lastYear ? ` · ${firstYear}–${lastYear}` : ''}
         </span>
@@ -97,12 +97,12 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
             By Franchise
           </h3>
           {franchiseRanked.length === 0 ? (
-            <p className="text-gray-600 text-xs">No data yet</p>
+            <p className="text-gray-400 text-xs">No data yet</p>
           ) : (
             <div className="space-y-2.5">
               {franchiseRanked.slice(0, 10).map(([team, count], i) => (
                 <div key={team} className="flex items-center gap-2">
-                  <span className={`text-xs font-mono w-3 ${i === 0 ? 'text-[#39ff14]' : 'text-gray-700'}`}>
+                  <span className={`text-xs font-mono w-3 ${i === 0 ? 'text-[#39ff14]' : 'text-gray-400'}`}>
                     {i === 0 ? '▸' : ''}
                   </span>
                   <Link
@@ -118,7 +118,7 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
                 </div>
               ))}
               {franchiseRanked.length > 10 && (
-                <p className="text-xs text-gray-700 mt-1 pl-5">
+                <p className="text-xs text-gray-400 mt-1 pl-5">
                   +{franchiseRanked.length - 10} other franchises
                 </p>
               )}
@@ -131,7 +131,7 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
             By Day of Week
           </h3>
-          <p className="text-xs text-gray-600 mb-3">
+          <p className="text-xs text-gray-400 mb-3">
             {peakDay}s are cursed
           </p>
           <div className="space-y-2.5">
@@ -166,7 +166,7 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
               </div>
               <div className="text-xs text-gray-500 mt-1">Home</div>
             </div>
-            <div className="text-gray-700 text-base font-mono pb-3">vs</div>
+            <div className="text-gray-400 text-base font-mono pb-3">vs</div>
             <div className="text-center flex-1">
               <div className="text-4xl font-black text-amber-400 tabular-nums">
                 {awayWins.toLocaleString()}
@@ -178,12 +178,12 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
             <div className="bg-[#39ff14] h-full transition-all" style={{ width: `${homePct}%` }} />
             <div className="bg-amber-900 h-full flex-1" />
           </div>
-          <div className="flex justify-between text-xs text-gray-600 mt-1.5">
+          <div className="flex justify-between text-xs text-gray-400 mt-1.5">
             <span>{homePct}% home</span>
             <span>{100 - homePct}% away</span>
           </div>
           {homeWins !== awayWins && (
-            <p className="text-xs text-gray-700 mt-3">
+            <p className="text-xs text-gray-400 mt-3">
               {homeWins > awayWins
                 ? 'Home teams score 13 more — home field is real'
                 : 'Visitors score 13 more — road rage is real'}
@@ -196,7 +196,7 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
             By Month
           </h3>
-          <p className="text-xs text-gray-600 mb-3">
+          <p className="text-xs text-gray-400 mb-3">
             {peakMonth} is the most dangerous month
           </p>
           <div className="space-y-2.5">

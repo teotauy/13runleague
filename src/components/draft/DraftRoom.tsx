@@ -338,7 +338,7 @@ export default function DraftRoom({
                   {drawnMember ? (
                     <div className="text-2xl font-black text-[#39ff14]">{drawnMember.name}</div>
                   ) : (
-                    <div className="text-gray-600 text-sm">{unpickedMembers.length} members remaining</div>
+                    <div className="text-gray-400 text-sm">{unpickedMembers.length} members remaining</div>
                   )}
                 </div>
                 <button
@@ -363,7 +363,7 @@ export default function DraftRoom({
                   {drawnTeam ? (
                     <div className="text-2xl font-black text-yellow-400 font-mono">{drawnTeam}</div>
                   ) : (
-                    <div className="text-gray-600 text-sm">{availableTeams.length} teams remaining</div>
+                    <div className="text-gray-400 text-sm">{availableTeams.length} teams remaining</div>
                   )}
                 </div>
                 <button
@@ -433,7 +433,7 @@ export default function DraftRoom({
                   const member = members.find((m) => m.id === pick.member_id)
                   return (
                     <tr key={pick.id} className="border-b border-gray-900 hover:bg-[#0a0a0a]">
-                      <td className="px-4 py-2 text-gray-600 font-mono text-xs w-8">
+                      <td className="px-4 py-2 text-gray-400 font-mono text-xs w-8">
                         #{draftPicks.length - idx}
                       </td>
                       <td className="px-4 py-2 text-white font-semibold">
@@ -453,7 +453,7 @@ export default function DraftRoom({
         )}
 
         <div className="mt-4">
-          <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+          <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
             <input
               type="checkbox"
               checked={autoRefresh}

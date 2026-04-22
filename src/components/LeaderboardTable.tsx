@@ -83,7 +83,7 @@ export default function LeaderboardTable({
   })
 
   function Arrow({ col }: { col: SortCol }) {
-    if (sortCol !== col) return <span className="text-gray-700 ml-1">↕</span>
+    if (sortCol !== col) return <span className="text-gray-400 ml-1">↕</span>
     return <span className="text-[#39ff14] ml-1">{dir === 'desc' ? '↓' : '↑'}</span>
   }
 
@@ -161,7 +161,7 @@ export default function LeaderboardTable({
                   const todayIsLive = todayGame && todayGame.status.abstractGameState !== 'Final'
                   const extra = todayIsLive ? weekGamesLeft - 1 : weekGamesLeft
                   return extra > 0 ? (
-                    <div className="text-[10px] text-gray-700 mt-0.5">
+                    <div className="text-[10px] text-gray-400 mt-0.5">
                       +{extra} more this wk
                     </div>
                   ) : null
@@ -198,7 +198,7 @@ export default function LeaderboardTable({
                 {seasonWon > 0 ? (
                   <span className="text-[#39ff14] font-bold">${seasonWon.toLocaleString()}</span>
                 ) : (
-                  <span className="text-gray-600">—</span>
+                  <span className="text-gray-400">—</span>
                 )}
               </td>
             </tr>

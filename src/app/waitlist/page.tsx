@@ -125,7 +125,7 @@ export default function WaitlistPage() {
               </button>
             </form>
 
-            <p className="text-gray-700 text-xs mt-4">
+            <p className="text-gray-400 text-xs mt-4">
               Monthly highlights + one email when spots open. Unsubscribe anytime.
             </p>
           </>

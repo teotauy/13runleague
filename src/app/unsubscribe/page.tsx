@@ -70,7 +70,7 @@ export default function UnsubscribePage() {
             >
               {status === 'loading' ? 'Unsubscribing…' : 'Unsubscribe'}
             </button>
-            <Link href="/" className="text-gray-600 text-xs hover:text-gray-400 inline-block">
+            <Link href="/" className="text-gray-400 text-xs hover:text-gray-400 inline-block">
               ← Back to dashboard
             </Link>
           </form>

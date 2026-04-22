@@ -230,19 +230,19 @@ export default function MemberRoster({ leagueId, leagueSlug, members, previousNa
                 <tr key={member.id} className={`border-b border-gray-900 hover:bg-[#0a0a0a] ${isAlumni ? 'opacity-60' : ''}`}>
                   <td className="px-4 py-3">
                     <span className="text-white font-semibold">{member.name}</span>
-                    {isAlumni && <span className="ml-2 text-[10px] font-mono text-gray-600 bg-gray-800 px-1.5 py-0.5 rounded">alumni</span>}
+                    {isAlumni && <span className="ml-2 text-[10px] font-mono text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded">alumni</span>}
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs font-mono">{yearRange(years)}</td>
                   <td className="px-4 py-3">
                     {member.assigned_team ? (
                       <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-200 text-xs font-mono">{member.assigned_team}</span>
                     ) : (
-                      <span className="text-gray-700 text-xs">—</span>
+                      <span className="text-gray-400 text-xs">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
                     <div className="text-gray-400 text-xs">{member.email ?? '—'}</div>
-                    {member.phone && <div className="text-gray-600 text-xs">{member.phone}</div>}
+                    {member.phone && <div className="text-gray-400 text-xs">{member.phone}</div>}
                   </td>
                   <td className="px-4 py-3 text-right space-x-3">
                     <button onClick={() => handleOpenEdit(member)}

@@ -144,7 +144,7 @@ function yearRange(years: number[]): string {
 }
 
 function SortArrow({ active, dir }: { active: boolean; dir: Dir }) {
-  if (!active) return <span className="text-gray-700 ml-1">↕</span>
+  if (!active) return <span className="text-gray-400 ml-1">↕</span>
   return <span className="text-[#39ff14] ml-1">{dir === 'desc' ? '↓' : '↑'}</span>
 }
 
@@ -234,7 +234,7 @@ function AllTimeTable({
               const playerBadges = badges.get(entry.name) ?? []
               return (
                 <tr key={entry.name} className="border-b border-gray-900 hover:bg-[#111]">
-                  <td className="py-2 pr-4 text-gray-600">{i + 1}</td>
+                  <td className="py-2 pr-4 text-gray-400">{i + 1}</td>
                   <td className="py-2 pr-4 text-white font-semibold">
                     {entry.isActive && (
                       <span className="mr-1" title="Active player">⭐</span>
@@ -279,13 +279,13 @@ function AllTimeTable({
 
       {/* Dynamic legend — only shows badges that actually appear */}
       {allBadges.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
           {hasIronman     && <span>🏆 Ironman — played all {IRONMAN_COUNT} seasons</span>}
           {hasWinsLeader  && <span>👑 {year ? `${year} Wins Leader` : 'Career Wins Leader'}</span>}
           {hasMoneyLeader && <span>💰 {year ? `${year} Money Leader` : 'Career Money Leader'}</span>}
           {hasSsnWins     && <span>🔥 Single-Season Wins Record</span>}
           {hasSsnMoney    && <span>💸 Single-Season Money Record</span>}
-          {!year && <span className="text-gray-700">· ⭐ Active player</span>}
+          {!year && <span className="text-gray-400">· ⭐ Active player</span>}
         </div>
       )}
     </div>
@@ -327,7 +327,7 @@ function TeamTable({ data }: { data: TeamEntry[] }) {
         <tbody>
           {sorted.map((entry, i) => (
             <tr key={entry.team} className="border-b border-gray-900 hover:bg-[#111]">
-              <td className="py-2 pr-4 text-gray-600">{i + 1}</td>
+              <td className="py-2 pr-4 text-gray-400">{i + 1}</td>
               <td className="py-2 pr-4 font-semibold"><Link href={`/teams/${entry.team}`} className="text-white hover:text-[#39ff14] transition-colors">{entry.team}</Link></td>
               <td className="py-2 pr-4 text-[#39ff14] font-bold">{entry.thirteenRunWeeks}</td>
               <td className="py-2 text-gray-300">${entry.totalPaidOut.toLocaleString()}</td>
@@ -420,18 +420,18 @@ export default function RankingsTabs({
               ★ {year} Season · South Brooklyn 13 Run League ★
             </p>
             {wins.length === 0 ? (
-              <p className="text-gray-600 text-sm text-center">No week-by-week data for this season.</p>
+              <p className="text-gray-400 text-sm text-center">No week-by-week data for this season.</p>
             ) : (
               wins.map((w, i) => (
                 <div key={i} className="flex items-center justify-between text-sm border-b border-gray-900 py-2">
-                  <span className="text-gray-600 w-16">WK {w.week}</span>
+                  <span className="text-gray-400 w-16">WK {w.week}</span>
                   <span className="text-white font-semibold flex-1">{w.member_name}</span>
                   <Link href={`/teams/${w.team}`} className="text-gray-500 hover:text-[#39ff14] mr-4 transition-colors">{w.team}</Link>
                   {w.total_won > 0 && <span className="text-[#39ff14] font-bold">${w.total_won.toLocaleString()}</span>}
                 </div>
               ))
             )}
-            <p className="text-center text-gray-700 text-xs pt-6">As always, no wagering, please.</p>
+            <p className="text-center text-gray-400 text-xs pt-6">As always, no wagering, please.</p>
           </div>
         )
       })()}

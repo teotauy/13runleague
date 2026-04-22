@@ -132,7 +132,7 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
         <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
           By Year
         </h3>
-        <span className="text-xs text-gray-700 font-mono">
+        <span className="text-xs text-gray-400 font-mono">
           {minYr}–{maxYr} · peak {peakYear} ({peakCount.toLocaleString()} games)
         </span>
       </div>
@@ -154,13 +154,13 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
               <div className={`font-mono ${isLeagueEra ? 'text-[#39ff14]' : 'text-gray-300'}`}>
                 {hoveredCount > 0
                   ? `${hoveredCount} thirteen-run game${hoveredCount !== 1 ? 's' : ''}`
-                  : <span className="text-gray-600">no data</span>
+                  : <span className="text-gray-400">no data</span>
                 }
               </div>
               {nearestMilestoneYr !== null && MILESTONES[nearestMilestoneYr] && (
                 <div className="mt-1.5 pt-1.5 border-t border-gray-800 text-gray-500 leading-snug">
                   {nearestMilestoneYr !== hovered.yr && (
-                    <span className="text-gray-600 mr-1">{nearestMilestoneYr}:</span>
+                    <span className="text-gray-400 mr-1">{nearestMilestoneYr}:</span>
                   )}
                   {MILESTONES[nearestMilestoneYr]}
                 </div>
@@ -271,7 +271,7 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
         {decadeTicks.map((yr) => (
           <span
             key={yr}
-            className="absolute text-xs text-gray-700 font-mono -translate-x-1/2"
+            className="absolute text-xs text-gray-400 font-mono -translate-x-1/2"
             style={{ left: `${(xOf(yr) / SVG_W) * 100}%` }}
           >
             {yr}
@@ -281,7 +281,7 @@ export default function YearChart({ yearData, minYr, maxYr, maxCount, peakYear, 
       </div>
       </div>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-700">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-400">
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-6 h-1.5 bg-gray-600 rounded" />
           MLB history

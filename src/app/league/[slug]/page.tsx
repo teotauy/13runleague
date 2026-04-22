@@ -405,7 +405,7 @@ export default async function LeagueDashboard({ params }: Props) {
             <section>
               <div className="flex items-center gap-3 mb-4">
                 <h2 className="text-lg font-bold"><span className="text-[#39ff14]">13</span>-Run History</h2>
-                <span className="text-xs text-gray-600 font-mono">most recent</span>
+                <span className="text-xs text-gray-400 font-mono">most recent</span>
               </div>
               <div className="space-y-1.5 max-w-3xl">
                 {thirteenHistory.slice(0, 10).map((result) => (
@@ -414,7 +414,7 @@ export default async function LeagueDashboard({ params }: Props) {
                     className="flex items-center gap-2 text-xs rounded bg-[#111] border border-gray-900 px-3 py-2"
                   >
                     <span className="text-[#39ff14] font-bold font-mono shrink-0">13</span>
-                    <span className="text-gray-600 font-mono shrink-0">{result.game_date}</span>
+                    <span className="text-gray-400 font-mono shrink-0">{result.game_date}</span>
                     <span className="text-white truncate">
                       <span className="font-bold text-[#39ff14]">{result.winning_team}</span>
                       {' scored '}
@@ -435,7 +435,7 @@ export default async function LeagueDashboard({ params }: Props) {
           )}
 
           {/* Footer — inside current year tab */}
-          <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs space-y-2">
+          <footer className="border-t border-gray-900 pt-6 text-gray-400 text-xs space-y-2">
             <p>
               The information used here was obtained free of charge from and is copyrighted by Retrosheet.
               Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.

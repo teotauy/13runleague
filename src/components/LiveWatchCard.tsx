@@ -217,7 +217,7 @@ export default function LiveWatchCard({
           <span className="text-gray-400 text-sm font-mono">
             {isTopInning ? '▲' : '▼'} {inningOrdinal}
           </span>
-          <span className="text-gray-600 text-xs font-mono">
+          <span className="text-gray-400 text-xs font-mono">
             {getTimeSinceLastUpdate()}
           </span>
         </div>
@@ -227,7 +227,7 @@ export default function LiveWatchCard({
       <div className="overflow-x-auto">
         <table className="text-xs font-mono w-full border-collapse">
           <thead>
-            <tr className="text-gray-600">
+            <tr className="text-gray-400">
               <td className="pr-2 py-1">Team</td>
               {innings.map((inn) => (
                 <td key={inn.num} className="px-1 py-1 text-center w-6">{inn.num}</td>
@@ -272,7 +272,7 @@ export default function LiveWatchCard({
         href={`https://www.mlb.com/gameday/${gamePk}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-xs text-gray-600 hover:text-gray-400 transition-colors text-right"
+        className="text-xs text-gray-400 hover:text-gray-400 transition-colors text-right"
       >
         Watch live →
       </a>
@@ -303,7 +303,7 @@ function ProbBadge({
           {pct}%
         </Tooltip>
       </div>
-      <div className="text-[10px] text-gray-600 font-mono">
+      <div className="text-[10px] text-gray-400 font-mono">
         {source === 'lookup' ? '📚 Retrosheet' : '📐 Poisson'}
       </div>
     </div>

@@ -55,7 +55,7 @@ export default function LeagueDashboardHeader({ leagueName, slug, role }: Props)
           </div>
           {showAdminUI && (
             <div className="flex gap-3">
-              <a href={`/league/${slug}/draft`} className="text-gray-600 text-sm hover:text-gray-400">
+              <a href={`/league/${slug}/draft`} className="text-gray-400 text-sm hover:text-gray-400">
                 Draft Room →
               </a>
               <a href={`/league/${slug}/admin`} className="text-[#39ff14]/70 text-sm hover:text-[#39ff14]">

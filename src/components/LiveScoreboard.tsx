@@ -79,7 +79,7 @@ export default function LiveScoreboard({ games }: LiveScoreboardProps) {
                   </div>
                   <div className="text-xs text-gray-500 font-mono">{game.away.team}</div>
                 </div>
-                <div className="text-gray-600 px-2">—</div>
+                <div className="text-gray-400 px-2">—</div>
                 <div className="flex-1 text-center">
                   <div
                     className="text-3xl font-bold"
@@ -114,7 +114,7 @@ export default function LiveScoreboard({ games }: LiveScoreboardProps) {
                   needs {13 - Math.max(awayOnDeck ? game.away.runs : 0, homeOnDeck ? game.home.runs : 0)} more · Watch live →
                 </div>
               ) : (
-                <div className="text-xs text-gray-600 text-right pt-1 hover:text-gray-400">
+                <div className="text-xs text-gray-400 text-right pt-1 hover:text-gray-400">
                   View Game →
                 </div>
               )}

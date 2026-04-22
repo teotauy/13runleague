@@ -221,7 +221,7 @@ export default function WeeklyRecapSection({ leagueSlug, recapCapabilityToken }:
           </div>
         )}
 
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-gray-400">
           Preview runs the same sanitizer as send. Most inboxes ignore CSS animation — use an animated GIF if you
           need motion. Read every pixel before you send.
         </p>
@@ -244,7 +244,7 @@ export default function WeeklyRecapSection({ leagueSlug, recapCapabilityToken }:
 
       <aside className="space-y-3 xl:sticky xl:top-4">
         <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wide">Ideas &amp; data</h3>
-        {ideasLoading && <p className="text-xs text-gray-600">Loading league angles…</p>}
+        {ideasLoading && <p className="text-xs text-gray-400">Loading league angles…</p>}
         {ideasError && (
           <p className="text-xs text-red-400 font-mono">{ideasError}</p>
         )}

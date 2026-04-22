@@ -96,13 +96,13 @@ export default function LeagueExplainer() {
                   </li>
                 ))}
               </ul>
-              <p className="text-gray-600 text-xs mt-4">
+              <p className="text-gray-400 text-xs mt-4">
                 It&rsquo;s the easiest way to run a 13 Run League — or just follow the chaos.
               </p>
             </div>
           </div>
 
-          <p className="text-center text-gray-700 text-xs pt-2 border-t border-white/5">
+          <p className="text-center text-gray-400 text-xs pt-2 border-t border-white/5">
             Built with love in South Brooklyn.{' '}
             <span className="text-gray-800">As always, no wagering, please.</span>
           </p>

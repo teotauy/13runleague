@@ -9,7 +9,7 @@ interface SiteFooterProps {
 
 export default function SiteFooter({ extraLinks, showHistoricalNote }: SiteFooterProps) {
   return (
-    <footer className="border-t border-gray-900 pt-6 text-gray-600 text-xs space-y-3">
+    <footer className="border-t border-gray-900 pt-6 text-gray-400 text-xs space-y-3">
 
       {/* Retrosheet attribution — 9.4 */}
       <p>
@@ -26,19 +26,19 @@ export default function SiteFooter({ extraLinks, showHistoricalNote }: SiteFoote
       </p>
 
       {showHistoricalNote && (
-        <p className="text-gray-700">
+        <p className="text-gray-400">
           Historical records may be incomplete for pre-1920 seasons.
         </p>
       )}
 
       {/* 9.6 — Legal / MLB disclaimer */}
-      <p className="text-gray-700">
+      <p className="text-gray-400">
         Not affiliated with MLB or any MLB team · Live data via MLB Stats API ·
         Probabilities are estimates, not gambling advice.
       </p>
 
       {/* 9.6 — Tagline */}
-      <p className="text-gray-700 italic">
+      <p className="text-gray-400 italic">
         As always, no wagering, please.
       </p>
 
@@ -76,9 +76,9 @@ export default function SiteFooter({ extraLinks, showHistoricalNote }: SiteFoote
           Built by Red Crow Labs
         </a>
         <span className="text-gray-800">·</span>
-        <span className="text-gray-700">South Brooklyn · Est. 2018</span>
+        <span className="text-gray-400">South Brooklyn · Est. 2018</span>
         <span className="text-gray-800">·</span>
-        <span className="text-gray-700">© 2025–2026 Red Crow Labs. All rights reserved.</span>
+        <span className="text-gray-400">© 2025–2026 Red Crow Labs. All rights reserved.</span>
       </div>
     </footer>
   )

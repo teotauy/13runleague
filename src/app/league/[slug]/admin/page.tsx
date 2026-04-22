@@ -156,7 +156,7 @@ export default async function AdminDashboard({ params }: Props) {
             />
           </div>
           {/* Nav */}
-          <div className="flex gap-4 mt-3 text-xs text-gray-600 font-mono border-t border-gray-900 pt-3 flex-wrap">
+          <div className="flex gap-4 mt-3 text-xs text-gray-400 font-mono border-t border-gray-900 pt-3 flex-wrap">
             <a href="#recap" className="hover:text-[#39ff14] transition-colors">Weekly Recap Email</a>
             <a href="#payments" className="hover:text-[#39ff14] transition-colors">Settle week &amp; payments</a>
             <a href="#roster" className="hover:text-gray-400 transition-colors">Roster</a>
@@ -177,7 +177,7 @@ export default async function AdminDashboard({ params }: Props) {
           <p className="text-sm text-gray-500 mb-4">
             Track Venmo/cash per member per week. When a week is done, use <strong className="text-gray-400">Settle week</strong>{' '}
             below — that records the pot ledger, payouts (if any 13-run winners), rollover, and refreshes droughts.{' '}
-            <span className="text-gray-600 font-mono">Season {seasonYear} · playing week {currentWeekNumber}</span>
+            <span className="text-gray-400 font-mono">Season {seasonYear} · playing week {currentWeekNumber}</span>
           </p>
           <PaymentBoard
             members={(members ?? [])
@@ -201,7 +201,7 @@ export default async function AdminDashboard({ params }: Props) {
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold">Pre-Season Status</h2>
-            <span className="text-xs text-gray-600 font-mono">2026 draft prep</span>
+            <span className="text-xs text-gray-400 font-mono">2026 draft prep</span>
           </div>
           <PreSeasonStatus
             leagueSlug={slug}
@@ -237,7 +237,7 @@ export default async function AdminDashboard({ params }: Props) {
         {/* Streaks */}
         <section>
           <h2 className="text-xl font-bold mb-1">Streaks &amp; Droughts</h2>
-          <p className="text-xs text-gray-600 mb-4">
+          <p className="text-xs text-gray-400 mb-4">
             Automatically recalculated whenever payouts are settled. Use this to backfill or repair the leaderboard's Drought column.
           </p>
           <RecalculateStreaksButton leagueSlug={slug} year={seasonYear} />

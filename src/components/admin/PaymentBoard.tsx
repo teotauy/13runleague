@@ -151,7 +151,7 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="flex items-center gap-2 text-sm font-semibold text-gray-300 hover:text-white transition-colors"
           >
-            <span className="text-gray-600">{isCollapsed ? '▶' : '▼'}</span>
+            <span className="text-gray-400">{isCollapsed ? '▶' : '▼'}</span>
             Payment Status
           </button>
           {/* Summary pill — always visible */}
@@ -309,7 +309,7 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
               <div className="w-6 h-4 bg-blue-900 rounded"></div>
               <span>Payouts Calculated</span>
             </div>
-            <span className="text-gray-600 ml-2">· Click any cell to cycle status · ✓ All marks every displayed week as paid</span>
+            <span className="text-gray-400 ml-2">· Click any cell to cycle status · ✓ All marks every displayed week as paid</span>
           </div>
         </>
       )}

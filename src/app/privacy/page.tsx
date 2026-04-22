@@ -8,7 +8,7 @@ export default function PrivacyPage() {
       <div className="max-w-3xl mx-auto px-4 py-12 space-y-8">
 
         <header>
-          <a href="/" className="text-gray-600 text-sm hover:text-gray-400 transition-colors">
+          <a href="/" className="text-gray-400 text-sm hover:text-gray-400 transition-colors">
             ← 13 Run League
           </a>
           <h1 className="text-3xl font-black mt-4">
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
 
         </div>
 
-        <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs flex gap-4">
+        <footer className="border-t border-gray-900 pt-6 text-gray-400 text-xs flex gap-4">
           <a href="/" className="hover:text-gray-500">Home</a>
           <span>·</span>
           <a href="/terms" className="hover:text-gray-500">Terms of Use</a>

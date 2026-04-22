@@ -88,13 +88,13 @@ export default function DynastyTracker({ data }: Props) {
         <h2 className="text-lg font-bold">
           <span className="text-[#39ff14]">Dynasty</span> Tracker
         </h2>
-        <span className="text-xs text-gray-600 font-mono">records · streaks · dominance</span>
+        <span className="text-xs text-gray-400 font-mono">records · streaks · dominance</span>
       </div>
 
       {/* Record Book */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <div className="rounded bg-[#111] border border-gray-900 p-4">
-          <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-2">
+          <div className="text-[10px] text-gray-400 font-mono uppercase tracking-wider mb-2">
             🔥 Most Wins — One Season
           </div>
           <div className="text-2xl font-black text-[#39ff14]">{topBySsnWins?.wins ?? 0}</div>
@@ -103,7 +103,7 @@ export default function DynastyTracker({ data }: Props) {
         </div>
 
         <div className="rounded bg-[#111] border border-gray-900 p-4">
-          <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-2">
+          <div className="text-[10px] text-gray-400 font-mono uppercase tracking-wider mb-2">
             🏆 Most Winning Seasons
           </div>
           <div className="text-2xl font-black text-[#39ff14]">
@@ -114,7 +114,7 @@ export default function DynastyTracker({ data }: Props) {
         </div>
 
         <div className="rounded bg-[#111] border border-gray-900 p-4">
-          <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-2">
+          <div className="text-[10px] text-gray-400 font-mono uppercase tracking-wider mb-2">
             💸 Biggest Single Season
           </div>
           <div className="text-2xl font-black text-[#39ff14]">
@@ -125,7 +125,7 @@ export default function DynastyTracker({ data }: Props) {
         </div>
 
         <div className="rounded bg-[#111] border border-gray-900 p-4">
-          <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider mb-2">
+          <div className="text-[10px] text-gray-400 font-mono uppercase tracking-wider mb-2">
             📅 Longest Win Streak
           </div>
           <div className="text-2xl font-black text-[#39ff14]">
@@ -140,7 +140,7 @@ export default function DynastyTracker({ data }: Props) {
       <div className="rounded border border-gray-800 bg-[#111] overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
           <span className="text-sm font-bold text-white">Year-by-Year Win Heatmap</span>
-          <span className="text-xs text-gray-600 font-mono">top 10 by career wins · cell = winning weeks</span>
+          <span className="text-xs text-gray-400 font-mono">top 10 by career wins · cell = winning weeks</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -186,7 +186,7 @@ export default function DynastyTracker({ data }: Props) {
         </div>
 
         {/* Legend */}
-        <div className="px-4 py-2 border-t border-gray-800 text-[10px] text-gray-600 flex flex-wrap gap-4 items-center">
+        <div className="px-4 py-2 border-t border-gray-800 text-[10px] text-gray-400 flex flex-wrap gap-4 items-center">
           <span>Winning weeks per season:</span>
           {[1, 2, 3].map((n) => (
             <span key={n} className="flex items-center gap-1">

@@ -57,11 +57,11 @@ export default function HeartbreakBoard({ games }: { games: HeartbreakGame[] }) 
         <h2 className="text-lg font-bold">
           <span className="text-red-400">💔</span> Heartbreak Board
         </h2>
-        <span className="text-xs text-gray-600 font-mono">
+        <span className="text-xs text-gray-400 font-mono">
           {games.length.toLocaleString()} near-misses · all-time
         </span>
       </div>
-      <p className="text-xs text-gray-600 mb-4">
+      <p className="text-xs text-gray-400 mb-4">
         Scored exactly 12 in a game where the opponent scored 13. One run short.
       </p>
 
@@ -71,7 +71,7 @@ export default function HeartbreakBoard({ games }: { games: HeartbreakGame[] }) 
             By Franchise
           </h3>
           {topEntry && (
-            <span className="text-xs text-gray-600 font-mono">
+            <span className="text-xs text-gray-400 font-mono">
               {topEntry.team} — {topEntry.count}× heartbroken
             </span>
           )}
@@ -80,7 +80,7 @@ export default function HeartbreakBoard({ games }: { games: HeartbreakGame[] }) 
         <div className="space-y-2.5">
           {ranked.slice(0, 15).map(({ team, count, lastDate }, i) => (
             <div key={team} className="flex items-center gap-2">
-              <span className={`text-xs font-mono w-3 shrink-0 ${i === 0 ? 'text-red-400' : 'text-gray-700'}`}>
+              <span className={`text-xs font-mono w-3 shrink-0 ${i === 0 ? 'text-red-400' : 'text-gray-400'}`}>
                 {i === 0 ? '▸' : ''}
               </span>
               <span className="text-xs font-mono text-gray-300 w-8 shrink-0">{team}</span>
@@ -96,24 +96,24 @@ export default function HeartbreakBoard({ games }: { games: HeartbreakGame[] }) 
               <span className="text-xs font-mono text-gray-500 w-6 text-right shrink-0">
                 {count}
               </span>
-              <span className="text-xs font-mono text-gray-700 w-10 text-right shrink-0 hidden sm:block">
+              <span className="text-xs font-mono text-gray-400 w-10 text-right shrink-0 hidden sm:block">
                 {lastDate.slice(0, 4)}
               </span>
             </div>
           ))}
           {ranked.length > 15 && (
-            <p className="text-xs text-gray-700 mt-1 pl-5">
+            <p className="text-xs text-gray-400 mt-1 pl-5">
               +{ranked.length - 15} other franchises
             </p>
           )}
         </div>
 
         {recentGame && recentHB && recentGame.winning_team && (
-          <div className="mt-4 pt-3 border-t border-gray-800 text-xs text-gray-600 font-mono">
+          <div className="mt-4 pt-3 border-t border-gray-800 text-xs text-gray-400 font-mono">
             Most recent:{' '}
             <span className="text-gray-400">{recentHB}</span> scored 12 while{' '}
             <span className="text-gray-400">{recentGame.winning_team}</span> scored 13
-            <span className="text-gray-700"> · {recentGame.game_date}</span>
+            <span className="text-gray-400"> · {recentGame.game_date}</span>
           </div>
         )}
       </div>

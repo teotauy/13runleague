@@ -60,7 +60,7 @@ export default function PushNotificationButton() {
   if (state === 'unsupported') return null
   if (state === 'blocked') {
     return (
-      <span className="text-gray-700 text-xs" title="Notifications blocked — check browser settings">
+      <span className="text-gray-400 text-xs" title="Notifications blocked — check browser settings">
         🔕 Notifications blocked
       </span>
     )
@@ -74,7 +74,7 @@ export default function PushNotificationButton() {
   }
   if (state === 'loading') {
     return (
-      <span className="text-gray-700 text-xs animate-pulse">🔔 …</span>
+      <span className="text-gray-400 text-xs animate-pulse">🔔 …</span>
     )
   }
 

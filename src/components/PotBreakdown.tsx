@@ -164,7 +164,7 @@ export default function PotBreakdown({
               ${analysis.displayPot.toLocaleString()}
             </span>
           </span>
-          <div className="text-xs text-gray-600 mt-1">Week {currentWeek}</div>
+          <div className="text-xs text-gray-400 mt-1">Week {currentWeek}</div>
         </div>
       </div>
 
@@ -219,7 +219,7 @@ export default function PotBreakdown({
                     style={{ width: `${barPct}%`, backgroundColor: color }}
                   />
                 </div>
-                <div className="flex justify-between text-[11px] text-gray-700">
+                <div className="flex justify-between text-[11px] text-gray-400">
                   <span>
                     {barPct}%{' '}
                     {weekWinners.length > 0 ? 'chance of a split' : 'chance of a 13 this week'}

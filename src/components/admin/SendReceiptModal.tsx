@@ -129,13 +129,13 @@ export default function SendReceiptModal({ leagueSlug, memberCount, members }: P
                   Personalized email — team, blurbs, and league info.
                 </p>
               </div>
-              <button onClick={handleClose} className="text-gray-600 hover:text-white text-xl leading-none ml-4">×</button>
+              <button onClick={handleClose} className="text-gray-400 hover:text-white text-xl leading-none ml-4">×</button>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wide">
                 League Password{' '}
-                <span className="text-gray-600 normal-case font-normal">(optional)</span>
+                <span className="text-gray-400 normal-case font-normal">(optional)</span>
               </label>
               <input
                 type="text"
@@ -178,11 +178,11 @@ export default function SendReceiptModal({ leagueSlug, memberCount, members }: P
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">
                     Recipients{' '}
                     <span className="text-[#39ff14] font-bold">{sendCount}</span>
-                    <span className="text-gray-600"> / {members.length}</span>
+                    <span className="text-gray-400"> / {members.length}</span>
                   </span>
                   <div className="flex gap-2">
                     <button onClick={selectAll} className="text-xs text-gray-500 hover:text-[#39ff14] transition-colors">All</button>
-                    <span className="text-gray-700">·</span>
+                    <span className="text-gray-400">·</span>
                     <button onClick={selectNone} className="text-xs text-gray-500 hover:text-red-400 transition-colors">None</button>
                   </div>
                 </div>
@@ -200,7 +200,7 @@ export default function SendReceiptModal({ leagueSlug, memberCount, members }: P
                           onChange={() => toggleMember(m.id)}
                           className="accent-[#39ff14] w-3.5 h-3.5 shrink-0"
                         />
-                        <span className={`text-sm ${checked ? 'text-white' : 'text-gray-600 line-through'}`}>
+                        <span className={`text-sm ${checked ? 'text-white' : 'text-gray-400 line-through'}`}>
                           {m.name}
                         </span>
                       </label>

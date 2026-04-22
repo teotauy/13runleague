@@ -20,7 +20,7 @@ export default function OnThisDayMLB({ games, monthDay }: Props) {
         <h2 className="text-lg font-bold">
           <span className="text-[#39ff14]">13</span> on This Day
         </h2>
-        <span className="text-xs text-gray-600 font-mono">
+        <span className="text-xs text-gray-400 font-mono">
           {label} in MLB history · {games.length} game{games.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -40,14 +40,14 @@ export default function OnThisDayMLB({ games, monthDay }: Props) {
                 <span className={awayIs13 ? 'text-[#39ff14] font-bold' : 'text-gray-300'}>
                   {g.awayTeam}
                 </span>
-                <span className="text-gray-600 mx-1">@</span>
+                <span className="text-gray-400 mx-1">@</span>
                 <span className={homeIs13 ? 'text-[#39ff14] font-bold' : 'text-gray-300'}>
                   {g.homeTeam}
                 </span>
               </span>
               <span className="font-mono text-xs shrink-0">
                 <span className={awayIs13 ? 'text-[#39ff14] font-bold' : 'text-gray-400'}>{g.awayScore}</span>
-                <span className="text-gray-600">–</span>
+                <span className="text-gray-400">–</span>
                 <span className={homeIs13 ? 'text-[#39ff14] font-bold' : 'text-gray-400'}>{g.homeScore}</span>
               </span>
             </div>

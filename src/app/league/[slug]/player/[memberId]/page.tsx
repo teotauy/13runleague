@@ -224,7 +224,7 @@ export default async function PlayerPage({ params }: Props) {
         <header className="mb-8">
           <a
             href={`/league/${slug}`}
-            className="text-gray-600 text-sm hover:text-gray-400 mb-4 block"
+            className="text-gray-400 text-sm hover:text-gray-400 mb-4 block"
           >
             ← Back to {league.name}
           </a>
@@ -303,17 +303,17 @@ export default async function PlayerPage({ params }: Props) {
                           ? 'border-blue-400 text-blue-300 bg-blue-950/40'
                           : wins > 0
                           ? 'border-gray-500 text-white bg-gray-800'
-                          : 'border-gray-800 text-gray-600 bg-[#0a0a0a]'
+                          : 'border-gray-800 text-gray-400 bg-[#0a0a0a]'
                       }`}
                     >
                       {team}
                     </div>
-                    <div className="text-[10px] text-gray-600 font-mono">{year}</div>
+                    <div className="text-[10px] text-gray-400 font-mono">{year}</div>
                   </div>
                 ))}
               </div>
               {/* Circle legend */}
-              <div className="mt-3 flex flex-wrap gap-4 text-[10px] text-gray-700 font-mono">
+              <div className="mt-3 flex flex-wrap gap-4 text-[10px] text-gray-400 font-mono">
                 <span><span className="text-[#39ff14]">●</span> Led league in $$$</span>
                 <span><span className="text-blue-400">●</span> Led league in wins</span>
                 <span><span className="text-gray-500">●</span> Had wins</span>
@@ -413,7 +413,7 @@ function StatBlock({
     <div>
       <div className="section-label mb-1">{label}</div>
       <div className="text-3xl font-black text-[#39ff14]">{value}</div>
-      {subtitle && <div className="text-xs text-gray-600 mt-1">{subtitle}</div>}
+      {subtitle && <div className="text-xs text-gray-400 mt-1">{subtitle}</div>}
     </div>
   )
 }

@@ -59,7 +59,7 @@ export default function RootLayout({
         <GlobalSeasonBanner />
         {children}
         <AddToHomeScreenBanner />
-        <footer className="w-full border-t border-white/5 py-4 px-4 text-center text-xs text-gray-600">
+        <footer className="w-full border-t border-white/5 py-4 px-4 text-center text-xs text-gray-400">
           © 2025–2026 Red Crow Labs. All rights reserved.
         </footer>
       </body>

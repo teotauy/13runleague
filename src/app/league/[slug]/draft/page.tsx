@@ -110,7 +110,7 @@ export default async function DraftPage({ params }: Props) {
               </h1>
               <p className="text-gray-400 text-lg mt-1">{league.name}</p>
             </div>
-            <a href={`/league/${slug}/admin`} className="text-gray-600 text-sm hover:text-gray-400">
+            <a href={`/league/${slug}/admin`} className="text-gray-400 text-sm hover:text-gray-400">
               ← Back to Admin
             </a>
           </div>

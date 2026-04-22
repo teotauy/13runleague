@@ -539,11 +539,11 @@ export default async function HistoryYearPage({ params }: Props) {
               return (
                 <div
                   key={wk}
-                  className="flex items-center gap-4 py-2 px-3 text-gray-700 hover:bg-[#0f0f0f] rounded"
+                  className="flex items-center gap-4 py-2 px-3 text-gray-400 hover:bg-[#0f0f0f] rounded"
                 >
                   <span className="font-mono text-xs w-6 text-right">{weekNumStr}</span>
-                  <span className="text-xs w-16 text-gray-600">{weekLabel}</span>
-                  <span className="text-xs tracking-[0.2em] text-gray-700">· · · ROLLOVER · · ·</span>
+                  <span className="text-xs w-16 text-gray-400">{weekLabel}</span>
+                  <span className="text-xs tracking-[0.2em] text-gray-400">· · · ROLLOVER · · ·</span>
                 </div>
               )
             }

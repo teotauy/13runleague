@@ -32,7 +32,7 @@ export default function ThirteenRunHistoryCard({ games }: { games: Game[] }) {
           </span>
           <span className="font-mono text-xs shrink-0">
             <span className={result.away_score === 13 ? 'text-[#39ff14] font-bold' : 'text-gray-400'}>{result.away_score}</span>
-            <span className="text-gray-600">–</span>
+            <span className="text-gray-400">–</span>
             <span className={result.home_score === 13 ? 'text-[#39ff14] font-bold' : 'text-gray-400'}>{result.home_score}</span>
           </span>
         </div>

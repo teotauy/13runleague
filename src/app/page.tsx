@@ -193,7 +193,7 @@ export default async function HomePage({ searchParams }: PageProps) {
             <h1 className="text-5xl font-black tracking-tight leading-none">
               <span className="text-[#39ff14]">13</span> Run League
             </h1>
-            <p className="text-gray-600 mt-2 text-sm">
+            <p className="text-gray-400 mt-2 text-sm">
               {new Date(baseballToday() + 'T12:00:00-04:00').toLocaleDateString('en-US', {
                 timeZone: 'America/New_York',
                 weekday: 'long',
@@ -302,7 +302,7 @@ export default async function HomePage({ searchParams }: PageProps) {
           <section className="module-card">
             <div className="px-6 py-16 text-center space-y-2">
               <div className="text-gray-500 font-mono text-lg">No games scheduled today</div>
-              <div className="text-gray-700 text-sm">
+              <div className="text-gray-400 text-sm">
                 Check back during the MLB season (March–October)
               </div>
             </div>
@@ -383,7 +383,7 @@ export default async function HomePage({ searchParams }: PageProps) {
           <section className="module-card">
             <p className="section-label mb-1">Scoring Patterns</p>
             <h2 className="text-xl font-bold text-white mb-1">Scorigami Squares</h2>
-            <p className="text-gray-600 text-xs mb-4">
+            <p className="text-gray-400 text-xs mb-4">
               Run-scoring distribution for today&apos;s highest-probability teams (cell brightness = frequency)
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

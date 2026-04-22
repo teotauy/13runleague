@@ -152,12 +152,12 @@ export default function GameCard({
             <span className={`font-bold font-mono ${awayHit13 ? 'text-[#39ff14]' : 'text-white'} ${awayHit13 ? 'text-2xl' : 'text-xl'}`}>
               {awayScore}
             </span>
-            <span className="text-gray-600 font-mono">–</span>
+            <span className="text-gray-400 font-mono">–</span>
             <span className={`font-bold font-mono ${homeHit13 ? 'text-[#39ff14]' : 'text-white'} ${homeHit13 ? 'text-2xl' : 'text-xl'}`}>
               {homeScore}
             </span>
             {isFinal && (
-              <span className={`text-xs font-mono ml-1 ${hit13 ? 'text-[#39ff14]/60' : 'text-gray-600'}`}>FINAL</span>
+              <span className={`text-xs font-mono ml-1 ${hit13 ? 'text-[#39ff14]/60' : 'text-gray-400'}`}>FINAL</span>
             )}
           </div>
         ) : (
@@ -192,7 +192,7 @@ export default function GameCard({
           <span className="font-bold text-sm" style={{ color: liveProb > 0.65 ? '#ef4444' : liveProb > 0.40 ? '#f97316' : '#eab308' }}>
             {(liveProb * 100).toFixed(1)}%
           </span>
-          <span className="text-gray-600 ml-auto">📚 Retrosheet lookup</span>
+          <span className="text-gray-400 ml-auto">📚 Retrosheet lookup</span>
         </div>
       )}
 
@@ -215,11 +215,11 @@ export default function GameCard({
       {gameStatus !== 'Live' && gameStatus !== 'Final' && (
         <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
           <div>
-            <span className="text-gray-600">SP: </span>
+            <span className="text-gray-400">SP: </span>
             <span className="text-gray-300">{awayPitcher ?? 'TBD'}</span>
           </div>
           <div>
-            <span className="text-gray-600">SP: </span>
+            <span className="text-gray-400">SP: </span>
             <span className="text-gray-300">{homePitcher ?? 'TBD'}</span>
           </div>
         </div>
@@ -228,7 +228,7 @@ export default function GameCard({
       {/* Lambda breakdown — only for Preview games, not Live */}
       {gameStatus === 'Preview' && (
         <div className="space-y-2">
-          <div className="grid grid-cols-3 gap-2 text-[10px] font-mono text-gray-600 uppercase tracking-wider px-1">
+          <div className="grid grid-cols-3 gap-2 text-[10px] font-mono text-gray-400 uppercase tracking-wider px-1">
             <Tooltip label="Base λ" explanation={['Expected runs based on season averages.', 'Both teams\' offensive & pitching numbers, blended with league baseline.']}>
               <div className="underline decoration-dotted cursor-help">Base</div>
             </Tooltip>
@@ -248,7 +248,7 @@ export default function GameCard({
 
       {/* For Final games: pre-game probability context */}
       {isFinal && (
-        <div className="text-xs text-gray-600 font-mono">
+        <div className="text-xs text-gray-400 font-mono">
           Pre-game{' '}
           <Tooltip label="Pre-game P(13)" explanation={['What the model predicted before first pitch.', 'Poisson model using season run averages, park factor & starting pitcher.']}>
             P(13)
@@ -274,7 +274,7 @@ export default function GameCard({
         href={`https://www.mlb.com/gameday/${gamePk}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-xs text-gray-600 hover:text-gray-400 transition-colors text-right"
+        className="text-xs text-gray-400 hover:text-gray-400 transition-colors text-right"
       >
         Gameday →
       </a>

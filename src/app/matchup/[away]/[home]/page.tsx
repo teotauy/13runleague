@@ -119,12 +119,12 @@ export default async function MatchupPage({ params }: Props) {
 
         {/* Header */}
         <header>
-          <Link href="/" className="text-gray-600 text-sm hover:text-gray-400 mb-4 inline-block">
+          <Link href="/" className="text-gray-400 text-sm hover:text-gray-400 mb-4 inline-block">
             ← Dashboard
           </Link>
           <h1 className="text-4xl font-black font-mono">
             <span style={{ color: awayInfo.primaryColor }}>{awayAbbr}</span>
-            <span className="text-gray-600 mx-2">@</span>
+            <span className="text-gray-400 mx-2">@</span>
             <span style={{ color: homeInfo.primaryColor }}>{homeAbbr}</span>
           </h1>
           <p className="text-gray-500 mt-1 text-sm">
@@ -152,7 +152,7 @@ export default async function MatchupPage({ params }: Props) {
               <div className="text-5xl font-black tabular-nums" style={{ color: awayInfo.primaryColor }}>
                 {awayTeam13s.length}
               </div>
-              <div className="text-xs text-gray-600 mt-1">
+              <div className="text-xs text-gray-400 mt-1">
                 {gameCount > 0
                   ? `${((awayTeam13s.length / gameCount) * 100).toFixed(1)}% of matchups`
                   : 'times'}
@@ -165,7 +165,7 @@ export default async function MatchupPage({ params }: Props) {
               <div className="text-5xl font-black tabular-nums" style={{ color: homeInfo.primaryColor }}>
                 {homeTeam13s.length}
               </div>
-              <div className="text-xs text-gray-600 mt-1">
+              <div className="text-xs text-gray-400 mt-1">
                 {gameCount > 0
                   ? `${((homeTeam13s.length / gameCount) * 100).toFixed(1)}% of matchups`
                   : 'times'}
@@ -177,7 +177,7 @@ export default async function MatchupPage({ params }: Props) {
         {total13s === 0 && (
           <div className="rounded border border-gray-800 bg-[#111] px-6 py-12 text-center space-y-2">
             <div className="text-gray-500 font-mono text-lg">No 13-run games on record</div>
-            <div className="text-gray-700 text-sm">
+            <div className="text-gray-400 text-sm">
               {awayAbbr} and {homeAbbr} have never combined for a 13-run game in our database.
             </div>
           </div>
@@ -228,7 +228,7 @@ export default async function MatchupPage({ params }: Props) {
                 ))}
               </div>
               {peakMonth && monthMap.size > 0 && (
-                <p className="text-xs text-gray-700 mt-3">
+                <p className="text-xs text-gray-400 mt-3">
                   {peakMonth} is the hottest month for 13s in this matchup
                 </p>
               )}
@@ -258,7 +258,7 @@ export default async function MatchupPage({ params }: Props) {
                 ))}
               </div>
               {peakDay && dowMap.size > 0 && (
-                <p className="text-xs text-gray-700 mt-3">
+                <p className="text-xs text-gray-400 mt-3">
                   {peakDay} is the most dangerous day for 13s in this matchup
                 </p>
               )}
@@ -273,7 +273,7 @@ export default async function MatchupPage({ params }: Props) {
           <section>
             <h2 className="text-lg font-bold mb-4">
               All <span className="text-[#39ff14]">13</span>-Run Games
-              <span className="text-gray-600 text-sm font-normal ml-2 font-mono">{total13s} total</span>
+              <span className="text-gray-400 text-sm font-normal ml-2 font-mono">{total13s} total</span>
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm font-mono">
@@ -302,7 +302,7 @@ export default async function MatchupPage({ params }: Props) {
                           <span className={g.away_score === 13 ? 'text-[#39ff14] font-bold' : 'text-gray-400'}>
                             {g.away_score}
                           </span>
-                          <span className="text-gray-600 mx-1">–</span>
+                          <span className="text-gray-400 mx-1">–</span>
                           <span className={g.home_score === 13 ? 'text-[#39ff14] font-bold' : 'text-gray-400'}>
                             {g.home_score}
                           </span>
@@ -341,7 +341,7 @@ export default async function MatchupPage({ params }: Props) {
           </section>
         )}
 
-        <footer className="border-t border-gray-900 pt-6 text-gray-700 text-xs space-y-2">
+        <footer className="border-t border-gray-900 pt-6 text-gray-400 text-xs space-y-2">
           <p>
             The information used here was obtained free of charge from and is copyrighted by{' '}
             <a
@@ -402,7 +402,7 @@ function Histogram({
           const is13 = i === 13
           return (
             <div key={i} className="flex items-center gap-2 text-xs font-mono">
-              <span className={`w-5 text-right ${is13 ? 'text-[#39ff14] font-bold' : 'text-gray-600'}`}>
+              <span className={`w-5 text-right ${is13 ? 'text-[#39ff14] font-bold' : 'text-gray-400'}`}>
                 {i}
               </span>
               <div className="flex-1 bg-gray-900 rounded-sm h-4 overflow-hidden">
@@ -414,12 +414,12 @@ function Histogram({
                   }}
                 />
               </div>
-              <span className="w-6 text-gray-600">{count || ''}</span>
+              <span className="w-6 text-gray-400">{count || ''}</span>
             </div>
           )
         })}
       </div>
-      <div className="text-xs text-gray-700 mt-2">{total} games in database</div>
+      <div className="text-xs text-gray-400 mt-2">{total} games in database</div>
     </div>
   )
 }

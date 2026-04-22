@@ -35,7 +35,7 @@ export default function AddToHomeScreenBanner() {
         </div>
         <button
           onClick={dismiss}
-          className="text-gray-600 hover:text-gray-400 text-lg shrink-0 mt-0.5"
+          className="text-gray-400 hover:text-gray-400 text-lg shrink-0 mt-0.5"
           aria-label="Dismiss"
         >
           ✕

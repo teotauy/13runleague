@@ -123,7 +123,7 @@ export default function PreSeasonStatus({ leagueSlug, members: initialMembers }:
                     <td className="py-3 pr-4 text-white font-semibold">
                       {member.name}
                       {isSaving && (
-                        <span className="ml-2 text-gray-600 text-xs">saving…</span>
+                        <span className="ml-2 text-gray-400 text-xs">saving…</span>
                       )}
                     </td>
                     <td className="py-3 pr-4">
@@ -176,7 +176,7 @@ export default function PreSeasonStatus({ leagueSlug, members: initialMembers }:
                           </span>
                         </label>
                       ) : (
-                        <span className="text-gray-700">—</span>
+                        <span className="text-gray-400">—</span>
                       )}
                     </td>
                   </tr>

@@ -140,7 +140,7 @@ export default async function TeamPage({ params }: Props) {
         {total === 0 ? (
           <div className="rounded-xl bg-white/[0.025] border border-white/[0.07] px-6 py-16 text-center space-y-2">
             <div className="text-gray-500 font-mono text-lg">No 13-run games on record</div>
-            <div className="text-gray-700 text-sm">
+            <div className="text-gray-400 text-sm">
               Data sourced from Retrosheet — some historical records may be incomplete.
             </div>
             <Link href="/history" className="text-[#39ff14] text-sm hover:underline mt-4 inline-block">
@@ -192,7 +192,7 @@ export default async function TeamPage({ params }: Props) {
                 <h3 className="section-label mb-1">
                   By Month
                 </h3>
-                <p className="text-xs text-gray-600 mb-3">
+                <p className="text-xs text-gray-400 mb-3">
                   {peakMonth} is the danger month
                 </p>
                 <div className="space-y-2.5">
@@ -222,7 +222,7 @@ export default async function TeamPage({ params }: Props) {
                     </div>
                     <div className="text-xs text-gray-500 mt-1">Home</div>
                   </div>
-                  <div className="text-gray-700 text-base font-mono pb-3">vs</div>
+                  <div className="text-gray-400 text-base font-mono pb-3">vs</div>
                   <div className="text-center flex-1">
                     <div className="text-4xl font-black text-amber-400 tabular-nums">
                       {awayCount}
@@ -237,12 +237,12 @@ export default async function TeamPage({ params }: Props) {
                   />
                   <div className="bg-amber-900 h-full flex-1" />
                 </div>
-                <div className="flex justify-between text-xs text-gray-600 mt-1.5">
+                <div className="flex justify-between text-xs text-gray-400 mt-1.5">
                   <span>{homePct}% home</span>
                   <span>{100 - homePct}% away</span>
                 </div>
                 {homeCount !== awayCount && hvTotal > 0 && (
-                  <p className="text-xs text-gray-700 mt-3">
+                  <p className="text-xs text-gray-400 mt-3">
                     {homeCount > awayCount
                       ? 'Scores 13 more often at home — the crowd feeds the beast'
                       : 'Scores 13 more on the road — playing with a chip on their shoulder'}
@@ -257,7 +257,7 @@ export default async function TeamPage({ params }: Props) {
                 <h2 className="text-lg font-bold">
                   All <span className="text-[#39ff14]">13</span>-Run Games
                 </h2>
-                <span className="text-xs text-gray-600 font-mono">{total} total</span>
+                <span className="text-xs text-gray-400 font-mono">{total} total</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm font-mono">
@@ -287,10 +287,10 @@ export default async function TeamPage({ params }: Props) {
                           </td>
                           <td className="py-2 pr-4">
                             <span className="text-[#39ff14] font-bold">{myScore}</span>
-                            <span className="text-gray-600 mx-1">–</span>
+                            <span className="text-gray-400 mx-1">–</span>
                             <span className="text-gray-400">{oppScore}</span>
                           </td>
-                          <td className="py-2 text-gray-600">
+                          <td className="py-2 text-gray-400">
                             {isHome ? 'home' : 'away'}
                           </td>
                         </tr>

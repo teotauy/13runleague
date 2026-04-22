@@ -92,7 +92,7 @@ export default async function HistoryPage() {
     <main className="min-h-screen bg-[#0f1115] stadium-texture text-white">
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         <header>
-          <a href="/" className="text-gray-600 text-sm hover:text-gray-400 mb-4 inline-block">← Dashboard</a>
+          <a href="/" className="text-gray-400 text-sm hover:text-gray-400 mb-4 inline-block">← Dashboard</a>
           <h1 className="text-4xl font-black">
             <span className="text-[#39ff14]">13</span>-Run History
           </h1>
@@ -119,7 +119,7 @@ export default async function HistoryPage() {
               <div className="text-2xl font-black text-[#39ff14] mt-1">
                 {teamGames!.length}
               </div>
-              <div className="text-[10px] text-gray-600">13-run games</div>
+              <div className="text-[10px] text-gray-400">13-run games</div>
             </Link>
           ))}
         </div>
