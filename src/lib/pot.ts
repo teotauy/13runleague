@@ -7,11 +7,15 @@ interface Winner {
   member_name: string
   team: string
   game_date: string
+  /** Payment status for the winning week — used to net buy-in from payout for unpaid winners. */
+  payment_status?: string | null
 }
 
 interface PayoutRecord {
   member_id: string
   payout_amount: number
+  /** Buy-in amount deducted from the raw split share (0 if winner was paid). */
+  deducted_buy_in: number
   shares_count: number
   member_name: string
   team: string
@@ -89,6 +93,7 @@ interface WeeklyPotResult {
   pot_amount: number
   rollover_from: number | null
   number_of_members: number
+  weekly_buy_in: number
 }
 
 /**
@@ -145,6 +150,7 @@ export async function calculateWeeklyPot(
     pot_amount: basePot + rolloverAmount,
     rollover_from: rolloverFromWeek,
     number_of_members: memberCount,
+    weekly_buy_in: league.weekly_buy_in || 10,
   }
 }
 
@@ -215,13 +221,28 @@ export async function getWinnersForWeek(
 
   const { data: winners } = await supabase
     .from('members')
-    .select('id, name, assigned_team')
+    .select('id, name, assigned_team, pre_season_paid')
     .eq('league_id', league_id)
     .in('assigned_team', variantList.length > 0 ? variantList : ['__none__'])
 
   if (!winners) {
     return []
   }
+
+  // Fetch payment status for each winning member this week.
+  // pre_season_paid acts as a fallback for Week 1 before individual payments are recorded.
+  const winnerIds = winners.map((m) => m.id)
+  const { data: weeklyPayments } = winnerIds.length > 0
+    ? await supabase
+        .from('weekly_payments')
+        .select('member_id, payment_status')
+        .eq('week_number', week_number)
+        .in('member_id', winnerIds)
+    : { data: [] }
+
+  const paymentMap = new Map(
+    (weeklyPayments ?? []).map((p) => [p.member_id, p.payment_status as string])
+  )
 
   const memberOwnsWinningTeam = (memberAbbr: string, winningCell: string) => {
     const m = normalizeTeamAbbr(memberAbbr.toUpperCase())
@@ -239,11 +260,15 @@ export async function getWinnersForWeek(
   for (const game of gameResults) {
     for (const member of winners) {
       if (memberOwnsWinningTeam(member.assigned_team, game.winning_team)) {
+        // Resolve payment status: weekly record takes priority; fall back to pre_season_paid
+        const weeklyStatus = paymentMap.get(member.id)
+        const payment_status = weeklyStatus ?? (member.pre_season_paid ? 'paid' : null)
         winnerEntries.push({
           member_id: member.id,
           member_name: member.name,
           team: member.assigned_team,
           game_date: game.game_date,
+          payment_status,
         })
       }
     }
@@ -253,24 +278,43 @@ export async function getWinnersForWeek(
 }
 
 /**
- * Calculate payout amounts based on pot and winners
- * Splits pot equally among all winners
+ * How much of the weekly buy-in to deduct from a winner's gross share.
+ * paid → 0, 50% paid → half, unpaid/null → full buy-in.
  */
-export function calculatePayouts(pot_amount: number, winners: Winner[]): PayoutRecord[] {
+function buyInOwed(status: string | null | undefined, weekly_buy_in: number): number {
+  if (status === 'paid') return 0
+  if (status === '50%') return Math.round(weekly_buy_in / 2)
+  return weekly_buy_in
+}
+
+/**
+ * Calculate payout amounts based on pot and winners.
+ * Splits pot equally among all winners, then nets any unpaid buy-in from each winner's share.
+ * The pot total is unchanged — this only reduces the cash-in-hand for members who didn't pay.
+ */
+export function calculatePayouts(
+  pot_amount: number,
+  winners: Winner[],
+  weekly_buy_in: number = 0
+): PayoutRecord[] {
   if (winners.length === 0) {
     return []
   }
 
   const payoutPerShare = Math.floor(pot_amount / winners.length)
 
-  return winners.map((winner) => ({
-    member_id: winner.member_id,
-    payout_amount: payoutPerShare,
-    shares_count: winners.length,
-    member_name: winner.member_name,
-    team: winner.team,
-    game_date: winner.game_date,
-  }))
+  return winners.map((winner) => {
+    const deducted_buy_in = buyInOwed(winner.payment_status, weekly_buy_in)
+    return {
+      member_id: winner.member_id,
+      payout_amount: Math.max(0, payoutPerShare - deducted_buy_in),
+      deducted_buy_in,
+      shares_count: winners.length,
+      member_name: winner.member_name,
+      team: winner.team,
+      game_date: winner.game_date,
+    }
+  })
 }
 
 interface RecordPayoutsParams {

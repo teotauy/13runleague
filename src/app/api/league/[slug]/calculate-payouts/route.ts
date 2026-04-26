@@ -32,6 +32,7 @@ interface PayoutResponse {
   payouts: Array<{
     member_name: string
     payout_amount: number
+    deducted_buy_in?: number
     team: string
   }>
   total_distributed: number
@@ -89,8 +90,8 @@ export async function POST(
     // Get winners for this week
     const winners = await getWinnersForWeek(leagueId, week_number, year, supabase)
 
-    // Calculate payouts
-    const payouts = calculatePayouts(potResult.pot_amount, winners)
+    // Calculate payouts — nets unpaid buy-in from each winner's gross share (Option A)
+    const payouts = calculatePayouts(potResult.pot_amount, winners, potResult.weekly_buy_in)
 
     // Record payouts in database
     await recordPayouts(
@@ -126,6 +127,7 @@ export async function POST(
       payouts: payouts.map((p) => ({
         member_name: p.member_name,
         payout_amount: p.payout_amount,
+        ...(p.deducted_buy_in > 0 && { deducted_buy_in: p.deducted_buy_in }),
         team: p.team,
       })),
       total_distributed: totalDistributed,
