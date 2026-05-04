@@ -8,7 +8,9 @@ import {
   getWeekNumber,
   getSeasonYear,
   getEffectiveRolloverPotForDashboard,
+  getWeekCalendarBoundsForSeasonYear,
 } from '@/lib/pot'
+import type { WeekResults } from '../../emails/WeeklyRecap'
 import { verifyRecapCapability } from '@/lib/recapCapability'
 import { sanitizeRecapHtml } from '@/lib/recapHtmlSanitize'
 import { buildRecapSuggestions, type RecapSuggestionBlock } from '@/lib/recapSuggestions'
@@ -65,6 +67,83 @@ async function buildRecapData(slug: string) {
     supabase
   )
 
+  // ── Week results: settled payouts + 13-run games ──────────────────────────
+  const { start: weekStart, end: weekEnd } =
+    getWeekCalendarBoundsForSeasonYear(seasonYear, weekNumber)
+
+  const [thirteenGamesRes, payoutRowsRes, ledgerRes] = await Promise.all([
+    supabase
+      .from('game_results')
+      .select('winning_team, game_date')
+      .eq('was_thirteen', true)
+      .gte('game_date', weekStart)
+      .lte('game_date', weekEnd)
+      .order('game_date', { ascending: true }),
+    supabase
+      .from('payouts')
+      .select('member_id, payout_amount, winning_team, game_date, shares_count')
+      .eq('league_id', league.id)
+      .eq('week_number', weekNumber)
+      .eq('year', seasonYear),
+    supabase
+      .from('weekly_pot_ledger')
+      .select('pot_amount, number_of_winners')
+      .eq('league_id', league.id)
+      .eq('week_number', weekNumber)
+      .eq('year', seasonYear)
+      .maybeSingle(),
+  ])
+
+  const payoutRows = payoutRowsRes.data ?? []
+  const thirteenGames = thirteenGamesRes.data ?? []
+  const ledger = ledgerRes.data
+
+  // Resolve member names for payout rows
+  const winnerIds = [...new Set(payoutRows.map((p) => p.member_id))]
+  let winnerMembers: { id: string; name: string }[] = []
+  if (winnerIds.length > 0) {
+    const { data } = await supabase
+      .from('members')
+      .select('id, name')
+      .in('id', winnerIds)
+    winnerMembers = data ?? []
+  }
+  const nameById = new Map(winnerMembers.map((m) => [m.id, m.name]))
+
+  // Aggregate winners — members with multiple shares sum their payouts
+  const winnerMap = new Map<string, { memberName: string; team: string; payoutAmount: number; shares: number }>()
+  for (const p of payoutRows) {
+    const memberName = nameById.get(p.member_id) ?? 'Unknown'
+    const existing = winnerMap.get(p.member_id)
+    if (existing) {
+      existing.payoutAmount += p.payout_amount
+      existing.shares += 1
+    } else {
+      winnerMap.set(p.member_id, {
+        memberName,
+        team: p.winning_team,
+        payoutAmount: p.payout_amount,
+        shares: 1,
+      })
+    }
+  }
+
+  const weekWinners = [...winnerMap.values()]
+  const totalDistributed = weekWinners.reduce((s, w) => s + w.payoutAmount, 0)
+  const rolloverAmount = weekWinners.length === 0 ? (ledger?.pot_amount ?? 0) : 0
+
+  const weekResults: WeekResults = {
+    thirteenRunGames: thirteenGames.map((g) => ({
+      gameDate: g.game_date,
+      winningTeam: g.winning_team,
+    })),
+    winners: weekWinners,
+    totalDistributed,
+    rolloverAmount,
+    nextWeekNumber: weekNumber + 1,
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
   const props = {
     weekNumber,
     upcomingGames: [] as { away: string; home: string; date: string; probability: number }[],
@@ -73,6 +152,7 @@ async function buildRecapData(slug: string) {
       potTotal: rolloverPot + weeklyPot,
       weeklyBuyIn: league.weekly_buy_in ?? 10,
     }],
+    weekResults,
   }
 
   return { league, emails, props, weekNumber }
