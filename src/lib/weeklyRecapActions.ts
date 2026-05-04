@@ -51,12 +51,14 @@ async function buildRecapData(slug: string) {
   const weeklyPot = (league.weekly_buy_in ?? 10) * activeMemberCount
 
   const today = new Date()
-  // Recap is for the just-completed week. The league week rolls over on Sunday
-  // (Sunday is day 0 and the first day of a new playing week), so if today is
-  // Sunday we anchor on yesterday (Saturday) to get last week's number.
-  const recapAnchor = today.getDay() === 0
-    ? new Date(today.getTime() - 24 * 60 * 60 * 1000)
-    : today
+  // Recap is always for the most recently completed week (Sun–Sat window).
+  // A new playing week starts on Sunday, so Saturday is the last day of the
+  // completed week. Regardless of what day the commissioner opens the recap
+  // editor, anchor to the most recent Saturday so we query the right week's
+  // payouts. Sun(0)→back 1 day, Mon(1)→back 2, …, Sat(6)→back 0.
+  const dayOfWeek = today.getDay()
+  const daysToLastSat = (dayOfWeek + 1) % 7
+  const recapAnchor = new Date(today.getTime() - daysToLastSat * 24 * 60 * 60 * 1000)
   const weekNumber = getWeekNumber(recapAnchor)
   const seasonYear = getSeasonYear(recapAnchor)
   const rolloverPot = await getEffectiveRolloverPotForDashboard(
