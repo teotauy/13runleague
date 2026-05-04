@@ -371,7 +371,15 @@ export async function recordPayouts(
   }: RecordPayoutsParams,
   supabase: SupabaseClient
 ): Promise<void> {
-  // 1. Insert payout records
+  // 1. Write payout records — delete existing rows for this week first so re-settling
+  //    is safe (avoids duplicate-key errors if the same game/member combo appears again).
+  await supabase
+    .from('payouts')
+    .delete()
+    .eq('league_id', league_id)
+    .eq('week_number', week_number)
+    .eq('year', year)
+
   const payoutRecords = payouts.map((payout) => ({
     league_id,
     member_id: payout.member_id,
@@ -409,38 +417,51 @@ export async function recordPayouts(
     throw new Error(`Failed to update pot ledger: ${ledgerError.message}`)
   }
 
-  // 3. Update historical_results for each winner
+  // 3. Update historical_results for each winner.
+  // Use explicit update-by-id when the row already exists, insert otherwise.
+  // Avoids the upsert-without-onConflict bug that throws on the unique constraint
+  // (historical_results_unique_member_year_team) when a row already exists.
   for (const payout of payouts) {
-    // Get current historical record
     const { data: existing } = await supabase
       .from('historical_results')
-      .select('*')
+      .select('id, total_won, shares, week_wins')
       .eq('league_id', league_id)
       .eq('year', year)
       .eq('member_name', payout.member_name)
-      .single()
+      .maybeSingle()
 
-    const newTotalWon = (existing?.total_won || 0) + payout.payout_amount
-    const newShares = (existing?.shares || 0) + 1
-    const weekWins = existing?.week_wins || []
+    const newTotalWon = (existing?.total_won ?? 0) + payout.payout_amount
+    const newShares = (existing?.shares ?? 0) + 1
+    const weekWins: number[] = Array.isArray(existing?.week_wins) ? [...existing.week_wins] : []
     if (!weekWins.includes(week_number)) {
       weekWins.push(week_number)
     }
 
-    const { error: histError } = await supabase
-      .from('historical_results')
-      .upsert({
-        league_id,
-        year,
-        member_name: payout.member_name,
-        team: payout.team,
-        total_won: newTotalWon,
-        shares: newShares,
-        week_wins: weekWins,
-      })
-
-    if (histError) {
-      throw new Error(`Failed to update historical results: ${histError.message}`)
+    if (existing?.id) {
+      // Row exists — update in place by primary key (no constraint collision possible)
+      const { error: histError } = await supabase
+        .from('historical_results')
+        .update({ total_won: newTotalWon, shares: newShares, week_wins: weekWins })
+        .eq('id', existing.id)
+      if (histError) {
+        throw new Error(`Failed to update historical results: ${histError.message}`)
+      }
+    } else {
+      // No row yet for this member+year — insert fresh
+      const { error: histError } = await supabase
+        .from('historical_results')
+        .insert({
+          league_id,
+          year,
+          member_name: payout.member_name,
+          team: payout.team,
+          total_won: newTotalWon,
+          shares: newShares,
+          week_wins: weekWins,
+        })
+      if (histError) {
+        throw new Error(`Failed to insert historical results: ${histError.message}`)
+      }
     }
   }
 
