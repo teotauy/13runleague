@@ -96,7 +96,7 @@ function mergeRecapProps(
   return {
     ...data.props,
     commissionerHtml,
-    showLeaguePot: options?.showLeaguePot !== false,
+    showLeaguePot: options?.showLeaguePot === true,
     showBranding: options?.showBranding !== false,
   }
 }
