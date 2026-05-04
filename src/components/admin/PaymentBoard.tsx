@@ -31,15 +31,26 @@ interface Props {
   leagueSlug: string
   payouts?: PayoutInfo[]
   year?: number
+  /** Current playing week — used to auto-initialize the visible week range. */
+  currentWeek?: number
 }
 
 type PaymentStatus = 'unpaid' | '50%' | 'paid'
 
-export default function PaymentBoard({ members, payments, leagueSlug, payouts = [], year = new Date().getFullYear() }: Props) {
+export default function PaymentBoard({
+  members,
+  payments,
+  leagueSlug,
+  payouts = [],
+  year = new Date().getFullYear(),
+  currentWeek = 5,
+}: Props) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [weeks, setWeeks] = useState<number[]>([1, 2, 3, 4, 5])
-  const [newWeek, setNewWeek] = useState(6)
+  // Show all weeks up through currentWeek (min 5 so the grid isn't tiny early in the season)
+  const initWeeks = Array.from({ length: Math.max(5, currentWeek) }, (_, i) => i + 1)
+  const [weeks, setWeeks] = useState<number[]>(initWeeks)
+  const [newWeek, setNewWeek] = useState(Math.max(5, currentWeek) + 1)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [markingAllFor, setMarkingAllFor] = useState<string | null>(null)
   /** Which week's settle modal is open (null = none). */
@@ -153,24 +164,6 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
           </span>
         </div>
 
-        {!isCollapsed && (
-          <div className="flex gap-2 items-center">
-            <input
-              type="number"
-              min="1"
-              max="52"
-              value={newWeek}
-              onChange={(e) => setNewWeek(parseInt(e.target.value) || 1)}
-              className="w-16 bg-[#0a0a0a] border border-gray-700 rounded px-2 py-1 text-white text-xs"
-            />
-            <button
-              onClick={handleAddWeek}
-              className="px-3 py-1 bg-[#39ff14] text-black font-bold rounded text-xs hover:bg-[#2fd400]"
-            >
-              + Week
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Collapsible body */}
@@ -252,7 +245,7 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
               Preview the week's 13-run games (MLB Stats API + game_results), review winners and payouts,
               then confirm to lock the pot. Settled weeks show a ✓ — click to re-settle if you need to repair.
             </p>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
               {weeks.map((week) => {
                 const payoutStatus = getPayoutStatus(week)
                 const isSettled = !!payoutStatus?.calculated
@@ -273,6 +266,16 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
                   </button>
                 )
               })}
+              {/* Add the next week */}
+              <button
+                type="button"
+                onClick={handleAddWeek}
+                disabled={isLoading}
+                title={`Add Week ${newWeek} to this view`}
+                className="px-3 py-2 rounded text-xs font-semibold border border-gray-700 text-gray-500 hover:text-gray-300 hover:border-gray-500 transition-colors disabled:opacity-40"
+              >
+                + W{newWeek}
+              </button>
             </div>
           </div>
 

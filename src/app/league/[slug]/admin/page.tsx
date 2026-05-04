@@ -194,6 +194,7 @@ export default async function AdminDashboard({ params }: Props) {
             leagueSlug={slug}
             payouts={payoutSummaries}
             year={seasonYear}
+            currentWeek={currentWeekNumber}
           />
         </section>
 
