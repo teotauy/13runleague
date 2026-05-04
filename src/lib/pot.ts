@@ -2,7 +2,7 @@ import { createClient } from './supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { franchiseAbbrs, normalizeTeamAbbr } from './teamColors'
 
-interface Winner {
+export interface Winner {
   member_id: string
   member_name: string
   team: string
@@ -11,7 +11,7 @@ interface Winner {
   payment_status?: string | null
 }
 
-interface PayoutRecord {
+export interface PayoutRecord {
   member_id: string
   payout_amount: number
   /** Buy-in amount deducted from the raw split share (0 if winner was paid). */
@@ -89,8 +89,10 @@ export function getWeekCalendarBoundsForSeasonYear(
   return { start: fmt(start), end: fmt(end) }
 }
 
-interface WeeklyPotResult {
+export interface WeeklyPotResult {
   pot_amount: number
+  /** Amount rolled over from a prior no-winner week (0 if this is a fresh week). */
+  rollover_amount: number
   rollover_from: number | null
   number_of_members: number
   weekly_buy_in: number
@@ -148,6 +150,7 @@ export async function calculateWeeklyPot(
 
   return {
     pot_amount: basePot + rolloverAmount,
+    rollover_amount: rolloverAmount,
     rollover_from: rolloverFromWeek,
     number_of_members: memberCount,
     weekly_buy_in: league.weekly_buy_in || 10,
@@ -182,27 +185,43 @@ export async function getEffectiveRolloverPotForDashboard(
   return 0
 }
 
+export interface OverrideGame {
+  /** Team abbreviation that scored 13 (e.g. "COL", "BOS"). */
+  winning_team: string
+  game_date: string
+}
+
 /**
- * Find all winners for a given week (teams that scored 13)
- * Returns array of member owners of those teams
+ * Find all winners for a given week (teams that scored 13).
+ * Returns array of member owners of those teams, one entry per winning game per member.
+ *
+ * Pass `overrideGames` to skip the game_results DB query and use an explicit list instead —
+ * used by the settlement modal when the commissioner has toggled games on/off.
  */
 export async function getWinnersForWeek(
   league_id: string,
   week_number: number,
   year: number,
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  options?: { overrideGames?: OverrideGame[] }
 ): Promise<Winner[]> {
-  const { start, end } = getWeekCalendarBoundsForSeasonYear(year, week_number)
+  let gameResults: Array<{ winning_team: string; game_date: string }>
 
-  // Find all games with 13-run results this week
-  const { data: gameResults } = await supabase
-    .from('game_results')
-    .select('winning_team, game_date')
-    .eq('was_thirteen', true)
-    .gte('game_date', start)
-    .lte('game_date', end)
+  if (options?.overrideGames) {
+    // Commissioner-supplied list — skip DB query
+    gameResults = options.overrideGames
+  } else {
+    const { start, end } = getWeekCalendarBoundsForSeasonYear(year, week_number)
+    const { data } = await supabase
+      .from('game_results')
+      .select('winning_team, game_date')
+      .eq('was_thirteen', true)
+      .gte('game_date', start)
+      .lte('game_date', end)
+    gameResults = data ?? []
+  }
 
-  if (!gameResults || gameResults.length === 0) {
+  if (gameResults.length === 0) {
     return []
   }
 
@@ -289,8 +308,9 @@ function buyInOwed(status: string | null | undefined, weekly_buy_in: number): nu
 
 /**
  * Calculate payout amounts based on pot and winners.
- * Splits pot equally among all winners, then nets any unpaid buy-in from each winner's share.
- * The pot total is unchanged — this only reduces the cash-in-hand for members who didn't pay.
+ * Splits pot equally among all winners (shares), then nets any unpaid buy-in from
+ * that member's FIRST share only — the buy-in is a weekly fee, not a per-share fee.
+ * The gross pot total is unchanged; this only reduces the cash-in-hand for non-payers.
  */
 export function calculatePayouts(
   pot_amount: number,
@@ -303,8 +323,15 @@ export function calculatePayouts(
 
   const payoutPerShare = Math.floor(pot_amount / winners.length)
 
+  // Deduct buy-in once per member (their first share absorbs it)
+  const deductedMembers = new Set<string>()
+
   return winners.map((winner) => {
-    const deducted_buy_in = buyInOwed(winner.payment_status, weekly_buy_in)
+    let deducted_buy_in = 0
+    if (!deductedMembers.has(winner.member_id)) {
+      deducted_buy_in = buyInOwed(winner.payment_status, weekly_buy_in)
+      if (deducted_buy_in > 0) deductedMembers.add(winner.member_id)
+    }
     return {
       member_id: winner.member_id,
       payout_amount: Math.max(0, payoutPerShare - deducted_buy_in),

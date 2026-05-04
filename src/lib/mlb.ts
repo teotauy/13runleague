@@ -195,6 +195,90 @@ export async function fetchDateRangeSchedule(start: string, end: string): Promis
   return games
 }
 
+/** A completed game with confirmed run totals — used for settlement preview. */
+export interface ThirteenRunGame {
+  gamePk: number
+  gameDate: string
+  awayAbbr: string
+  awayName: string
+  awayScore: number
+  homeAbbr: string
+  homeName: string
+  homeScore: number
+  /** Normalised abbreviation(s) of the team(s) that scored 13. */
+  winningAbbrs: string[]
+}
+
+/**
+ * Fetch all Final regular-season games for a date range and return only the
+ * ones where home or away scored exactly 13. Used by the settlement preview
+ * to cross-reference the game_results DB entries against the live MLB API.
+ *
+ * Uses `cache: 'no-store'` — settlement is a high-stakes write; always fresh.
+ */
+export async function fetchWeeklyFinalScores(
+  start: string,
+  end: string
+): Promise<ThirteenRunGame[]> {
+  const url = `${MLB_API}/api/v1/schedule?sportId=1&startDate=${start}&endDate=${end}&gameType=R&hydrate=linescore,team`
+  let data: Record<string, unknown>
+  try {
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) return []
+    data = await res.json()
+  } catch {
+    return []
+  }
+
+  const results: ThirteenRunGame[] = []
+
+  for (const dateEntry of (data.dates as Record<string, unknown>[]) ?? []) {
+    const dateStr = dateEntry.date as string
+    for (const game of (dateEntry.games as Record<string, unknown>[]) ?? []) {
+      const status = (game.status as Record<string, unknown>)?.abstractGameState
+      if (status !== 'Final') continue
+
+      const teams = game.teams as Record<string, Record<string, unknown>>
+      const away = teams?.away
+      const home = teams?.home
+      const linescore = game.linescore as Record<string, unknown> | undefined
+      const lsTeams = linescore?.teams as Record<string, Record<string, unknown>> | undefined
+
+      const awayScore =
+        (away?.score as number | undefined) ??
+        (lsTeams?.away?.runs as number | undefined) ??
+        0
+      const homeScore =
+        (home?.score as number | undefined) ??
+        (lsTeams?.home?.runs as number | undefined) ??
+        0
+
+      if (awayScore !== 13 && homeScore !== 13) continue
+
+      const awayTeam = canonTeam(away?.team as MLBTeam)
+      const homeTeam = canonTeam(home?.team as MLBTeam)
+
+      const winningAbbrs: string[] = []
+      if (awayScore === 13) winningAbbrs.push(awayTeam.abbreviation)
+      if (homeScore === 13) winningAbbrs.push(homeTeam.abbreviation)
+
+      results.push({
+        gamePk: game.gamePk as number,
+        gameDate: dateStr,
+        awayAbbr: awayTeam.abbreviation,
+        awayName: awayTeam.teamName,
+        awayScore,
+        homeAbbr: homeTeam.abbreviation,
+        homeName: homeTeam.teamName,
+        homeScore,
+        winningAbbrs,
+      })
+    }
+  }
+
+  return results
+}
+
 export async function fetchScheduleForDate(date: string): Promise<MLBGame[]> {
   const url = `${MLB_API}/api/v1/schedule?sportId=1&date=${date}&gameType=R&hydrate=probablePitcher(note),linescore,team,venue`
 

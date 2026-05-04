@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import SettleWeekModal from './SettleWeekModal'
 
 interface Member {
   id: string
@@ -37,11 +38,12 @@ type PaymentStatus = 'unpaid' | '50%' | 'paid'
 export default function PaymentBoard({ members, payments, leagueSlug, payouts = [], year = new Date().getFullYear() }: Props) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [calculatingWeek, setCalculatingWeek] = useState<number | null>(null)
   const [weeks, setWeeks] = useState<number[]>([1, 2, 3, 4, 5])
   const [newWeek, setNewWeek] = useState(6)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [markingAllFor, setMarkingAllFor] = useState<string | null>(null)
+  /** Which week's settle modal is open (null = none). */
+  const [settlingWeek, setSettlingWeek] = useState<number | null>(null)
 
   const getPaymentStatus = (memberId: string, week: number): PaymentStatus => {
     const payment = payments.find((p) => p.member_id === memberId && p.week_number === week)
@@ -59,33 +61,6 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
   const unpaidMembers = members.filter((m) =>
     weeks.some((w) => getPaymentStatus(m.id, w) !== 'paid')
   )
-
-  const handleCalculatePayouts = async (week: number) => {
-    setCalculatingWeek(week)
-    try {
-      const res = await fetch(`/api/league/${leagueSlug}/calculate-payouts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ week_number: week, year }),
-      })
-      if (!res.ok) {
-        let msg = 'Failed to calculate payouts'
-        try {
-          const j = (await res.json()) as { error?: string }
-          if (j?.error) msg = j.error
-        } catch {
-          /* ignore */
-        }
-        throw new Error(msg)
-      }
-      router.refresh()
-    } catch (err) {
-      console.error(err)
-      alert(err instanceof Error ? err.message : 'Error calculating payouts')
-    } finally {
-      setCalculatingWeek(null)
-    }
-  }
 
   const handleCycleStatus = async (memberId: string, week: number) => {
     const current = getPaymentStatus(memberId, week)
@@ -143,6 +118,19 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
   }
 
   return (
+    <>
+    {settlingWeek !== null && (
+      <SettleWeekModal
+        week={settlingWeek}
+        year={year}
+        leagueSlug={leagueSlug}
+        onClose={() => setSettlingWeek(null)}
+        onSettled={() => {
+          setSettlingWeek(null)
+          router.refresh()
+        }}
+      />
+    )}
     <div className="space-y-4">
       {/* Header with collapse toggle */}
       <div className="flex items-center justify-between">
@@ -257,34 +245,31 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
             )}
           </div>
 
-          {/* Settle week — hits calculate-payouts API */}
+          {/* Settle week — opens preview modal */}
           <div className="mt-2 p-4 rounded-lg border border-[#39ff14]/30 bg-[#0a0a0a]">
             <h3 className="text-sm font-semibold text-[#39ff14] mb-1">Settle week</h3>
             <p className="text-xs text-gray-500 mb-3">
-              Locks the pot for that week: ledger entry, winner payouts (from 13-run games), rollover if nobody won,
-              and drought refresh. Safe to run again for the same week only if you need to repair data.
+              Preview the week's 13-run games (MLB Stats API + game_results), review winners and payouts,
+              then confirm to lock the pot. Settled weeks show a ✓ — click to re-settle if you need to repair.
             </p>
             <div className="flex gap-2 flex-wrap">
               {weeks.map((week) => {
                 const payoutStatus = getPayoutStatus(week)
+                const isSettled = !!payoutStatus?.calculated
                 return (
                   <button
                     key={week}
                     type="button"
-                    title={`Settle week ${week} for season ${year}`}
-                    onClick={() => handleCalculatePayouts(week)}
-                    disabled={isLoading || calculatingWeek === week}
+                    title={isSettled ? `Re-settle week ${week} (already settled)` : `Preview & settle week ${week}`}
+                    onClick={() => setSettlingWeek(week)}
+                    disabled={isLoading}
                     className={`px-3 py-2 rounded text-xs font-semibold transition-colors ${
-                      payoutStatus?.calculated
-                        ? 'bg-blue-900 text-blue-200 hover:bg-blue-800'
+                      isSettled
+                        ? 'bg-blue-900/60 text-blue-300 border border-blue-800 hover:bg-blue-900'
                         : 'bg-[#39ff14]/20 text-[#39ff14] border border-[#39ff14]/40 hover:bg-[#39ff14]/30'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
-                    {calculatingWeek === week
-                      ? `Settling… ${week}`
-                      : payoutStatus?.calculated
-                        ? `Again ${week} ✓`
-                        : `Settle week ${week}`}
+                    {isSettled ? `W${week} ✓` : `Preview & Settle W${week}`}
                   </button>
                 )
               })}
@@ -314,5 +299,6 @@ export default function PaymentBoard({ members, payments, leagueSlug, payouts = 
         </>
       )}
     </div>
+    </>
   )
 }

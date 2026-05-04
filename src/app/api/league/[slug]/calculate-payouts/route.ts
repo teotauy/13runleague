@@ -7,6 +7,7 @@ import {
   calculatePayouts,
   recordPayouts,
   getSeasonYear,
+  type OverrideGame,
 } from '@/lib/pot'
 import { recalculateStreaks } from '@/lib/streaks'
 
@@ -18,6 +19,12 @@ interface CalculatePayoutsRequest {
   week_number: number
   year: number
   manual?: boolean
+  /**
+   * When provided (from the settlement modal), skip the game_results DB query and
+   * use this explicit list of winning games instead. An empty array means no winners
+   * — the pot will roll over.
+   */
+  override_games?: OverrideGame[]
 }
 
 interface PayoutResponse {
@@ -87,8 +94,14 @@ export async function POST(
     // Calculate pot for this week (includes rollover)
     const potResult = await calculateWeeklyPot(leagueId, week_number, year, supabase)
 
-    // Get winners for this week
-    const winners = await getWinnersForWeek(leagueId, week_number, year, supabase)
+    // Get winners for this week — use commissioner override list if provided
+    const winners = await getWinnersForWeek(
+      leagueId,
+      week_number,
+      year,
+      supabase,
+      body.override_games !== undefined ? { overrideGames: body.override_games } : undefined
+    )
 
     // Calculate payouts — nets unpaid buy-in from each winner's gross share (Option A)
     const payouts = calculatePayouts(potResult.pot_amount, winners, potResult.weekly_buy_in)
