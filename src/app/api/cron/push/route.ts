@@ -92,7 +92,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Only run during game hours (12:00–23:59 ET)
+  // Only run during game hours (06:00–23:59 ET)
+  // Extended to 6 AM to catch overnight games (finishing 00:00–05:59 ET)
   const etHour = parseInt(
     new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/New_York',
@@ -101,7 +102,7 @@ export async function GET(request: Request) {
     }).format(new Date()),
     10
   )
-  if (etHour < 12) {
+  if (etHour < 6) {
     return NextResponse.json({ skipped: 'outside game hours' })
   }
 
