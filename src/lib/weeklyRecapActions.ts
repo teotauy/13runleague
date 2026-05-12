@@ -164,6 +164,7 @@ export type RecapEditorOptions = {
   commissionerHtml?: string | null
   showLeaguePot?: boolean
   showBranding?: boolean
+  subjectLine?: string | null
 }
 
 function mergeRecapProps(
@@ -215,7 +216,7 @@ export async function fetchRecapSuggestions(
 }
 
 export type WeeklyRecapPreviewResult =
-  | { ok: true; html: string; weekNumber: number; recipientCount: number }
+  | { ok: true; html: string; weekNumber: number; recipientCount: number; subjectLine: string }
   | { ok: false; error: string }
 
 export async function previewWeeklyRecapEmail(
@@ -235,12 +236,15 @@ export async function previewWeeklyRecapEmail(
     return { ok: false, error: 'Unauthorized' }
   }
 
-  const html = await render(WeeklyRecap(mergeRecapProps(data, options)))
+  const mergedProps = mergeRecapProps(data, options)
+  const html = await render(WeeklyRecap(mergedProps))
+  const subjectLine = options?.subjectLine?.trim() || `13 Run League — Week ${data.weekNumber} Recap`
   return {
     ok: true,
     html,
     weekNumber: data.weekNumber,
     recipientCount: data.emails.length,
+    subjectLine,
   }
 }
 
@@ -271,12 +275,13 @@ export async function sendWeeklyRecapEmail(
 
   const html = await render(WeeklyRecap(mergeRecapProps(data, options)))
   const resend = new Resend(process.env.RESEND_API_KEY)
+  const subjectLine = options?.subjectLine?.trim() || `13 Run League — Week ${data.weekNumber} Recap`
 
   const { error } = await resend.emails.send({
     from: '13 Run League <recap@13runleague.com>',
     to: ['recap@13runleague.com'],
     bcc: data.emails,
-    subject: `13 Run League — Week ${data.weekNumber} Recap`,
+    subject: subjectLine,
     html,
     headers: {
       'List-Unsubscribe': '<mailto:recap@13runleague.com?subject=unsubscribe>',

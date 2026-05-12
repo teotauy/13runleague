@@ -25,8 +25,10 @@ export default function WeeklyRecapSection({ leagueSlug, recapCapabilityToken }:
 
   const [showLeaguePot, setShowLeaguePot] = useState(true)
   const [showBranding, setShowBranding] = useState(true)
+  const [subjectLine, setSubjectLine] = useState('')
 
   const [previewHtml, setPreviewHtml] = useState<string | null>(null)
+  const [previewSubjectLine, setPreviewSubjectLine] = useState<string | null>(null)
   const [previewStatus, setPreviewStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -36,8 +38,9 @@ export default function WeeklyRecapSection({ leagueSlug, recapCapabilityToken }:
       commissionerHtml: editorRef.current?.innerHTML ?? '',
       showLeaguePot,
       showBranding,
+      subjectLine,
     }
-  }, [showLeaguePot, showBranding])
+  }, [showLeaguePot, showBranding, subjectLine])
 
   useEffect(() => {
     let cancelled = false
@@ -112,6 +115,7 @@ export default function WeeklyRecapSection({ leagueSlug, recapCapabilityToken }:
       const r = await previewWeeklyRecapEmail(leagueSlug, recapCapabilityToken, editorOptions())
       if (!r.ok) throw new Error(r.error)
       setPreviewHtml(r.html)
+      setPreviewSubjectLine(r.subjectLine)
       setWeekNumber(r.weekNumber)
       setRecipientCount(r.recipientCount)
       setPreviewStatus('ready')
@@ -166,6 +170,17 @@ export default function WeeklyRecapSection({ leagueSlug, recapCapabilityToken }:
             />
             Include 13 header &amp; footer
           </label>
+        </div>
+
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Subject line</label>
+          <input
+            type="text"
+            value={subjectLine}
+            onChange={(e) => setSubjectLine(e.target.value)}
+            placeholder={`13 Run League — Week ${weekNumber ?? '?'} Recap`}
+            className="w-full px-3 py-1.5 rounded border border-gray-700 bg-[#0a0a0a] text-gray-200 text-sm outline-none focus:border-[#39ff14]/50"
+          />
         </div>
 
         <div className="text-sm text-gray-400">
@@ -228,8 +243,15 @@ export default function WeeklyRecapSection({ leagueSlug, recapCapabilityToken }:
 
         {previewHtml && (
           <div className="border border-gray-800 rounded overflow-hidden">
-            <div className="bg-[#111] text-xs text-gray-500 px-3 py-1.5 border-b border-gray-800 font-mono">
-              Email preview — Week {weekNumber} · {recipientCount} recipients
+            <div className="bg-[#111] border-b border-gray-800 p-3 space-y-1.5">
+              <div className="text-xs text-gray-500 font-mono">
+                Email preview — Week {weekNumber} · {recipientCount} recipients
+              </div>
+              {previewSubjectLine && (
+                <div className="text-xs text-gray-400 font-mono">
+                  Subject: <span className="text-gray-200">{previewSubjectLine}</span>
+                </div>
+              )}
             </div>
             <iframe
               srcDoc={previewHtml}
