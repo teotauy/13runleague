@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type ClipboardEvent } from 'react'
 import {
   previewWeeklyRecapEmail,
   sendWeeklyRecapEmail,
@@ -16,6 +16,7 @@ interface Props {
 
 export default function WeeklyRecapSection({ leagueSlug, recapCapabilityToken }: Props) {
   const editorRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [blocks, setBlocks] = useState<RecapSuggestionBlock[]>([])
   const [ideasLoading, setIdeasLoading] = useState(true)
   const [ideasError, setIdeasError] = useState('')
@@ -31,6 +32,7 @@ export default function WeeklyRecapSection({ leagueSlug, recapCapabilityToken }:
   const [previewSubjectLine, setPreviewSubjectLine] = useState<string | null>(null)
   const [previewStatus, setPreviewStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
   const editorOptions = useCallback((): RecapEditorOptions => {
@@ -101,6 +103,42 @@ export default function WeeklyRecapSection({ leagueSlug, recapCapabilityToken }:
       'insertHTML',
       `<p><img src="${url.replace(/"/g, '&quot;')}" alt="${escapeAttr(alt)}" style="max-width:100%;height:auto;border-radius:6px" /></p>`
     )
+  }
+
+  async function uploadImage(file: File) {
+    setUploadStatus('uploading')
+    setErrorMsg('')
+    try {
+      const form = new FormData()
+      form.set('file', file)
+      const res = await fetch(`/api/league/${leagueSlug}/recap-images`, {
+        method: 'POST',
+        body: form,
+      })
+      const data = (await res.json()) as { url?: string; error?: string }
+      if (!res.ok || !data.url) throw new Error(data.error ?? 'Image upload failed')
+      runCmd(
+        'insertHTML',
+        `<p><img src="${data.url.replace(/"/g, '&quot;')}" alt="${escapeAttr(file.name)}" style="max-width:100%;height:auto;border-radius:6px" /></p>`
+      )
+      setUploadStatus('idle')
+    } catch (e) {
+      setUploadStatus('error')
+      setErrorMsg(e instanceof Error ? e.message : 'Image upload failed')
+    }
+  }
+
+  function handleFilePicked(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (file) void uploadImage(file)
+  }
+
+  function handlePaste(e: ClipboardEvent<HTMLDivElement>) {
+    const image = [...e.clipboardData.files].find((file) => file.type.startsWith('image/'))
+    if (!image) return
+    e.preventDefault()
+    void uploadImage(image)
   }
 
   function insertBlock(html: string) {
@@ -196,13 +234,22 @@ export default function WeeklyRecapSection({ leagueSlug, recapCapabilityToken }:
           <ToolbarBtn onClick={() => runCmd('insertOrderedList')} label="1. List" />
           <ToolbarBtn onClick={promptLink} label="Link" />
           <ToolbarBtn onClick={promptImage} label="Image" />
+          <ToolbarBtn onClick={() => fileInputRef.current?.click()} label={uploadStatus === 'uploading' ? 'Uploading…' : 'Upload image'} />
           <ToolbarBtn onClick={() => runCmd('removeFormat')} label="Clear fmt" />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            onChange={handleFilePicked}
+            className="hidden"
+          />
         </div>
 
         <div
           ref={editorRef}
           contentEditable
           suppressContentEditableWarning
+          onPaste={handlePaste}
           className="min-h-[280px] px-3 py-3 rounded border border-gray-700 bg-[#0a0a0a] text-gray-200 text-sm leading-relaxed outline-none focus:border-[#39ff14]/50 prose prose-invert max-w-none [&_a]:text-[#39ff14]"
         />
 
@@ -237,8 +284,9 @@ export default function WeeklyRecapSection({ leagueSlug, recapCapabilityToken }:
         )}
 
         <p className="text-xs text-gray-400">
-          Preview runs the same sanitizer as send. Most inboxes ignore CSS animation — use an animated GIF if you
-          need motion. Read every pixel before you send.
+          Preview runs the same sanitizer as send. Paste or upload screenshots here to turn them into public HTTPS
+          image URLs before sending. Most inboxes ignore CSS animation — use an animated GIF if you need motion.
+          Read every pixel before you send.
         </p>
 
         {previewHtml && (
