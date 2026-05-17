@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { getTeamBlurbs } from '@/lib/teamBlurbs'
+import { getSeasonYear } from '@/lib/pot'
 
 function isAdmin(value: string | undefined) {
   return value === 'admin' || value === 'authenticated'
@@ -122,12 +123,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
 
   const { data: league, error: leagueError } = await supabase
     .from('leagues')
-    .select('id, name')
+    .select('id, name, rules')
     .eq('slug', slug)
     .single()
 
   if (leagueError || !league) {
     return NextResponse.json({ error: 'League not found' }, { status: 404 })
+  }
+
+  const seasonYear = getSeasonYear(new Date())
+  const rules = (league.rules ?? {}) as {
+    seasonEmails?: Record<string, { sentAt?: string | null; sentCount?: number | null }>
+  }
+  if (rules.seasonEmails?.[String(seasonYear)]?.sentAt) {
+    return NextResponse.json(
+      { sent: 0, failed: 0, errors: [`Season emails were already sent for ${seasonYear}.`] },
+      { status: 409 }
+    )
   }
 
   let query = supabase
@@ -197,6 +209,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       failed++
       errors.push(`${member.name}: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
+  }
+
+  if (sent > 0 && failed === 0) {
+    await supabase
+      .from('leagues')
+      .update({
+        rules: {
+          ...rules,
+          seasonEmails: {
+            ...(rules.seasonEmails ?? {}),
+            [String(seasonYear)]: {
+              sentAt: new Date().toISOString(),
+              sentCount: sent,
+            },
+          },
+        },
+      })
+      .eq('id', league.id)
   }
 
   return NextResponse.json({ sent, failed, errors })

@@ -77,6 +77,7 @@ Product backlog and seasonal notes: **`ROADMAP.md`**. Agent rules (email/SMS, co
 - Playing weeks run Sunday through Saturday. Admin settlement for a week opens the following **Sunday at 6:00 AM ET**, matching the app's baseball-day cutoff for late games.
 - Re-settling an already-settled week is supported; the payout ledger updates by league/year/week so repair settlements do not create duplicate ledger rows.
 - Weekly recap previews include a top winner banner when the settled week has payouts. Multi-winner weeks list every winner in the banner and keep the detailed payout breakdown below it.
+- Season intro emails are one-time per league season. After a successful send, the admin action is hidden and the API rejects repeat sends for that season.
 
 ---
 

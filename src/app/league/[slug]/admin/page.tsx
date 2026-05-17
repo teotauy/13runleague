@@ -36,13 +36,18 @@ export default async function AdminDashboard({ params }: Props) {
 
   const { data: league, error } = await supabase
     .from('leagues')
-    .select('id, name, slug, password_hash, weekly_buy_in')
+    .select('id, name, slug, password_hash, weekly_buy_in, rules')
     .eq('slug', slug)
     .single()
 
   if (error || !league) notFound()
 
   const recapCapabilityToken = signRecapCapability(league.id, slug)
+  const seasonYear = getSeasonYear(new Date())
+  const leagueRules = (league.rules ?? {}) as {
+    seasonEmails?: Record<string, { sentAt?: string | null }>
+  }
+  const seasonEmailsSentAt = leagueRules.seasonEmails?.[String(seasonYear)]?.sentAt ?? null
 
   // Optional query — member_password_hash column added in migration 20260305010000
   // Gracefully handles the case where the migration hasn't run yet
@@ -87,7 +92,6 @@ export default async function AdminDashboard({ params }: Props) {
 
   const today = new Date()
   const currentWeekNumber = getWeekNumber(today)
-  const seasonYear = getSeasonYear(today)
   const etParts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
     weekday: 'short',
@@ -159,11 +163,13 @@ export default async function AdminDashboard({ params }: Props) {
 
           {/* Quick Actions */}
           <div className="flex gap-3 mt-4">
-            <SendReceiptModal
-              leagueSlug={slug}
-              memberCount={membersWithActive.filter((m) => m.email && m.is_active !== false).length}
-              members={membersWithActive.map((m) => ({ id: m.id, name: m.name }))}
-            />
+            {!seasonEmailsSentAt && (
+              <SendReceiptModal
+                leagueSlug={slug}
+                memberCount={membersWithActive.filter((m) => m.email && m.is_active !== false).length}
+                members={membersWithActive.map((m) => ({ id: m.id, name: m.name }))}
+              />
+            )}
           </div>
           {/* Nav */}
           <div className="flex gap-4 mt-3 text-xs text-gray-400 font-mono border-t border-gray-900 pt-3 flex-wrap">
