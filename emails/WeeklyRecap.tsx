@@ -79,12 +79,48 @@ export default function WeeklyRecap({
 }: WeeklyRecapProps) {
   const hasWinners = (weekResults?.winners.length ?? 0) > 0
   const isRollover = weekResults && !hasWinners
+  const winnerNames = weekResults?.winners.map((winner) => winner.memberName).join(', ') ?? ''
 
   return (
     <Html>
       <Head />
       <Body style={{ backgroundColor: '#0a0a0a', fontFamily: 'monospace', margin: 0, padding: 0 }}>
         <Container style={{ maxWidth: '600px', margin: '0 auto', padding: '32px 16px', backgroundColor: '#0a0a0a' }}>
+
+          {/* Top winner banner */}
+          {weekResults && hasWinners && (
+            <Section style={{
+              backgroundColor: '#061a06',
+              border: '1px solid #39ff14',
+              borderRadius: '10px',
+              padding: '16px 18px',
+              marginBottom: '24px',
+            }}>
+              <Text style={{
+                color: '#39ff14',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                margin: '0 0 8px',
+              }}>
+                Week {weekNumber} 13-run winner{weekResults.winners.length > 1 ? 's' : ''}
+              </Text>
+              <Heading as="h1" style={{
+                color: '#ffffff',
+                fontSize: '24px',
+                lineHeight: '1.25',
+                margin: '0 0 8px',
+              }}>
+                {winnerNames}
+              </Heading>
+              <Text style={{ color: '#bbf7d0', fontSize: '14px', margin: '0' }}>
+                {weekResults.winners
+                  .map((winner) => `${winner.team} · $${winner.payoutAmount.toLocaleString()}`)
+                  .join('  |  ')}
+              </Text>
+            </Section>
+          )}
 
           {/* Header */}
           {showBranding && (
@@ -98,13 +134,13 @@ export default function WeeklyRecap({
             </Section>
           )}
 
-          {/* ── Winner card ─────────────────────────────────────── */}
+          {/* ── Winner details ───────────────────────────────────── */}
           {weekResults && hasWinners && (
             <Section style={{
               backgroundColor: '#0a1a0a',
-              border: '1px solid #166534',
+              border: '1px solid #14532d',
               borderRadius: '8px',
-              padding: '20px',
+              padding: '16px',
               marginBottom: '28px',
             }}>
               <Text style={{
@@ -113,9 +149,9 @@ export default function WeeklyRecap({
                 fontWeight: 'bold',
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
-                margin: '0 0 16px',
+                margin: '0 0 14px',
               }}>
-                🏆 Week {weekNumber} — Winner{weekResults.winners.length > 1 ? 's' : ''}
+                Payout detail
               </Text>
 
               {weekResults.winners.map((w, i) => (

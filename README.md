@@ -72,6 +72,14 @@ Product backlog and seasonal notes: **`ROADMAP.md`**. Agent rules (email/SMS, co
 
 ---
 
+## Admin Settlement And Recap Notes
+
+- Playing weeks run Sunday through Saturday. Admin settlement for a week opens the following **Sunday at 6:00 AM ET**, matching the app's baseball-day cutoff for late games.
+- Re-settling an already-settled week is supported; the payout ledger updates by league/year/week so repair settlements do not create duplicate ledger rows.
+- Weekly recap previews include a top winner banner when the settled week has payouts. Multi-winner weeks list every winner in the banner and keep the detailed payout breakdown below it.
+
+---
+
 ## Learn More (Next.js)
 
 This project started from [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app). See [Next.js documentation](https://nextjs.org/docs) and [deployment](https://nextjs.org/docs/app/building-your-application/deploying).

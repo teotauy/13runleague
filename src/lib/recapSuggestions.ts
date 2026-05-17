@@ -102,24 +102,31 @@ export async function buildRecapSuggestions(
     )
 
   const streakByMember = new Map((streakRows ?? []).map((r) => [r.member_id, r.current_streak ?? 0]))
-  let droughtLeader: { name: string; team: string; weeks: number } | null = null
+  let droughtWeeks = 0
+  let droughtLeaders: Array<{ name: string; team: string; weeks: number }> = []
   for (const m of active) {
     const w = streakByMember.get(m.id) ?? 0
-    if (!droughtLeader || w > droughtLeader.weeks) {
-      droughtLeader = { name: m.name, team: m.assigned_team.toUpperCase(), weeks: w }
+    if (w > droughtWeeks) {
+      droughtWeeks = w
+      droughtLeaders = [{ name: m.name, team: m.assigned_team.toUpperCase(), weeks: w }]
+    } else if (w === droughtWeeks && w > 0) {
+      droughtLeaders.push({ name: m.name, team: m.assigned_team.toUpperCase(), weeks: w })
     }
   }
 
-  if (droughtLeader && droughtLeader.weeks > 0) {
+  if (droughtWeeks > 0 && droughtLeaders.length > 0) {
+    const leaderText = droughtLeaders
+      .map((leader) => `${leader.name} (${leader.team})`)
+      .join(droughtLeaders.length === 2 ? ' and ' : ', ')
     const lines = [
-      `${droughtLeader.name} (${droughtLeader.team}) is riding a ${droughtLeader.weeks}-week pot drought — longest in the league right now.`,
+      `${leaderText} ${droughtLeaders.length === 1 ? 'is' : 'are'} riding a ${droughtWeeks}-week pot drought — longest in the league right now.`,
       `current_streak here is “weeks since last 13-run payout,” not MLB wins/losses.`,
     ]
     blocks.push({
       id: 'drought',
       title: 'Longest active pot drought',
       bodyLines: lines,
-      insertHtml: `<p><strong>Pot drought watch:</strong> ${droughtLeader.name} (${droughtLeader.team}) — <strong>${droughtLeader.weeks} weeks</strong> since a 13-run payday. Send good vibes (or trash talk).</p>`,
+      insertHtml: `<p><strong>Pot drought watch:</strong> ${leaderText} — <strong>${droughtWeeks} weeks</strong> since a 13-run payday. Send good vibes (or trash talk).</p>`,
     })
   }
 
@@ -176,35 +183,36 @@ export async function buildRecapSuggestions(
     mm.set(mo, (mm.get(mo) ?? 0) + 1)
   }
 
-  const peakLines: string[] = []
-  const peakHtmlParts: string[] = []
-  for (const m of active) {
-    const t = normalizeTeamAbbr(m.assigned_team.toUpperCase())
-    const mm = monthByTeam.get(t)
-    if (!mm || mm.size === 0) continue
-    let bestM = 0
-    let bestC = 0
-    for (const [mo, c] of mm) {
-      if (c > bestC) {
-        bestC = c
-        bestM = mo
-      }
-    }
-    if (bestC < 2) continue
-    const label = MONTH_NAMES[bestM] ?? `Month ${bestM + 1}`
-    peakLines.push(
-      `${m.assigned_team.toUpperCase()}: most franchise 13-run games in ${label} (historical sample) — ${bestC} games.`
-    )
-    peakHtmlParts.push(
-      `<li><strong>${escapeHtml(m.assigned_team.toUpperCase())}</strong>: peak month <strong>${label}</strong> (${bestC} historical 13-run wins logged)</li>`
-    )
+  const currentMonth = today.getMonth()
+  const currentMonthLabel = MONTH_NAMES[currentMonth] ?? `Month ${currentMonth + 1}`
+  const monthRows: Array<{ team: string; count: number }> = []
+  for (const t of teamSet) {
+    const canonicalTeam = normalizeTeamAbbr(t)
+    const count = monthByTeam.get(canonicalTeam)?.get(currentMonth) ?? 0
+    if (count < 2) continue
+    monthRows.push({ team: t, count })
   }
-  if (peakLines.length > 0) {
+  monthRows.sort((a, b) => b.count - a.count || a.team.localeCompare(b.team))
+
+  if (monthRows.length > 0) {
+    const top = monthRows.slice(0, 10)
+    const peakLines = top.map(
+      (row) =>
+        `${row.team}: ${row.count} historical franchise 13-run game${row.count === 1 ? '' : 's'} in ${currentMonthLabel}.`
+    )
     blocks.push({
       id: 'peak-month',
-      title: 'Peak calendar months (historical 13s)',
-      bodyLines: peakLines.slice(0, 10),
-      insertHtml: `<p><strong>Historical “hot months”</strong> for your teams (Retrosheet-era 13-run wins):</p><ul>${peakHtmlParts.slice(0, 10).join('')}</ul>`,
+      title: `${currentMonthLabel} historical 13s`,
+      bodyLines: [
+        `These counts are all-time franchise games in the database where that team scored exactly 13 runs during ${currentMonthLabel}.`,
+        ...peakLines,
+      ],
+      insertHtml: `<p><strong>${currentMonthLabel} 13-run history</strong> for your teams: all-time franchise games in the database where the team scored exactly 13 runs in ${currentMonthLabel}.</p><ul>${top
+        .map(
+          (row) =>
+            `<li><strong>${escapeHtml(row.team)}</strong>: <strong>${row.count}</strong> historical ${currentMonthLabel} 13-run game${row.count === 1 ? '' : 's'}.</li>`
+        )
+        .join('')}</ul>`,
     })
   }
 

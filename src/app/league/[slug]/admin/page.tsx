@@ -88,6 +88,16 @@ export default async function AdminDashboard({ params }: Props) {
   const today = new Date()
   const currentWeekNumber = getWeekNumber(today)
   const seasonYear = getSeasonYear(today)
+  const etParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    weekday: 'short',
+    hour: '2-digit',
+    hour12: false,
+  }).formatToParts(today)
+  const etWeekday = etParts.find((part) => part.type === 'weekday')?.value
+  const etHour = parseInt(etParts.find((part) => part.type === 'hour')?.value ?? '0', 10)
+  const settlementOpenThroughWeek =
+    currentWeekNumber - (etWeekday === 'Sun' && etHour < 6 ? 2 : 1)
 
   const memberIds = (members ?? []).map((m) => m.id)
   let weeklyPaymentsRows: {
@@ -195,6 +205,7 @@ export default async function AdminDashboard({ params }: Props) {
             payouts={payoutSummaries}
             year={seasonYear}
             currentWeek={currentWeekNumber}
+            settlementOpenThroughWeek={Math.max(0, settlementOpenThroughWeek)}
           />
         </section>
 
@@ -239,7 +250,7 @@ export default async function AdminDashboard({ params }: Props) {
         <section>
           <h2 className="text-xl font-bold mb-1">Streaks &amp; Droughts</h2>
           <p className="text-xs text-gray-400 mb-4">
-            Automatically recalculated whenever payouts are settled. Use this to backfill or repair the leaderboard's Drought column.
+            Automatically recalculated whenever payouts are settled. Use this to backfill or repair the leaderboard&apos;s Drought column.
           </p>
           <RecalculateStreaksButton leagueSlug={slug} year={seasonYear} />
         </section>

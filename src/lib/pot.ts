@@ -1,4 +1,3 @@
-import { createClient } from './supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { franchiseAbbrs, normalizeTeamAbbr } from './teamColors'
 
@@ -411,6 +410,8 @@ export async function recordPayouts(
       payout_per_share:
         winners.length > 0 ? Math.floor(pot_amount / winners.length) : 0,
       calculated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'league_id,year,week_number',
     })
 
   if (ledgerError) {

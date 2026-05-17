@@ -33,6 +33,8 @@ interface Props {
   year?: number
   /** Current playing week — used to auto-initialize the visible week range. */
   currentWeek?: number
+  /** Latest week that is safe to settle. Opens after the week has fully ended. */
+  settlementOpenThroughWeek?: number
 }
 
 type PaymentStatus = 'unpaid' | '50%' | 'paid'
@@ -44,6 +46,7 @@ export default function PaymentBoard({
   payouts = [],
   year = new Date().getFullYear(),
   currentWeek = 5,
+  settlementOpenThroughWeek = currentWeek - 1,
 }: Props) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
@@ -242,27 +245,35 @@ export default function PaymentBoard({
           <div className="mt-2 p-4 rounded-lg border border-[#39ff14]/30 bg-[#0a0a0a]">
             <h3 className="text-sm font-semibold text-[#39ff14] mb-1">Settle week</h3>
             <p className="text-xs text-gray-500 mb-3">
-              Preview the week's 13-run games (MLB Stats API + game_results), review winners and payouts,
+              Preview the week&apos;s 13-run games (MLB Stats API + game_results), review winners and payouts,
               then confirm to lock the pot. Settled weeks show a ✓ — click to re-settle if you need to repair.
             </p>
             <div className="flex gap-2 flex-wrap items-center">
               {weeks.map((week) => {
                 const payoutStatus = getPayoutStatus(week)
                 const isSettled = !!payoutStatus?.calculated
+                const canSettle = week <= settlementOpenThroughWeek
+                const title = !canSettle
+                  ? `Week ${week} is still in progress. Settlement opens Sunday at 6am ET.`
+                  : isSettled
+                    ? `Re-settle week ${week} (already settled)`
+                    : `Preview & settle week ${week}`
                 return (
                   <button
                     key={week}
                     type="button"
-                    title={isSettled ? `Re-settle week ${week} (already settled)` : `Preview & settle week ${week}`}
+                    title={title}
                     onClick={() => setSettlingWeek(week)}
-                    disabled={isLoading}
+                    disabled={isLoading || !canSettle}
                     className={`px-3 py-2 rounded text-xs font-semibold transition-colors ${
-                      isSettled
+                      !canSettle
+                        ? 'bg-gray-900/60 text-gray-600 border border-gray-800 cursor-not-allowed'
+                        : isSettled
                         ? 'bg-blue-900/60 text-blue-300 border border-blue-800 hover:bg-blue-900'
                         : 'bg-[#39ff14]/20 text-[#39ff14] border border-[#39ff14]/40 hover:bg-[#39ff14]/30'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
-                    {isSettled ? `W${week} ✓` : `Preview & Settle W${week}`}
+                    {!canSettle ? `W${week} locked` : isSettled ? `W${week} ✓` : `Preview & Settle W${week}`}
                   </button>
                 )
               })}
