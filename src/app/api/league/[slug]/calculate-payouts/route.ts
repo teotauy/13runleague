@@ -6,7 +6,6 @@ import {
   getWinnersForWeek,
   calculatePayouts,
   recordPayouts,
-  getSeasonYear,
   type OverrideGame,
 } from '@/lib/pot'
 import { recalculateStreaks } from '@/lib/streaks'
@@ -40,6 +39,7 @@ interface PayoutResponse {
     member_name: string
     payout_amount: number
     deducted_buy_in?: number
+    net_cash?: number
     team: string
   }>
   total_distributed: number
@@ -141,6 +141,7 @@ export async function POST(
         member_name: p.member_name,
         payout_amount: p.payout_amount,
         ...(p.deducted_buy_in > 0 && { deducted_buy_in: p.deducted_buy_in }),
+        ...(p.deducted_buy_in > 0 && { net_cash: Math.max(0, p.payout_amount - p.deducted_buy_in) }),
         team: p.team,
       })),
       total_distributed: totalDistributed,

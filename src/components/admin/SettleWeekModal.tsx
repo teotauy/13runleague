@@ -13,12 +13,14 @@ interface Props {
 }
 
 type Phase = 'loading' | 'preview' | 'confirming' | 'success' | 'error'
+const SEASON_WEEKS = 28
 
-/** How much buy-in to deduct for a winner — mirrors pot.ts logic, client-side for live preview. */
+/** How much season buy-in to deduct for a winner — mirrors pot.ts logic, client-side for live preview. */
 function buyInOwed(status: string | null | undefined, weekly_buy_in: number): number {
+  const seasonBuyIn = weekly_buy_in * SEASON_WEEKS
   if (status === 'paid') return 0
-  if (status === '50%') return Math.round(weekly_buy_in / 2)
-  return weekly_buy_in
+  if (status === '50%') return Math.round(seasonBuyIn / 2)
+  return seasonBuyIn
 }
 
 function fmtDate(iso: string) {

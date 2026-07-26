@@ -28,7 +28,7 @@ interface LeagueSummary {
 export interface WeekWinnerResult {
   memberName: string
   team: string
-  /** Net payout (after any buy-in deduction). */
+  /** Gross/stat payout. Buy-in deductions are handled outside recap/stat displays. */
   payoutAmount: number
   /** How many shares this member won (≥1 if their team scored 13 multiple times). */
   shares: number

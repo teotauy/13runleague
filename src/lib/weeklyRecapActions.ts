@@ -7,7 +7,6 @@ import WeeklyRecap from '../../emails/WeeklyRecap'
 import {
   getWeekNumber,
   getSeasonYear,
-  getEffectiveRolloverPotForDashboard,
   getWeekCalendarBoundsForSeasonYear,
 } from '@/lib/pot'
 import type { WeekResults } from '../../emails/WeeklyRecap'
@@ -61,13 +60,6 @@ async function buildRecapData(slug: string) {
   const recapAnchor = new Date(today.getTime() - daysToLastSat * 24 * 60 * 60 * 1000)
   const weekNumber = getWeekNumber(recapAnchor)
   const seasonYear = getSeasonYear(recapAnchor)
-  const rolloverPot = await getEffectiveRolloverPotForDashboard(
-    league.id,
-    league.pot_total,
-    seasonYear,
-    weekNumber,
-    supabase
-  )
 
   // ── Week results: settled payouts + 13-run games ──────────────────────────
   const { start: weekStart, end: weekEnd } =
@@ -151,7 +143,9 @@ async function buildRecapData(slug: string) {
     upcomingGames: [] as { away: string; home: string; date: string; probability: number }[],
     leagues: [{
       leagueName: league.name,
-      potTotal: rolloverPot + weeklyPot,
+      // The recap pot block should show the current post-settlement pot, while
+      // the winner banner above shows the completed week's settled payout.
+      potTotal: (league.pot_total ?? 0) + weeklyPot,
       weeklyBuyIn: league.weekly_buy_in ?? 10,
     }],
     weekResults,

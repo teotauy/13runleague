@@ -12,6 +12,7 @@ export interface Winner {
 
 export interface PayoutRecord {
   member_id: string
+  /** Gross/stat payout before any cash deduction. */
   payout_amount: number
   /** Buy-in amount deducted from the raw split share (0 if winner was paid). */
   deducted_buy_in: number
@@ -22,6 +23,7 @@ export interface PayoutRecord {
 }
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
+const SEASON_WEEKS = 28
 
 /** Sunday 00:00 local on or before the given calendar day (for Sunday-based playing weeks). */
 function sundayOnOrBefore(d: Date): Date {
@@ -296,20 +298,20 @@ export async function getWinnersForWeek(
 }
 
 /**
- * How much of the weekly buy-in to deduct from a winner's gross share.
- * paid → 0, 50% paid → half, unpaid/null → full buy-in.
+ * How much season buy-in to deduct from a winner's gross share.
+ * paid → 0, 50% paid → half-season balance, unpaid/null → full-season balance.
  */
 function buyInOwed(status: string | null | undefined, weekly_buy_in: number): number {
+  const seasonBuyIn = weekly_buy_in * SEASON_WEEKS
   if (status === 'paid') return 0
-  if (status === '50%') return Math.round(weekly_buy_in / 2)
-  return weekly_buy_in
+  if (status === '50%') return Math.round(seasonBuyIn / 2)
+  return seasonBuyIn
 }
 
 /**
  * Calculate payout amounts based on pot and winners.
- * Splits pot equally among all winners (shares), then nets any unpaid buy-in from
- * that member's FIRST share only — the buy-in is a weekly fee, not a per-share fee.
- * The gross pot total is unchanged; this only reduces the cash-in-hand for non-payers.
+ * Splits pot equally among all winners (shares). `payout_amount` stays gross for
+ * tables/stats; `deducted_buy_in` is the cash adjustment for what the winner receives.
  */
 export function calculatePayouts(
   pot_amount: number,
@@ -333,7 +335,7 @@ export function calculatePayouts(
     }
     return {
       member_id: winner.member_id,
-      payout_amount: Math.max(0, payoutPerShare - deducted_buy_in),
+      payout_amount: payoutPerShare,
       deducted_buy_in,
       shares_count: winners.length,
       member_name: winner.member_name,
