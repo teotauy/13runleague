@@ -1,8 +1,12 @@
 /**
  * Vercel Cron: /api/cron/push
- * Runs every 5 minutes during game hours (noon–midnight ET).
- * Checks today's final MLB games; fires push notifications to all subscribers
+ * Runs every 5 minutes.
+ * Checks final MLB games; fires push notifications to all subscribers
  * when any team scores exactly 13 runs. Deduplicates via push_notifications_sent.
+ *
+ * Late West Coast finales often end 12–3 AM ET. We keep scanning overnight
+ * (baseballToday stays on the prior slate until 6 AM ET) and also backfill the
+ * previous slate after rollover so a missed 13-run final is not lost.
  */
 
 import { NextResponse } from 'next/server'
@@ -39,6 +43,7 @@ function ensureVapid() {
 
 interface ScheduleGame {
   gamePk: number
+  gameDate: string
   status:  { abstractGameState: string }
   teams: {
     away: { team: { abbreviation: string; name: string }; score?: number }
@@ -46,8 +51,14 @@ interface ScheduleGame {
   }
 }
 
-async function fetchTodayFinalGames(): Promise<ScheduleGame[]> {
-  const date = baseballToday()
+function previousDateString(yyyyMmDd: string): string {
+  const [y, m, d] = yyyyMmDd.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  dt.setUTCDate(dt.getUTCDate() - 1)
+  return dt.toISOString().slice(0, 10)
+}
+
+async function fetchFinalGamesForDate(date: string): Promise<ScheduleGame[]> {
   const url  = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}&gameType=R&hydrate=linescore,team`
   const res  = await fetch(url, { cache: 'no-store' })
   if (!res.ok) return []
@@ -62,6 +73,7 @@ async function fetchTodayFinalGames(): Promise<ScheduleGame[]> {
       const homeAbbr = normalizeTeamAbbr(String(g.teams.home.team.abbreviation).toUpperCase())
       games.push({
         gamePk: g.gamePk,
+        gameDate: date,
         status: g.status,
         teams: {
           away: {
@@ -80,6 +92,17 @@ async function fetchTodayFinalGames(): Promise<ScheduleGame[]> {
   return games
 }
 
+async function fetchTrackedFinalGames(): Promise<ScheduleGame[]> {
+  const today = baseballToday()
+  // Always include the prior slate so overnight West Coast finales are not
+  // dropped when baseballToday rolls forward at 6 AM ET.
+  const dates = [today, previousDateString(today)]
+  const batches = await Promise.all(dates.map((d) => fetchFinalGamesForDate(d)))
+  const byPk = new Map<number, ScheduleGame>()
+  for (const game of batches.flat()) byPk.set(game.gamePk, game)
+  return [...byPk.values()]
+}
+
 // ---------------------------------------------------------------------------
 // Route handler
 // ---------------------------------------------------------------------------
@@ -92,20 +115,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Only run during game hours (06:00–23:59 ET)
-  // Extended to 6 AM to catch overnight games (finishing 00:00–05:59 ET)
-  const etHour = parseInt(
-    new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/New_York',
-      hour: '2-digit',
-      hour12: false,
-    }).format(new Date()),
-    10
-  )
-  if (etHour < 6) {
-    return NextResponse.json({ skipped: 'outside game hours' })
-  }
-
   try {
     ensureVapid()
   } catch (err) {
@@ -115,15 +124,14 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient()
 
-  // 1. Fetch today's final games
-  const games = await fetchTodayFinalGames()
+  // 1. Fetch finals for baseball-today + prior slate (overnight backfill)
+  const games = await fetchTrackedFinalGames()
   if (games.length === 0) {
     return NextResponse.json({ sent: 0, message: 'No final games' })
   }
 
   // 1b. Persist all 13-run finals to game_results so the celebration banner,
   //     winner detection, and payout settlement all work automatically.
-  const gameDate = baseballToday()
   const thirteenGameRows = games
     .filter((g) => g.teams.away.score === 13 || g.teams.home.score === 13)
     .map((g) => {
@@ -132,7 +140,7 @@ export async function GET(request: Request) {
       if (g.teams.home.score === 13) winningTeams.push(g.teams.home.team.abbreviation)
       return {
         game_pk:      String(g.gamePk),
-        game_date:    gameDate,
+        game_date:    g.gameDate,
         home_team:    g.teams.home.team.abbreviation,
         away_team:    g.teams.away.team.abbreviation,
         home_score:   g.teams.home.score ?? 0,
@@ -182,7 +190,6 @@ export async function GET(request: Request) {
   }
 
   // 3. Dedup — filter out already-sent notifications
-  const keys = thirteenHits.map((h) => `${h.gamePk}|${h.abbr}`)
   const { data: alreadySent } = await supabase
     .from('push_notifications_sent')
     .select('game_pk, team')

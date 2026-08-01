@@ -146,7 +146,14 @@ export default async function HomePage({ searchParams }: PageProps) {
     .order('game_date', { ascending: false })
 
   const todayStr = baseballToday()
-  const todayThirteens = (thirteenHistory ?? []).filter((g) => g.game_date === todayStr)
+  // Include prior slate so overnight West Coast 13s still celebrate after 6 AM ET rollover
+  const [ty, tm, td] = todayStr.split('-').map(Number)
+  const prior = new Date(Date.UTC(ty, tm - 1, td))
+  prior.setUTCDate(prior.getUTCDate() - 1)
+  const yesterdayStr = prior.toISOString().slice(0, 10)
+  const todayThirteens = (thirteenHistory ?? []).filter(
+    (g) => g.game_date === todayStr || g.game_date === yesterdayStr
+  )
 
   // ── Season state for banner ──
   const bannerTodayStr = baseballToday()
