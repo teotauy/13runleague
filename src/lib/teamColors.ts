@@ -1,3 +1,5 @@
+import { RETRO_TO_ABBR } from './retrosheetTeams'
+
 /**
  * MLB Team Color Mappings
  * Used for visualizing champions in the Past Champions Banner and other team-based displays
@@ -232,17 +234,40 @@ export const TEAM_COLORS: Record<string, TeamColor> = {
 
 /**
  * Maps legacy/renamed team abbreviations to their current equivalent.
- * Use normalizeTeamAbbr() when reading from the database (Retrosheet data
- * uses old abbreviations) and franchiseAbbrs() when querying.
+ * Retrosheet codes come from RETRO_TO_ABBR; AZ is the MLB Stats API Diamondbacks code.
+ * Use normalizeTeamAbbr() when reading stored rows and franchiseAbbrs() when querying.
  */
 export const TEAM_ABBR_ALIASES: Record<string, string> = {
-  OAK: 'ATH', // Oakland Athletics → Athletics (2025+)
-  AZ: 'ARI', // MLB Stats API uses AZ for Arizona; app + members table use ARI
-  ANA: 'LAA', // Retrosheet Anaheim Angels
-  CAL: 'LAA', // Retrosheet California Angels
-  KC1: 'ATH', // Retrosheet Kansas City Athletics
-  SE1: 'MIL', // Retrosheet Seattle Pilots
-  BLA: 'NYY', // Retrosheet 1901–02 AL Orioles (Yankees franchise)
+  AZ: 'ARI',
+  ...Object.fromEntries(
+    Object.entries(RETRO_TO_ABBR).filter(([from, to]) => from !== to)
+  ),
+}
+
+/** Supabase returns 1000 rows unless limited; we have ~3.5k 13-run games. */
+export const GAME_RESULTS_FETCH_LIMIT = 10_000
+
+/** Split a winning_team cell (including "ATH,BOS" both-hit-13) into current abbrs. */
+export function normalizeWinningTeams(cell: string | null | undefined): string[] {
+  if (!cell) return []
+  return cell
+    .split(',')
+    .map((part) => normalizeTeamAbbr(part.trim().toUpperCase()))
+    .filter((abbr) => abbr.length > 0)
+}
+
+/** All-time 13-run counts keyed by current franchise abbreviation. */
+export function tallyThirteenByFranchise(
+  rows: Array<{ winning_team: string | null }>
+): Record<string, number> {
+  const counts: Record<string, number> = {}
+  for (const row of rows) {
+    for (const team of normalizeWinningTeams(row.winning_team)) {
+      if (!TEAM_COLORS[team]) continue
+      counts[team] = (counts[team] ?? 0) + 1
+    }
+  }
+  return counts
 }
 
 /** Normalize a stored abbreviation to its current equivalent. */
@@ -252,10 +277,11 @@ export function normalizeTeamAbbr(abbr: string): string {
 
 /** Return all abbreviations (current + historical) for a given current abbr. */
 export function franchiseAbbrs(abbr: string): string[] {
+  const canon = normalizeTeamAbbr(abbr)
   const aliases = Object.entries(TEAM_ABBR_ALIASES)
-    .filter(([, v]) => v === abbr)
+    .filter(([, v]) => v === canon)
     .map(([k]) => k)
-  return [abbr, ...aliases]
+  return [...new Set([canon, ...aliases])]
 }
 
 /**

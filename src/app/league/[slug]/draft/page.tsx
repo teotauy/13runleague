@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import DraftRoom from '@/components/draft/DraftRoom'
-import { TEAM_COLORS, normalizeTeamAbbr } from '@/lib/teamColors'
+import { TEAM_COLORS, normalizeTeamAbbr, normalizeWinningTeams, GAME_RESULTS_FETCH_LIMIT } from '@/lib/teamColors'
 import type { TeamStat } from '@/components/draft/DraftRankingsBoard'
 
 export const dynamic = 'force-dynamic'
@@ -66,6 +66,7 @@ export default async function DraftPage({ params }: Props) {
     .select('winning_team')
     .eq('was_thirteen', true)
     .not('winning_team', 'is', null)
+    .limit(GAME_RESULTS_FETCH_LIMIT)
 
   // Aggregate league stats per team
   const leagueMap = new Map<string, { wins: number; earned: number; seasons: number }>()
@@ -81,9 +82,9 @@ export default async function DraftPage({ params }: Props) {
   // Aggregate MLB all-time counts per team
   const mlbMap = new Map<string, number>()
   for (const row of mlbCounts ?? []) {
-    if (!row.winning_team) continue
-    const abbr = normalizeTeamAbbr(row.winning_team)
-    mlbMap.set(abbr, (mlbMap.get(abbr) ?? 0) + 1)
+    for (const team of normalizeWinningTeams(row.winning_team)) {
+      mlbMap.set(team, (mlbMap.get(team) ?? 0) + 1)
+    }
   }
 
   // Build final TeamStat[] for all 30 teams

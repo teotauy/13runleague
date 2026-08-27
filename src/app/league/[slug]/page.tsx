@@ -19,7 +19,7 @@ import WinCelebration, { type WinCelebrationPayout } from '@/components/WinCeleb
 import LeagueTabs from '@/components/LeagueTabs'
 import LeagueExplainer from '@/components/LeagueExplainer'
 import ThirteenRunLore from '@/components/ThirteenRunLore'
-import { normalizeTeamAbbr } from '@/lib/teamColors'
+import { normalizeTeamAbbr, GAME_RESULTS_FETCH_LIMIT } from '@/lib/teamColors'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,6 +61,7 @@ export default async function LeagueDashboard({ params }: Props) {
     .select('game_date, home_team, away_team, winning_team, home_score, away_score')
     .eq('was_thirteen', true)
     .order('game_date', { ascending: false })
+    .limit(GAME_RESULTS_FETCH_LIMIT)
 
   const games = await fetchTodaySchedule()
 

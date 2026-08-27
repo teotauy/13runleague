@@ -18,6 +18,7 @@ import SiteFooter from '@/components/SiteFooter'
 import type { SeasonState } from '@/components/SeasonBanner'
 import { getFestiveTheme } from '@/lib/festiveThemes'
 import { createServiceClient } from '@/lib/supabase/server'
+import { GAME_RESULTS_FETCH_LIMIT } from '@/lib/teamColors'
 import type { MLBGame, MLBLiveGame } from '@/lib/mlb'
 import AddToHomeScreenBanner from "@/components/AddToHomeScreenBanner"
 import Link from 'next/link'
@@ -145,6 +146,7 @@ export default async function HomePage({ searchParams }: PageProps) {
     .select('game_date, home_team, away_team, winning_team, home_score, away_score')
     .eq('was_thirteen', true)
     .order('game_date', { ascending: false })
+    .limit(GAME_RESULTS_FETCH_LIMIT)
 
   const todayStr = baseballToday()
   // Include prior slate so overnight West Coast 13s still celebrate after 6 AM ET rollover

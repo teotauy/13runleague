@@ -951,7 +951,7 @@ export const CONSECUTIVE_STREAKS: ConsecutiveStreak[] = [
     "games": [
       {
         "date": "1901-06-08",
-        "score": "Cleveland 13–5 Orioles (AL)",
+        "score": "Cleveland 13–5 Yankees",
         "team": "Cleveland"
       },
       {
@@ -961,7 +961,7 @@ export const CONSECUTIVE_STREAKS: ConsecutiveStreak[] = [
       },
       {
         "date": "1901-06-10",
-        "score": "Cleveland 13–6 Orioles (AL)",
+        "score": "Cleveland 13–6 Yankees",
         "team": "Cleveland"
       },
       {

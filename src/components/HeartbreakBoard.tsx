@@ -1,4 +1,4 @@
-import { normalizeTeamAbbr } from '@/lib/teamColors'
+import { normalizeTeamAbbr, normalizeWinningTeams } from '@/lib/teamColors'
 
 export interface HeartbreakGame {
   game_date: string
@@ -47,8 +47,8 @@ export default function HeartbreakBoard({ games }: { games: HeartbreakGame[] }) 
   const recentGame = games[0]
   const recentHB = recentGame
     ? recentGame.home_score === 12
-      ? recentGame.home_team
-      : recentGame.away_team
+      ? normalizeTeamAbbr(recentGame.home_team)
+      : normalizeTeamAbbr(recentGame.away_team)
     : null
 
   return (
@@ -112,7 +112,7 @@ export default function HeartbreakBoard({ games }: { games: HeartbreakGame[] }) 
           <div className="mt-4 pt-3 border-t border-gray-800 text-xs text-gray-400 font-mono">
             Most recent:{' '}
             <span className="text-gray-400">{recentHB}</span> scored 12 while{' '}
-            <span className="text-gray-400">{recentGame.winning_team}</span> scored 13
+            <span className="text-gray-400">{normalizeWinningTeams(recentGame.winning_team).join(', ') || recentGame.winning_team}</span> scored 13
             <span className="text-gray-400"> · {recentGame.game_date}</span>
           </div>
         )}

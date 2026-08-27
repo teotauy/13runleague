@@ -5,6 +5,12 @@ import PastChampionsBanner, { type YearlyChampions } from '@/components/PastCham
 import HeartbreakBoard from '@/components/HeartbreakBoard'
 import DynastyTracker from '@/components/DynastyTracker'
 import SiteFooter from '@/components/SiteFooter'
+import {
+  GAME_RESULTS_FETCH_LIMIT,
+  normalizeTeamAbbr,
+  normalizeWinningTeams,
+  tallyThirteenByFranchise,
+} from '@/lib/teamColors'
 
 export const revalidate = 3600
 
@@ -33,6 +39,15 @@ export default async function HistoryPage() {
     .order('game_date', { ascending: false })
     .limit(200)
 
+  const { data: allWinners } = await supabase
+    .from('game_results')
+    .select('winning_team')
+    .eq('was_thirteen', true)
+    .limit(GAME_RESULTS_FETCH_LIMIT)
+
+  const franchiseCounts = Object.entries(tallyThirteenByFranchise(allWinners ?? []))
+    .sort((a, b) => b[1] - a[1])
+
   // Fetch heartbreak games — was_thirteen + one team scored exactly 12
   const { data: heartbreakGames } = await supabase
     .from('game_results')
@@ -40,22 +55,13 @@ export default async function HistoryPage() {
     .eq('was_thirteen', true)
     .or('home_score.eq.12,away_score.eq.12')
     .order('game_date', { ascending: false })
+    .limit(GAME_RESULTS_FETCH_LIMIT)
 
   // Fetch historical results for champions banner
   const { data: historicalData } = await supabase
     .from('historical_results')
     .select('member_name, team, year, total_won, shares')
     .order('year', { ascending: false })
-
-  // Group by team
-  const byTeam: Record<string, typeof games> = {}
-  for (const game of games ?? []) {
-    const team = game.winning_team ?? 'Unknown'
-    if (!byTeam[team]) byTeam[team] = []
-    byTeam[team]!.push(game)
-  }
-
-  const teamsSorted = Object.entries(byTeam).sort((a, b) => b[1]!.length - a[1]!.length)
 
   // Organize historical data into yearly champions
   const yearlyChampionsMap = new Map<number, Array<{ memberName: string; team: string; totalWon: number; shares: number }>>()
@@ -123,7 +129,7 @@ export default async function HistoryPage() {
 
         {/* Summary grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-          {teamsSorted.map(([team, teamGames]) => (
+          {franchiseCounts.map(([team, count]) => (
             <Link
               key={team}
               href={`/teams/${team.toLowerCase()}`}
@@ -131,7 +137,7 @@ export default async function HistoryPage() {
             >
               <div className="text-xs text-gray-500 font-mono">{team}</div>
               <div className="text-2xl font-black text-[#39ff14] mt-1">
-                {teamGames!.length}
+                {count}
               </div>
               <div className="text-[10px] text-gray-400">13-run games</div>
             </Link>
@@ -155,23 +161,28 @@ export default async function HistoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {(games ?? []).map((g) => (
+                {(games ?? []).map((g) => {
+                  const away = normalizeTeamAbbr(g.away_team)
+                  const home = normalizeTeamAbbr(g.home_team)
+                  const winners = normalizeWinningTeams(g.winning_team)
+                  return (
                   <tr key={g.id} className="border-b border-gray-900 hover:bg-white/[0.03]">
                     <td className="py-2 pr-4 text-gray-400">{g.game_date}</td>
                     <td className="py-2 pr-4 text-gray-300">
                       <a
-                        href={`/matchup/${g.away_team}/${g.home_team}`}
+                        href={`/matchup/${away}/${home}`}
                         className="hover:text-white transition-colors"
                       >
-                        {g.away_team} @ {g.home_team}
+                        {away} @ {home}
                       </a>
                     </td>
                     <td className="py-2 pr-4 text-gray-300">
                       {g.away_score}–{g.home_score}
                     </td>
-                    <td className="py-2 text-[#39ff14] font-bold">{g.winning_team}</td>
+                    <td className="py-2 text-[#39ff14] font-bold">{winners.join(', ') || g.winning_team}</td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>

@@ -1,4 +1,4 @@
-import { TEAM_COLORS } from '@/lib/teamColors'
+import { TEAM_COLORS, GAME_RESULTS_FETCH_LIMIT, tallyThirteenByFranchise } from '@/lib/teamColors'
 import { createServiceClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -25,13 +25,9 @@ export default async function TeamsIndexPage() {
     .from('game_results')
     .select('winning_team')
     .eq('was_thirteen', true)
-    .limit(10000)
+    .limit(GAME_RESULTS_FETCH_LIMIT)
 
-  // Tally counts
-  const counts: Record<string, number> = {}
-  for (const row of rows ?? []) {
-    if (row.winning_team) counts[row.winning_team] = (counts[row.winning_team] ?? 0) + 1
-  }
+  const counts = tallyThirteenByFranchise(rows ?? [])
 
   const teams: TeamStat[] = Object.entries(TEAM_COLORS)
     .map(([abbr, tc]) => ({

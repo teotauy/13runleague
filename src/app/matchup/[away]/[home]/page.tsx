@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import { createServiceClient } from '@/lib/supabase/server'
-import { getTeamColor } from '@/lib/teamColors'
+import { getTeamColor, franchiseAbbrs, normalizeTeamAbbr, normalizeWinningTeams, GAME_RESULTS_FETCH_LIMIT } from '@/lib/teamColors'
 import YearChart from '@/components/YearChart'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,8 +13,8 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { away, home } = await params
-  const awayAbbr = away.toUpperCase()
-  const homeAbbr = home.toUpperCase()
+  const awayAbbr = normalizeTeamAbbr(away.toUpperCase())
+  const homeAbbr = normalizeTeamAbbr(home.toUpperCase())
   const title = `${awayAbbr} @ ${homeAbbr} — 13-Run Matchup History`
   const ogUrl = `/api/og?title=${encodeURIComponent(`${awayAbbr} @ ${homeAbbr}`)}&subtitle=${encodeURIComponent('13-run matchup history since 1901')}`
   return {
@@ -36,21 +37,30 @@ function dayOfWeek(dateStr: string): number {
 
 export default async function MatchupPage({ params }: Props) {
   const { away, home } = await params
-  const awayAbbr = away.toUpperCase()
-  const homeAbbr = home.toUpperCase()
+  const awayRaw = away.toUpperCase()
+  const homeRaw = home.toUpperCase()
+  const awayAbbr = normalizeTeamAbbr(awayRaw)
+  const homeAbbr = normalizeTeamAbbr(homeRaw)
+  if (awayRaw !== awayAbbr || homeRaw !== homeAbbr) {
+    redirect(`/matchup/${awayAbbr}/${homeAbbr}`)
+  }
 
   const awayInfo = getTeamColor(awayAbbr)
   const homeInfo = getTeamColor(homeAbbr)
   const supabase = createServiceClient()
 
-  // All games ever played between these two teams (both directions) — for run distribution
+  const awayCodes = franchiseAbbrs(awayAbbr)
+  const homeCodes = franchiseAbbrs(homeAbbr)
+
+  // All games ever played between these two franchises (both directions) — for run distribution
   const { data: allGames } = await supabase
     .from('game_results')
     .select('game_date, home_team, away_team, home_score, away_score, winning_team, was_thirteen')
     .or(
-      `and(away_team.eq.${awayAbbr},home_team.eq.${homeAbbr}),and(away_team.eq.${homeAbbr},home_team.eq.${awayAbbr})`
+      `and(away_team.in.(${awayCodes.join(',')}),home_team.in.(${homeCodes.join(',')})),and(away_team.in.(${homeCodes.join(',')}),home_team.in.(${awayCodes.join(',')}))`
     )
     .order('game_date', { ascending: false })
+    .limit(GAME_RESULTS_FETCH_LIMIT)
 
   const games = allGames ?? []
 
@@ -60,10 +70,16 @@ export default async function MatchupPage({ params }: Props) {
 
   // Away team 13s vs Home team 13s specifically in this direction (AWAY @ HOME)
   const awayTeam13s = thirteenGames.filter(
-    (g) => g.away_team === awayAbbr && g.home_team === homeAbbr && g.away_score === 13
+    (g) =>
+      normalizeTeamAbbr(g.away_team) === awayAbbr &&
+      normalizeTeamAbbr(g.home_team) === homeAbbr &&
+      g.away_score === 13
   )
   const homeTeam13s = thirteenGames.filter(
-    (g) => g.away_team === awayAbbr && g.home_team === homeAbbr && g.home_score === 13
+    (g) =>
+      normalizeTeamAbbr(g.away_team) === awayAbbr &&
+      normalizeTeamAbbr(g.home_team) === homeAbbr &&
+      g.home_score === 13
   )
 
   const gameCount = games.length
@@ -287,8 +303,10 @@ export default async function MatchupPage({ params }: Props) {
                 </thead>
                 <tbody>
                   {thirteenGames.map((g) => {
-                    const winner = g.winning_team
-                    const winnerInfo = getTeamColor(winner ?? '')
+                    const away = normalizeTeamAbbr(g.away_team)
+                    const home = normalizeTeamAbbr(g.home_team)
+                    const winner = normalizeWinningTeams(g.winning_team).join(', ') || g.winning_team
+                    const winnerInfo = getTeamColor(normalizeTeamAbbr((g.winning_team ?? '').split(',')[0] ?? ''))
                     return (
                       <tr
                         key={`${g.game_date}-${g.home_team}-${g.away_team}`}
@@ -296,7 +314,7 @@ export default async function MatchupPage({ params }: Props) {
                       >
                         <td className="py-2 pr-4 text-gray-400">{g.game_date}</td>
                         <td className="py-2 pr-4 text-gray-300">
-                          {g.away_team} @ {g.home_team}
+                          {away} @ {home}
                         </td>
                         <td className="py-2 pr-4">
                           <span className={g.away_score === 13 ? 'text-[#39ff14] font-bold' : 'text-gray-400'}>
@@ -332,9 +350,9 @@ export default async function MatchupPage({ params }: Props) {
                   <span className="text-[#39ff14] font-bold">13</span>
                   <span className="text-gray-400">{g.game_date}</span>
                   <span className="text-white">
-                    {g.away_team} @ {g.home_team} — {g.away_score}–{g.home_score}
+                    {normalizeTeamAbbr(g.away_team)} @ {normalizeTeamAbbr(g.home_team)} — {g.away_score}–{g.home_score}
                   </span>
-                  <span className="ml-auto text-amber-400">{g.winning_team} scored 13</span>
+                  <span className="ml-auto text-amber-400">{normalizeWinningTeams(g.winning_team).join(', ') || g.winning_team} scored 13</span>
                 </div>
               ))}
             </div>

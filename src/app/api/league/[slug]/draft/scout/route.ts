@@ -2,7 +2,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { normalizeTeamAbbr, franchiseAbbrs, TEAM_COLORS } from '@/lib/teamColors'
+import { normalizeTeamAbbr, franchiseAbbrs, TEAM_COLORS, GAME_RESULTS_FETCH_LIMIT } from '@/lib/teamColors'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -59,6 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     .eq('was_thirteen', true)
     .in('winning_team', franchiseList)
     .order('game_date', { ascending: false })
+    .limit(GAME_RESULTS_FETCH_LIMIT)
 
   // ── 3. Build stats for prompt ─────────────────────────────────────────────
   const totalLeagueWins = leagueHistory?.reduce((sum, r) => sum + (r.shares ?? 0), 0) ?? 0

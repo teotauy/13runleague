@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 import { createServiceClient } from '@/lib/supabase/server'
-import { TEAM_COLORS, getTeamColor, franchiseAbbrs } from '@/lib/teamColors'
+import { TEAM_COLORS, getTeamColor, franchiseAbbrs, normalizeTeamAbbr, GAME_RESULTS_FETCH_LIMIT } from '@/lib/teamColors'
 import YearChart from '@/components/YearChart'
 import MiniBar from '@/components/MiniBar'
 import SiteFooter from '@/components/SiteFooter'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 
 export const revalidate = 3600
 
@@ -22,7 +22,7 @@ interface Props {
 
 export async function generateMetadata({ params }: { params: Promise<{ abbreviation: string }> }): Promise<Metadata> {
   const { abbreviation } = await params
-  const abbr = abbreviation.toUpperCase()
+  const abbr = normalizeTeamAbbr(abbreviation.toUpperCase())
 
   const title = `${abbr} — 13 Run League History`
   const subtitle = `All-time 13-run game history for the ${abbr}`
@@ -40,7 +40,9 @@ const BASEBALL_MONTHS = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct']
 
 export default async function TeamPage({ params }: Props) {
   const { abbreviation } = await params
-  const abbr = abbreviation.toUpperCase()
+  const requested = abbreviation.toUpperCase()
+  const abbr = normalizeTeamAbbr(requested)
+  if (requested !== abbr) redirect(`/teams/${abbr.toLowerCase()}`)
 
   // Validate — must be a known franchise
   if (!TEAM_COLORS[abbr]) notFound()
@@ -56,6 +58,7 @@ export default async function TeamPage({ params }: Props) {
     .eq('was_thirteen', true)
     .in('winning_team', abbrs)
     .order('game_date', { ascending: false })
+    .limit(GAME_RESULTS_FETCH_LIMIT)
 
   const allGames = games ?? []
   const total = allGames.length
@@ -68,7 +71,7 @@ export default async function TeamPage({ params }: Props) {
   const monthMap = new Map<string, number>()
 
   for (const g of allGames) {
-    if (abbrs.includes(g.home_team)) homeCount++
+    if (normalizeTeamAbbr(g.home_team) === abbr) homeCount++
     else awayCount++
 
     const yr = parseInt(g.game_date.slice(0, 4), 10)
@@ -271,18 +274,20 @@ export default async function TeamPage({ params }: Props) {
                   </thead>
                   <tbody>
                     {allGames.map((g) => {
-                      const isHome = g.home_team === abbr
+                      const home = normalizeTeamAbbr(g.home_team)
+                      const away = normalizeTeamAbbr(g.away_team)
+                      const isHome = home === abbr
                       const myScore = isHome ? g.home_score : g.away_score
                       const oppScore = isHome ? g.away_score : g.home_score
                       return (
-                        <tr key={`${g.game_date}-${g.home_team}`} className="border-b border-gray-900 hover:bg-white/[0.03]">
+                        <tr key={`${g.game_date}-${g.home_team}-${g.away_team}`} className="border-b border-gray-900 hover:bg-white/[0.03]">
                           <td className="py-2 pr-4 text-gray-400">{g.game_date}</td>
                           <td className="py-2 pr-4">
                             <Link
-                              href={`/matchup/${g.away_team}/${g.home_team}`}
+                              href={`/matchup/${away}/${home}`}
                               className="text-gray-300 hover:text-white transition-colors"
                             >
-                              {g.away_team} @ {g.home_team}
+                              {away} @ {home}
                             </Link>
                           </td>
                           <td className="py-2 pr-4">

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import YearChart from './YearChart'
 import MiniBar from './MiniBar'
-import { normalizeTeamAbbr } from '@/lib/teamColors'
+import { normalizeTeamAbbr, normalizeWinningTeams } from '@/lib/teamColors'
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const
@@ -24,8 +24,7 @@ export default function ThirteenRunLore({ games }: { games: ThirteenGame[] }) {
   // ── By Franchise ─────────────────────────────────────────────────────────
   const franchiseMap = new Map<string, number>()
   for (const g of games) {
-    if (g.winning_team) {
-      const team = normalizeTeamAbbr(g.winning_team)
+    for (const team of normalizeWinningTeams(g.winning_team)) {
       franchiseMap.set(team, (franchiseMap.get(team) ?? 0) + 1)
     }
   }

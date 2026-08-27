@@ -33,42 +33,7 @@ import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
-
-// ── Retrosheet team code → MLB abbreviation ───────────────────────────────────
-// Retrosheet uses historical codes; we map to modern MLB API abbreviations.
-// Teams that moved or renamed get the current franchise abbreviation.
-const RETRO_TO_ABBR: Record<string, string> = {
-  // AL
-  BAL: 'BAL', BOS: 'BOS', CHA: 'CWS', CLE: 'CLE', DET: 'DET',
-  HOU: 'HOU', KCA: 'KC',  LAA: 'LAA', MIN: 'MIN', NYA: 'NYY',
-  OAK: 'ATH', SEA: 'SEA', TBA: 'TB',  TEX: 'TEX', TOR: 'TOR',
-  ANA: 'LAA',  // Anaheim Angels (Retrosheet code through 2021+)
-  CAL: 'LAA',  // California Angels
-  // Historical AL franchises → modern equivalent
-  MLA: 'BAL',  // Milwaukee Brewers (AL, 1901) → became Baltimore Orioles
-  SLA: 'BAL',  // St. Louis Browns → Baltimore Orioles
-  WS1: 'MIN',  // Washington Senators (orig) → Twins
-  WS2: 'TEX',  // Washington Senators (expansion) → Rangers
-  PHA: 'ATH',  // Philadelphia Athletics
-  KC1: 'ATH',  // Kansas City A's (1955–67). Must be Latin KC1 — a Cyrillic А never matches.
-  SE1: 'MIL',  // Seattle Pilots (1969) → Milwaukee Brewers
-  ATH: 'ATH',  // Athletics (Retrosheet 2025+, after dropping OAK)
-  BLA: 'NYY',  // Baltimore Orioles (AL 1901–02) → Highlanders/Yankees (not today's BAL)
-  // NL
-  ATL: 'ATL', CHN: 'CHC', CIN: 'CIN', COL: 'COL', LAN: 'LAD',
-  MIA: 'MIA', MIL: 'MIL', NYN: 'NYM', PHI: 'PHI', PIT: 'PIT',
-  SDN: 'SD',  SFN: 'SF',  SLN: 'STL', WAS: 'WSH', ARI: 'ARI',
-  // Historical NL franchises → modern equivalent
-  BSN: 'ATL',  // Boston Braves → Milwaukee → Atlanta Braves
-  MLN: 'ATL',  // Milwaukee Braves → Atlanta
-  BR1: 'LAD',  // Brooklyn Dodgers → LA
-  BRO: 'LAD',  // Brooklyn Dodgers variant
-  NY1: 'SF',   // New York Giants → San Francisco Giants
-  FLO: 'MIA',  // Florida Marlins
-  MON: 'WSH',  // Montreal Expos → Washington Nationals
-  // Federal League, early franchises — map to closest modern team or skip
-  // (The script will skip any team code not in this map)
-}
+import { RETRO_TO_ABBR } from '../src/lib/retrosheetTeams'
 
 interface GameRow {
   game_pk: string
