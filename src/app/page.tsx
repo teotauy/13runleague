@@ -20,6 +20,7 @@ import { getFestiveTheme } from '@/lib/festiveThemes'
 import { createServiceClient } from '@/lib/supabase/server'
 import type { MLBGame, MLBLiveGame } from '@/lib/mlb'
 import AddToHomeScreenBanner from "@/components/AddToHomeScreenBanner"
+import Link from 'next/link'
 
 export const revalidate = 60
 
@@ -407,6 +408,9 @@ export default async function HomePage({ searchParams }: PageProps) {
             <p className="section-label mb-1">League History</p>
             <h2 className="text-xl font-bold mb-4"><span className="text-[#39ff14]">13</span>-Run History</h2>
             <ThirteenRunHistoryCard games={thirteenHistory} />
+            <Link href="/history/streaks" className="text-[#39ff14] text-sm hover:underline mt-4 inline-block">
+              Consecutive 13-run days →
+            </Link>
           </section>
         )}
 

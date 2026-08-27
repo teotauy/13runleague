@@ -99,6 +99,20 @@ export default async function HistoryPage() {
           <p className="text-gray-500 mt-1">All recorded 13-run games by team</p>
         </header>
 
+        <Link
+          href="/history/streaks"
+          className="module-card block hover:border-[#39ff14]/40 transition-colors"
+        >
+          <p className="section-label mb-1">Streaks</p>
+          <h2 className="text-xl font-bold mb-1">
+            Consecutive <span className="text-[#39ff14]">13</span>-run days
+          </h2>
+          <p className="text-gray-400 text-sm">
+            Three days in a row has happened 76 times. Four has happened. The record is five. Never six.
+          </p>
+          <p className="text-[#39ff14] text-sm font-bold mt-3">Open the full list →</p>
+        </Link>
+
         {/* Past Champions Banner */}
         <PastChampionsBanner yearlyChampions={yearlyChampions} />
 
