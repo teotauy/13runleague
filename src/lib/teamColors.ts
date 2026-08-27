@@ -240,6 +240,9 @@ export const TEAM_ABBR_ALIASES: Record<string, string> = {
   AZ: 'ARI', // MLB Stats API uses AZ for Arizona; app + members table use ARI
   ANA: 'LAA', // Retrosheet Anaheim Angels
   CAL: 'LAA', // Retrosheet California Angels
+  KC1: 'ATH', // Retrosheet Kansas City Athletics
+  SE1: 'MIL', // Retrosheet Seattle Pilots
+  BLA: 'NYY', // Retrosheet 1901–02 AL Orioles (Yankees franchise)
 }
 
 /** Normalize a stored abbreviation to its current equivalent. */

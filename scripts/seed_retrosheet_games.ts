@@ -50,7 +50,10 @@ const RETRO_TO_ABBR: Record<string, string> = {
   WS1: 'MIN',  // Washington Senators (orig) → Twins
   WS2: 'TEX',  // Washington Senators (expansion) → Rangers
   PHA: 'ATH',  // Philadelphia Athletics
-  KCА: 'ATH',  // Kansas City A's → Oakland A's
+  KC1: 'ATH',  // Kansas City A's (1955–67). Must be Latin KC1 — a Cyrillic А never matches.
+  SE1: 'MIL',  // Seattle Pilots (1969) → Milwaukee Brewers
+  ATH: 'ATH',  // Athletics (Retrosheet 2025+, after dropping OAK)
+  BLA: 'NYY',  // Baltimore Orioles (AL 1901–02) → Highlanders/Yankees (not today's BAL)
   // NL
   ATL: 'ATL', CHN: 'CHC', CIN: 'CIN', COL: 'COL', LAN: 'LAD',
   MIA: 'MIA', MIL: 'MIL', NYN: 'NYM', PHI: 'PHI', PIT: 'PIT',
