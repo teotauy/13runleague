@@ -42,6 +42,8 @@ const RETRO_TO_ABBR: Record<string, string> = {
   BAL: 'BAL', BOS: 'BOS', CHA: 'CWS', CLE: 'CLE', DET: 'DET',
   HOU: 'HOU', KCA: 'KC',  LAA: 'LAA', MIN: 'MIN', NYA: 'NYY',
   OAK: 'ATH', SEA: 'SEA', TBA: 'TB',  TEX: 'TEX', TOR: 'TOR',
+  ANA: 'LAA',  // Anaheim Angels (Retrosheet code through 2021+)
+  CAL: 'LAA',  // California Angels
   // Historical AL franchises → modern equivalent
   MLA: 'BAL',  // Milwaukee Brewers (AL, 1901) → became Baltimore Orioles
   SLA: 'BAL',  // St. Louis Browns → Baltimore Orioles
