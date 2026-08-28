@@ -2,7 +2,7 @@
  *  Source: Retrosheet regular-season game logs (1871–2025) + MLB Stats API (2026).
  *  A day counts if any team scored exactly 13 runs.
  */
-export const CONSECUTIVE_AS_OF = '2026-08-26'
+export const CONSECUTIVE_AS_OF = '2026-08-27'
 
 export type EraKey = 'all' | 'modern'
 
@@ -34,19 +34,19 @@ export type EraStats = {
 
 export const ERA_STATS: Record<EraKey, EraStats> = {
   all: {
-  "games": 3756,
-  "dates": 3461,
+  "games": 3757,
+  "dates": 3462,
   "byLen": {
     "1": 2499,
     "2": 357,
-    "3": 61,
-    "4": 10,
+    "3": 60,
+    "4": 11,
     "5": 5
   },
   "ge3": 76,
-  "ge4": 15,
-  "exactly3": 61,
-  "exactly4": 10,
+  "ge4": 16,
+  "exactly3": 60,
+  "exactly4": 11,
   "exactly5": 5,
   "decades": {
     "1870": 1,
@@ -68,19 +68,19 @@ export const ERA_STATS: Record<EraKey, EraStats> = {
   }
 },
   modern: {
-  "games": 2974,
-  "dates": 2745,
+  "games": 2975,
+  "dates": 2746,
   "byLen": {
     "1": 1998,
     "2": 276,
-    "3": 48,
-    "4": 9,
+    "3": 47,
+    "4": 10,
     "5": 3
   },
   "ge3": 60,
-  "ge4": 12,
-  "exactly3": 48,
-  "exactly4": 9,
+  "ge4": 13,
+  "exactly3": 47,
+  "exactly4": 10,
   "exactly5": 3,
   "decades": {
     "1900": 3,
@@ -583,6 +583,34 @@ export const CONSECUTIVE_STREAKS: ConsecutiveStreak[] = [
         "date": "2019-07-01",
         "score": "Giants 13–2 Padres",
         "team": "Giants"
+      }
+    ]
+  },
+  {
+    "length": 4,
+    "start": "2026-08-24",
+    "end": "2026-08-27",
+    "year": 2026,
+    "games": [
+      {
+        "date": "2026-08-24",
+        "score": "Rockies 3–13 Nationals",
+        "team": "Nationals"
+      },
+      {
+        "date": "2026-08-25",
+        "score": "Orioles 13–1 Cardinals",
+        "team": "Orioles"
+      },
+      {
+        "date": "2026-08-26",
+        "score": "Rockies 13–1 Nationals",
+        "team": "Rockies"
+      },
+      {
+        "date": "2026-08-27",
+        "score": "Royals 13–2 Blue Jays",
+        "team": "Royals"
       }
     ]
   },
@@ -2058,29 +2086,6 @@ export const CONSECUTIVE_STREAKS: ConsecutiveStreak[] = [
         "date": "2026-06-07",
         "score": "Angels 13–5 Dodgers",
         "team": "Angels"
-      }
-    ]
-  },
-  {
-    "length": 3,
-    "start": "2026-08-24",
-    "end": "2026-08-26",
-    "year": 2026,
-    "games": [
-      {
-        "date": "2026-08-24",
-        "score": "Rockies 3–13 Nationals",
-        "team": "Nationals"
-      },
-      {
-        "date": "2026-08-25",
-        "score": "Orioles 13–1 Cardinals",
-        "team": "Orioles"
-      },
-      {
-        "date": "2026-08-26",
-        "score": "Rockies 13–1 Nationals",
-        "team": "Rockies"
       }
     ]
   }

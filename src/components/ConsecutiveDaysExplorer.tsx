@@ -171,10 +171,13 @@ export default function ConsecutiveDaysExplorer({ today }: { today: string }) {
 
       {liveCouldExtend && latest && (
         <div className="rounded-xl border border-[#39ff14]/30 bg-[#39ff14]/5 px-4 py-3">
-          <p className="text-sm font-bold text-[#39ff14] mb-1">A 3-day streak is live</p>
+          <p className="text-sm font-bold text-[#39ff14] mb-1">
+            A {latest.length}-day streak is live
+          </p>
           <p className="text-sm text-gray-300">
             {fmtRange(latest.start, latest.end)} already has a 13-run game each day
-            ({latest.games.map((g) => g.team).join(', ')}). Tonight could make it four in a row.
+            ({latest.games.map((g) => g.team).join(', ')}). Tonight could make it{' '}
+            {latest.length + 1 === 5 ? 'five' : latest.length + 1 === 4 ? 'four' : String(latest.length + 1)} in a row.
           </p>
         </div>
       )}

@@ -114,7 +114,7 @@ export default async function HistoryPage() {
             Consecutive <span className="text-[#39ff14]">13</span>-run days
           </h2>
           <p className="text-gray-400 text-sm">
-            Three days in a row has happened 76 times. Four has happened. The record is five. Never six.
+            Three days in a row has happened 76 times. Four has happened 16 times. The record is five. Never six.
           </p>
           <p className="text-[#39ff14] text-sm font-bold mt-3">Open the full list →</p>
         </Link>
