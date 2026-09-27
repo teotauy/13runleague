@@ -9,6 +9,7 @@ import MemberPasswordForm from '@/components/admin/MemberPasswordForm'
 import RecalculateStreaksButton from '@/components/admin/RecalculateStreaksButton'
 import SendReceiptModal from '@/components/admin/SendReceiptModal'
 import WeeklyRecapSection from '@/components/admin/WeeklyRecapSection'
+import SeasonWrappedSection from '@/components/admin/SeasonWrappedSection'
 import PaymentBoard from '@/components/admin/PaymentBoard'
 import { signRecapCapability } from '@/lib/recapCapability'
 
@@ -174,6 +175,7 @@ export default async function AdminDashboard({ params }: Props) {
           {/* Nav */}
           <div className="flex gap-4 mt-3 text-xs text-gray-400 font-mono border-t border-gray-900 pt-3 flex-wrap">
             <a href="#recap" className="hover:text-[#39ff14] transition-colors">Weekly Recap Email</a>
+            <a href="#wrapped" className="hover:text-[#39ff14] transition-colors">Season Wrapped</a>
             <a href="#payments" className="hover:text-[#39ff14] transition-colors">Settle week &amp; payments</a>
             <a href="#roster" className="hover:text-gray-400 transition-colors">Roster</a>
             <a href="#teams" className="hover:text-gray-400 transition-colors">Teams</a>
@@ -185,6 +187,16 @@ export default async function AdminDashboard({ params }: Props) {
         <section id="recap">
           <h2 className="text-xl font-bold mb-4">Weekly Recap Email</h2>
           <WeeklyRecapSection leagueSlug={slug} recapCapabilityToken={recapCapabilityToken} />
+        </section>
+
+        {/* Season Wrapped (end-of-year, per-owner) */}
+        <section id="wrapped">
+          <h2 className="text-xl font-bold mb-4">Season Wrapped Email</h2>
+          <SeasonWrappedSection
+            leagueSlug={slug}
+            recapCapabilityToken={recapCapabilityToken}
+            defaultSeasonYear={seasonYear}
+          />
         </section>
 
         {/* Payments grid + settle week (payouts API) */}
