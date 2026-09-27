@@ -9,6 +9,7 @@ import MemberPasswordForm from '@/components/admin/MemberPasswordForm'
 import RecalculateStreaksButton from '@/components/admin/RecalculateStreaksButton'
 import SendReceiptModal from '@/components/admin/SendReceiptModal'
 import WeeklyRecapSection from '@/components/admin/WeeklyRecapSection'
+import InvoicePreviewSection from '@/components/admin/InvoicePreviewSection'
 import PaymentBoard from '@/components/admin/PaymentBoard'
 import { signRecapCapability } from '@/lib/recapCapability'
 
@@ -174,6 +175,7 @@ export default async function AdminDashboard({ params }: Props) {
           {/* Nav */}
           <div className="flex gap-4 mt-3 text-xs text-gray-400 font-mono border-t border-gray-900 pt-3 flex-wrap">
             <a href="#recap" className="hover:text-[#39ff14] transition-colors">Weekly Recap Email</a>
+            <a href="#invoices" className="hover:text-[#39ff14] transition-colors">Buy-in invoices</a>
             <a href="#payments" className="hover:text-[#39ff14] transition-colors">Settle week &amp; payments</a>
             <a href="#roster" className="hover:text-gray-400 transition-colors">Roster</a>
             <a href="#teams" className="hover:text-gray-400 transition-colors">Teams</a>
@@ -185,6 +187,20 @@ export default async function AdminDashboard({ params }: Props) {
         <section id="recap">
           <h2 className="text-xl font-bold mb-4">Weekly Recap Email</h2>
           <WeeklyRecapSection leagueSlug={slug} recapCapabilityToken={recapCapabilityToken} />
+        </section>
+
+        {/* Buy-in invoice preview (never sends) */}
+        <section id="invoices">
+          <h2 className="text-xl font-bold mb-1">Buy-in invoice emails</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Preview invoices for active members who are not marked paid and whose season wins have not
+            covered the {seasonYear} entry fee (
+            <span className="font-mono text-gray-400">
+              ${(league.weekly_buy_in ?? 10) * 28}
+            </span>
+            ). Amount due = buy-in owed − wins. Preview only — Colby sends after approving copy.
+          </p>
+          <InvoicePreviewSection leagueSlug={slug} />
         </section>
 
         {/* Payments grid + settle week (payouts API) */}

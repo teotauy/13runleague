@@ -23,7 +23,8 @@ export interface PayoutRecord {
 }
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
-const SEASON_WEEKS = 28
+/** Playing weeks in a full season buy-in (`weekly_buy_in × SEASON_WEEKS`). */
+export const SEASON_WEEKS = 28
 
 /** Sunday 00:00 local on or before the given calendar day (for Sunday-based playing weeks). */
 function sundayOnOrBefore(d: Date): Date {
@@ -298,10 +299,10 @@ export async function getWinnersForWeek(
 }
 
 /**
- * How much season buy-in to deduct from a winner's gross share.
+ * How much season buy-in is still owed (or to deduct from a winner's gross share).
  * paid → 0, 50% paid → half-season balance, unpaid/null → full-season balance.
  */
-function buyInOwed(status: string | null | undefined, weekly_buy_in: number): number {
+export function buyInOwed(status: string | null | undefined, weekly_buy_in: number): number {
   const seasonBuyIn = weekly_buy_in * SEASON_WEEKS
   if (status === 'paid') return 0
   if (status === '50%') return Math.round(seasonBuyIn / 2)
