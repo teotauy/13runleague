@@ -369,7 +369,7 @@ SeasonWrapped.PreviewProps = {
     memberName: 'Alex Owner',
     email: 'alex@example.com',
     teamAbbr: 'MIL',
-    teamName: 'Brewers',
+    teamName: 'Milwaukee Brewers',
     totalWon: 400,
     shares: 2,
     wins: [

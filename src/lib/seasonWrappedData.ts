@@ -3,7 +3,46 @@ import {
   getSeasonYear,
   getWeekCalendarBoundsForSeasonYear,
 } from '@/lib/pot'
-import { getTeamColor, franchiseAbbrs, normalizeTeamAbbr } from '@/lib/teamColors'
+import { franchiseAbbrs, normalizeTeamAbbr } from '@/lib/teamColors'
+
+/** Full club names for email copy — same map as send-receipts. */
+const TEAM_FULL_NAMES: Record<string, string> = {
+  ARI: 'Arizona Diamondbacks',
+  ATH: 'Athletics',
+  ATL: 'Atlanta Braves',
+  BAL: 'Baltimore Orioles',
+  BOS: 'Boston Red Sox',
+  CHC: 'Chicago Cubs',
+  CWS: 'Chicago White Sox',
+  CIN: 'Cincinnati Reds',
+  CLE: 'Cleveland Guardians',
+  COL: 'Colorado Rockies',
+  DET: 'Detroit Tigers',
+  HOU: 'Houston Astros',
+  KC: 'Kansas City Royals',
+  LAA: 'Los Angeles Angels',
+  LAD: 'Los Angeles Dodgers',
+  MIA: 'Miami Marlins',
+  MIL: 'Milwaukee Brewers',
+  MIN: 'Minnesota Twins',
+  NYM: 'New York Mets',
+  NYY: 'New York Yankees',
+  PHI: 'Philadelphia Phillies',
+  PIT: 'Pittsburgh Pirates',
+  SD: 'San Diego Padres',
+  SEA: 'Seattle Mariners',
+  SF: 'San Francisco Giants',
+  STL: 'St. Louis Cardinals',
+  TB: 'Tampa Bay Rays',
+  TEX: 'Texas Rangers',
+  TOR: 'Toronto Blue Jays',
+  WSH: 'Washington Nationals',
+}
+
+function teamFullName(abbr: string): string {
+  const canon = normalizeTeamAbbr(abbr)
+  return TEAM_FULL_NAMES[canon] ?? TEAM_FULL_NAMES[abbr.toUpperCase()] ?? abbr
+}
 import {
   buildVenmoPayUrl,
   resolveVenmoUsername,
@@ -191,9 +230,10 @@ export async function buildSeasonWrappedData(
   for (const p of payouts) {
     const cur = byMember.get(p.member_id) ?? { totalWon: 0, shares: 0, wins: [] }
     const amount = p.payout_amount ?? 0
-    const shares = p.shares_count ?? 1
+    // One payout row = one share for this member. Do NOT sum shares_count —
+    // that column is how many winners split the pot that week (see pot.ts).
     cur.totalWon += amount
-    cur.shares += shares
+    cur.shares += 1
     cur.wins.push({
       weekNumber: p.week_number ?? 0,
       amount,
@@ -274,7 +314,6 @@ export async function buildSeasonWrappedData(
   const memberStats: MemberSeasonStats[] = membersList.map((m) => {
     const stats = byMember.get(m.id) ?? { totalWon: 0, shares: 0, wins: [] }
     const teamAbbr = normalizeTeamAbbr(m.assigned_team)
-    const teamMeta = getTeamColor(teamAbbr)
     const nearMissCount = franchiseAbbrs(teamAbbr).reduce(
       (sum, abbr) => sum + (nearMissByTeam.get(abbr) ?? 0),
       0
@@ -286,7 +325,7 @@ export async function buildSeasonWrappedData(
       memberName: m.name,
       email: m.email,
       teamAbbr,
-      teamName: teamMeta.name,
+      teamName: teamFullName(teamAbbr),
       totalWon: stats.totalWon,
       shares: stats.shares,
       wins,
