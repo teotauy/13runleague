@@ -9,10 +9,46 @@ import {
   getSeasonYear,
   getWeekCalendarBoundsForSeasonYear,
 } from '@/lib/pot'
+import { fetchWeeklyFinalScores } from '@/lib/mlb'
 import type { WeekResults } from '../../emails/WeeklyRecap'
 import { verifyRecapCapability } from '@/lib/recapCapability'
 import { sanitizeRecapHtml } from '@/lib/recapHtmlSanitize'
 import { buildRecapSuggestions, type RecapSuggestionBlock } from '@/lib/recapSuggestions'
+
+/** Calendar Y/M/D and weekday (0=Sun) in America/New_York. */
+function etCalendar(date: Date): { year: number; month: number; day: number; dayOfWeek: number } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    weekday: 'short',
+  }).formatToParts(date)
+  const year = parseInt(parts.find((p) => p.type === 'year')!.value, 10)
+  const month = parseInt(parts.find((p) => p.type === 'month')!.value, 10)
+  const day = parseInt(parts.find((p) => p.type === 'day')!.value, 10)
+  const wd = parts.find((p) => p.type === 'weekday')!.value
+  const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(wd)
+  return { year, month, day, dayOfWeek }
+}
+
+/**
+ * Most recent Saturday on the ET baseball calendar, as a local Date at noon.
+ * Playing weeks are Sun–Sat ET; never use the server's UTC weekday.
+ */
+function mostRecentSaturdayEt(today: Date = new Date()): Date {
+  const et = etCalendar(today)
+  const daysToLastSat = (et.dayOfWeek + 1) % 7
+  // Walk the ET calendar date back to Saturday, then build a noon local Date
+  // so getWeekNumber/getSeasonYear see the intended calendar day on UTC hosts.
+  const utcNoon = Date.UTC(et.year, et.month - 1, et.day - daysToLastSat, 12, 0, 0)
+  const sat = new Date(utcNoon)
+  return new Date(sat.getUTCFullYear(), sat.getUTCMonth(), sat.getUTCDate(), 12, 0, 0)
+}
+
+function thirteenGameKey(gameDate: string, winningTeam: string): string {
+  return `${gameDate}|${winningTeam.split(',').map((t) => t.trim().toUpperCase()).sort().join(',')}`
+}
 
 async function buildRecapData(slug: string) {
   const supabase = createServiceClient()
@@ -49,15 +85,10 @@ async function buildRecapData(slug: string) {
   const activeMemberCount = (members ?? []).length
   const weeklyPot = (league.weekly_buy_in ?? 10) * activeMemberCount
 
-  const today = new Date()
-  // Recap is always for the most recently completed week (Sun–Sat window).
-  // A new playing week starts on Sunday, so Saturday is the last day of the
-  // completed week. Regardless of what day the commissioner opens the recap
-  // editor, anchor to the most recent Saturday so we query the right week's
-  // payouts. Sun(0)→back 1 day, Mon(1)→back 2, …, Sat(6)→back 0.
-  const dayOfWeek = today.getDay()
-  const daysToLastSat = (dayOfWeek + 1) % 7
-  const recapAnchor = new Date(today.getTime() - daysToLastSat * 24 * 60 * 60 * 1000)
+  // Recap is always for the most recently completed week (Sun–Sat ET window).
+  // Anchor to the most recent Saturday in Eastern Time so UTC hosts (Vercel)
+  // don't shift the week when ET is still Saturday / early Sunday.
+  const recapAnchor = mostRecentSaturdayEt()
   const weekNumber = getWeekNumber(recapAnchor)
   const seasonYear = getSeasonYear(recapAnchor)
 
@@ -65,7 +96,7 @@ async function buildRecapData(slug: string) {
   const { start: weekStart, end: weekEnd } =
     getWeekCalendarBoundsForSeasonYear(seasonYear, weekNumber)
 
-  const [thirteenGamesRes, payoutRowsRes, ledgerRes] = await Promise.all([
+  const [thirteenGamesRes, payoutRowsRes, ledgerRes, mlbThirteenGames] = await Promise.all([
     supabase
       .from('game_results')
       .select('winning_team, game_date')
@@ -86,11 +117,35 @@ async function buildRecapData(slug: string) {
       .eq('week_number', weekNumber)
       .eq('year', seasonYear)
       .maybeSingle(),
+    // Live MLB cross-check — same source settle-preview uses — so a late
+    // West Coast 13 (officialDate still Saturday) appears even if game_results
+    // is lagging behind the push cron.
+    fetchWeeklyFinalScores(weekStart, weekEnd),
   ])
 
   const payoutRows = payoutRowsRes.data ?? []
-  const thirteenGames = thirteenGamesRes.data ?? []
+  const dbThirteenGames = thirteenGamesRes.data ?? []
   const ledger = ledgerRes.data
+
+  // Merge DB + MLB; prefer official schedule dates from MLB when present.
+  const thirteenByKey = new Map<string, { gameDate: string; winningTeam: string }>()
+  for (const g of dbThirteenGames) {
+    if (!g.winning_team) continue
+    thirteenByKey.set(thirteenGameKey(g.game_date, g.winning_team), {
+      gameDate: g.game_date,
+      winningTeam: g.winning_team,
+    })
+  }
+  for (const g of mlbThirteenGames) {
+    const winningTeam = g.winningAbbrs.join(',')
+    if (!winningTeam) continue
+    const key = thirteenGameKey(g.gameDate, winningTeam)
+    // MLB officialDate wins on conflict (corrects ISO-split / overnight misdates).
+    thirteenByKey.set(key, { gameDate: g.gameDate, winningTeam })
+  }
+  const thirteenRunGames = [...thirteenByKey.values()].sort((a, b) =>
+    a.gameDate.localeCompare(b.gameDate) || a.winningTeam.localeCompare(b.winningTeam)
+  )
 
   // Resolve member names for payout rows
   const winnerIds = [...new Set(payoutRows.map((p) => p.member_id))]
@@ -124,13 +179,13 @@ async function buildRecapData(slug: string) {
 
   const weekWinners = [...winnerMap.values()]
   const totalDistributed = weekWinners.reduce((s, w) => s + w.payoutAmount, 0)
-  const rolloverAmount = weekWinners.length === 0 ? (ledger?.pot_amount ?? 0) : 0
+  const rolloverAmount =
+    weekWinners.length === 0 && thirteenRunGames.length === 0
+      ? (ledger?.pot_amount ?? 0)
+      : 0
 
   const weekResults: WeekResults = {
-    thirteenRunGames: thirteenGames.map((g) => ({
-      gameDate: g.game_date,
-      winningTeam: g.winning_team,
-    })),
+    thirteenRunGames,
     winners: weekWinners,
     totalDistributed,
     rolloverAmount,
