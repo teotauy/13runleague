@@ -63,6 +63,11 @@ interface WeeklyRecapProps {
   showBranding?: boolean
 }
 
+function fmtGameDate(iso: string) {
+  const d = new Date(iso + 'T12:00:00')
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
 export default function WeeklyRecap({
   weekNumber,
   upcomingGames,
@@ -73,7 +78,10 @@ export default function WeeklyRecap({
   showBranding = true,
 }: WeeklyRecapProps) {
   const hasWinners = (weekResults?.winners.length ?? 0) > 0
-  const isRollover = weekResults && !hasWinners
+  const hasThirteenGames = (weekResults?.thirteenRunGames.length ?? 0) > 0
+  // Rollover only when the week truly had no 13-run games — never when games
+  // exist but payouts have not been settled yet.
+  const isRollover = weekResults && !hasWinners && !hasThirteenGames
   const winnerNames = weekResults?.winners.map((winner) => winner.memberName).join(', ') ?? ''
 
   return (
@@ -126,6 +134,40 @@ export default function WeeklyRecap({
               <Text style={{ color: '#6b7280', margin: '0 0 32px', fontSize: '14px' }}>
                 Week {weekNumber} Recap
               </Text>
+            </Section>
+          )}
+
+          {/* ── 13-run games (always surface when present) ───────── */}
+          {weekResults && hasThirteenGames && (
+            <Section style={{
+              backgroundColor: '#0a1a0a',
+              border: '1px solid #166534',
+              borderRadius: '8px',
+              padding: '20px',
+              marginBottom: '28px',
+            }}>
+              <Text style={{
+                color: '#39ff14',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                margin: '0 0 12px',
+              }}>
+                Week {weekNumber} — 13-Run Games
+              </Text>
+              {weekResults.thirteenRunGames.map((g, i) => (
+                <Text key={`${g.gameDate}-${g.winningTeam}-${i}`} style={{ color: '#d1d5db', fontSize: '14px', margin: '0 0 6px', fontFamily: 'monospace' }}>
+                  {fmtGameDate(g.gameDate)}
+                  <span style={{ color: '#39ff14', fontWeight: 'bold' }}> {g.winningTeam}</span>
+                  {' scored 13'}
+                </Text>
+              ))}
+              {!hasWinners && (
+                <Text style={{ color: '#9ca3af', fontSize: '12px', margin: '12px 0 0' }}>
+                  Payouts not settled yet — settle the week in admin to attach winners.
+                </Text>
+              )}
             </Section>
           )}
 

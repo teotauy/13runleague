@@ -115,13 +115,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  try {
-    ensureVapid()
-  } catch (err) {
-    console.error('[PushCron] VAPID not configured:', err)
-    return NextResponse.json({ error: 'VAPID keys not configured' }, { status: 500 })
-  }
-
   const supabase = createServiceClient()
 
   // 1. Fetch finals for baseball-today + prior slate (overnight backfill)
@@ -130,8 +123,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ sent: 0, message: 'No final games' })
   }
 
-  // 1b. Persist all 13-run finals to game_results so the celebration banner,
-  //     winner detection, and payout settlement all work automatically.
+  // 1b. Persist all 13-run finals to game_results BEFORE push/VAPID work so
+  //     wrap-up, celebration banner, and settlement stay correct even when
+  //     web-push keys are missing.
   const thirteenGameRows = games
     .filter((g) => g.teams.away.score === 13 || g.teams.home.score === 13)
     .map((g) => {
@@ -155,6 +149,28 @@ export async function GET(request: Request) {
     await supabase
       .from('game_results')
       .upsert(thirteenGameRows, { onConflict: 'game_pk' })
+
+    // Streaks should update as soon as 13s land in game_results — not only when
+    // push delivery succeeds.
+    try {
+      const { data: leagues } = await supabase.from('leagues').select('id')
+      const currentYear = getSeasonYear(new Date())
+      await Promise.all(
+        (leagues ?? []).map((league) => recalculateStreaks(league.id, currentYear, supabase))
+      )
+    } catch (err) {
+      console.error('[PushCron] Streak recalculation failed (non-fatal):', err)
+    }
+  }
+
+  try {
+    ensureVapid()
+  } catch (err) {
+    console.error('[PushCron] VAPID not configured:', err)
+    return NextResponse.json({
+      error: 'VAPID keys not configured',
+      persistedThirteen: thirteenGameRows.length,
+    }, { status: 500 })
   }
 
   // 2. Find teams that scored exactly 13
@@ -249,19 +265,7 @@ export async function GET(request: Request) {
       .upsert({ game_pk: hit.gamePk, team: hit.abbr, event_type: 'thirteen' })
   }
 
-  // 6. Recalculate streaks for all leagues — wins count the moment the game ends.
-  //    Only runs when toSend had new games (above), so this is a no-op on repeat cron ticks.
-  try {
-    const { data: leagues } = await supabase.from('leagues').select('id')
-    const currentYear = getSeasonYear(new Date())
-    await Promise.all(
-      (leagues ?? []).map((league) => recalculateStreaks(league.id, currentYear, supabase))
-    )
-  } catch (err) {
-    console.error('[PushCron] Streak recalculation failed (non-fatal):', err)
-  }
-
-  // 7. Clean up expired subscriptions
+  // 6. Clean up expired subscriptions
   if (failedEndpoints.length > 0) {
     await supabase
       .from('push_subscriptions')
